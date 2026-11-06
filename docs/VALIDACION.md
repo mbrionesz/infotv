@@ -1,3 +1,18 @@
+# Validación actual — 0.4.4
+
+Prueba física de 0.4.3: arranque más rápido, algunos canales estables, otros con
+cortes cerca de 30 s, vídeo poco fluido y desfase de audio pequeño. No hay aún
+logs que identifiquen la causa de cada canal.
+
+0.4.4 añade worker HLS local, adaptación por fotogramas perdidos, recuperación
+acotada de bloqueos y diagnóstico de buffer/códecs/fotogramas. Validación local:
+36 pruebas unitarias, integración Chromium y 60 s de vídeo sintético con lista
+deslizante y caída de lista después del segundo 30. No prueba los FPS ni la
+sincronía audiovisual en hardware Samsung. [Detalle](RELEASE-0.4.4-alpha.1.md).
+La validación física de esta versión sigue pendiente.
+
+Los apartados siguientes son historial.
+
 # Validación actual — 0.4.3
 
 El usuario confirmó vídeo real durante unos segundos en 0.4.2, seguido de cortes.
