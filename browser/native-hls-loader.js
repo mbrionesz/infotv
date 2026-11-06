@@ -1,4 +1,4 @@
-export function nativeHlsLoad(loader,transport,context,config,callbacks,headers){
+export function nativeHlsLoad(loader,transport,context,config,callbacks,headers,fallback){
  loader.context=context;loader.nativeActive=true;const stats=loader.stats;stats.loading.start=performance.now();
  const requestHeaders=Object.assign({},headers);
  if(Number.isFinite(context.rangeEnd))requestHeaders.Range='bytes='+(context.rangeStart||0)+'-'+(context.rangeEnd-1);
@@ -6,6 +6,7 @@ export function nativeHlsLoad(loader,transport,context,config,callbacks,headers)
  const timer=setTimeout(()=>{if(active){cancel();stats.aborted=true;callbacks.onTimeout(stats,context,null);}},Math.min(15000,config.timeout||15000));
  transport.request({url:context.url,headers:requestHeaders,timeout:12000}).then(result=>{
   if(!active)return;cancel();
+  if(!result&&fallback){loader.nativeActive=false;stats.loading.start=0;stats.aborted=false;loader.cancelNative=null;fallback();return;}
   if(!result||result.status<200||result.status>=300){callbacks.onError({code:result&&result.status||0,text:'Error HTTP en sockets Samsung'},context,null,stats);return;}
   loader.nativeHeaders=result.headers||'';
   stats.loading.first=stats.loading.end=performance.now();stats.loaded=stats.total=result.body.byteLength;stats.chunkCount=1;

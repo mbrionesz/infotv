@@ -1,3 +1,29 @@
+# Corrección 0.4.1
+
+El usuario confirmó que la 0.4.0, instalada en su Samsung, deja de cargar y muestra
+«Error HTTP/TLS en transporte Samsung». Crear un socket no verificaba el transporte
+completo. La 0.4.1 devuelve esa petición a XHR si falla la transferencia nativa y
+suspende el transporte nativo durante el resto de la sesión. La recuperación
+cubre portal, comprobación del manifiesto y cargador HLS. **En fallback se utiliza
+el DNS del TV**, sin protección DoH aplicada al vídeo. Reiniciar permite volver a
+intentar el transporte nativo.
+
+No se atribuye el fallo a un certificado/DNS concreto sin el código del equipo.
+Diagnóstico guarda `lastFailure.code` (cURL), clasificación segura, host y motivo;
+no muestra URLs firmadas o cabeceras. HTTP 401/403 se mantienen como respuestas
+HTTP y no disparan este cambio de transporte. No se desactiva la validación TLS.
+
+`dnsServers` contiene sólo las seis IP públicas configuradas. `resolver` identifica
+el DNS consultado; `ip` es la dirección del portal/CDN que devolvió ese DNS. Las
+IP sintéticas, como 203.0.113.7, se usan únicamente en tests y no se empaquetan como
+configuración de producción. La interfaz incorpora una leyenda explícita.
+
+25 pruebas aprobadas, incluido el fallo nativo con recuperación y conservación del
+código, así como HLS cifrado real después de caer a XHR en Chromium. Sigue pendiente
+la nueva prueba en TV y la identificación del error HTTP/TLS concreto.
+
+El documento siguiente conserva el diseño y las limitaciones del prototipo 0.4.
+
 # DNS integrado experimental — 0.4.0 alpha.1
 
 La 0.3.1 sólo consultaba DoH para diagnóstico. La 0.4 añade un **transporte real**

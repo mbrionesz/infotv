@@ -76,7 +76,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.4.0');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.4.1');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -174,6 +174,8 @@ try {
   await browser.evaluate('__xuper.show("player")');
   await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
   const nativeCalls=await browser.evaluate('nativeRouteCalls');assert.ok(nativeCalls.some(url=>url.endsWith('.m3u8')));assert.ok(nativeCalls.some(url=>url.endsWith('.ts')));assert.ok(nativeCalls.some(url=>url.endsWith('/key.bin')));
+  await browser.evaluate('__xuper.show("home");XuperNativeTransport.request=async function(){return null};__xuper.show("player")');
+  await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
   assert.deepEqual(browser.errors,[]);
   console.log('PASS: worker, IndexedDB, paged catalog, three-column guide, QWERTY; autonomous startup without pairing/RPC; real HLS.js decodes AES-128 H.264/AAC via cross-origin authorized manifest+segments+key; pause/resume, channel change, teardown, UI and branding. Provider catalog mocked; not a real channel or Samsung test.');
 } catch(error) {

@@ -50,7 +50,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': 'alpha', 'minimumTizen': '4.0',
-        'hardwareValidation': 'v0.4-pending-on-QN55QN70FAGXZS', 'providerValidation': 'v0.2-channel-list-loaded-on-TV-playback-timeout-v0.4-pending',
+        'hardwareValidation': 'v0.4.0-native-http-tls-failed-v0.4.1-pending-on-QN55QN70FAGXZS', 'providerValidation': 'v0.2-channel-list-loaded-on-TV-playback-timeout-v0.4-pending',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion']
     }, indent=2) + '\n')

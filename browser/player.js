@@ -94,7 +94,7 @@ export function createPlayer(getStream) {
         load(context,config,callbacks){
           if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
           const transport=window.XuperNativeTransport;
-          if(transport&&transport.snapshot().available)return nativeHlsLoad(this,transport,context,config,callbacks,headers);
+          if(transport&&transport.snapshot().available)return nativeHlsLoad(this,transport,context,config,callbacks,headers,()=>super.load(context,config,callbacks));
           return super.load(context,config,callbacks);
         }
       }

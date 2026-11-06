@@ -1,6 +1,6 @@
-import {dnsQuestion} from './dns-diagnostic.js';
+import {dnsQuestion,resolvers} from './dns-diagnostic.js';
 export function createNativeTransport({workerFactory=()=>new Worker(new URL('vendor/native-worker.js',document.baseURI)),now=Date.now}={}){
- let serial=0,cooldown=0,ready=false,reason='Comprobando extensión Samsung';const queue=[],slots=[],cache=new Map(),inflight=new Map(),recent=new Map();
+ let serial=0,cooldown=0,ready=false,disabled=false,lastFailure=null,reason='Comprobando extensión Samsung';const queue=[],slots=[],cache=new Map(),inflight=new Map(),recent=new Map();
  function slot(){
   return new Promise(resolve=>{
    let worker;try{worker=workerFactory();}catch(_){reason='No pudo crear worker Samsung';resolve(null);return;}
@@ -11,7 +11,7 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
     if('ready' in message){if(initialized)return;initialized=true;clearTimeout(timer);if(!message.ready){reason=message.reason;worker.terminate();resolve(null);}else{slots.push(item);resolve(item);pump();}return;}
     if(!item.pending||item.pending.id!==message.id)return;
     const pending=item.pending;clearTimeout(pending.timer);item.pending=null;item.busy=false;
-    if(message.error)pending.reject(new Error(message.error));else pending.resolve(message.result);pump();
+    if(message.error){const error=new Error(message.error);error.nativeCode=message.nativeCode;pending.reject(error);}else pending.resolve(message.result);pump();
    };
    worker.onerror=()=>{
     if(!initialized){initialized=true;clearTimeout(timer);reason='Error al cargar sockets Samsung';resolve(null);}
@@ -25,7 +25,7 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
   const first=await slot();if(!first)return false;
   ready=true;reason='Sockets Samsung disponibles';slot();return true;
  };
- let started;function ensure(){if(!started)started=start();return started;}
+ let started;function ensure(){if(disabled)return Promise.resolve(false);if(!started)started=start();return started;}
  function pump(){
   for(const item of slots){if(item.dead||item.busy||!queue.length)continue;const job=queue.shift();item.busy=true;item.pending=job;
    job.timer=setTimeout(()=>{if(item.pending!==job)return;item.pending=null;item.dead=true;item.busy=false;item.worker.terminate();job.reject(new Error('Tiempo de espera agotado en sockets'));pump();},job.method==='dns'?6000:16000);
@@ -45,17 +45,27 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
    return result;
   });inflight.set(host,task);task.then(()=>inflight.delete(host),()=>inflight.delete(host));return task;
  }
+ function suspend(error,record){
+  disabled=true;ready=false;
+  const code=Number.isInteger(error.nativeCode)?error.nativeCode:null;
+  const details={7:'No pudo conectar al servidor',28:'Tiempo de conexión agotado',35:'Falló la negociación TLS',43:'Argumento no admitido por el transporte',60:'Certificado no validado',77:'No pudo leer el almacén de certificados'};
+  lastFailure={host:record.host,code,detail:details[code]||'Fallo del transporte nativo'};
+  reason='Transporte Samsung suspendido en esta sesión'+(code!==null?' · cURL '+code:'')+'. Se usará el navegador y el DNS del TV.';
+  while(queue.length)queue.shift().reject(error);
+ }
  async function request(options){
   if(!await ensure())return null;
   let target=new URL(options.url);if(!/^https?:$/.test(target.protocol)||target.username||target.password)throw new Error('URL no admitida');
   let headers=Object.assign({},options.headers),method=options.method||'GET',body=options.body||null;
   for(let redirects=0;redirects<5;redirects++){
    let address;try{address=await lookup(target.hostname);}catch(_){cooldown=now()+300000;address={ip:'',mode:'system-fallback'};}
+   if(disabled)return null;
    const lines=Object.keys(headers).filter(name=>! /^(host|connection|content-length|accept-encoding)$/i.test(name)).map(name=>{
     const value=String(headers[name]);if(!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)||/[\r\n]/.test(value))throw new Error('Cabecera no válida');return name+': '+value;
    }).join('\n');
    const record={host:target.hostname,mode:address.mode,ip:address.ip,resolver:address.resolver||'',pending:true,tlsVerified:false};recent.delete(target.hostname);recent.set(target.hostname,record);if(recent.size>8)recent.delete(recent.keys().next().value);
-   const result=await call('http',{url:target.href,host:target.hostname,port:Number(target.port)||(target.protocol==='https:'?443:80),headers:lines,method,body:typeof body==='string'?new TextEncoder().encode(body).buffer:body,ip:address.ip,timeout:options.timeout||12000}).catch(error=>{record.pending=false;record.error='Conexión HTTP/TLS fallida';throw error;});
+   const result=await call('http',{url:target.href,host:target.hostname,port:Number(target.port)||(target.protocol==='https:'?443:80),headers:lines,method,body:typeof body==='string'?new TextEncoder().encode(body).buffer:body,ip:address.ip,timeout:options.timeout||12000}).catch(error=>{record.pending=false;record.error='Conexión HTTP/TLS fallida';record.nativeCode=Number.isInteger(error.nativeCode)?error.nativeCode:null;suspend(error,record);return null;});
+   if(!result)return null;
    Object.assign(record,{pending:false,httpStatus:result.status,tlsVerified:target.protocol==='https:'});
    const location=(result.headers.match(/^location:\s*(.+)$/im)||[])[1];
    if([301,302,303,307,308].includes(result.status)&&location){
@@ -65,5 +75,5 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
    return Object.assign(result,{url:target.href,mode:address.mode});
   }throw new Error('Demasiadas redirecciones');
  }
- return {ensure,request,diagnose:async()=>({available:await ensure(),dnsOverride:ready&&Array.from(recent.values()).some(item=>item.mode==='secure-dns'),secureDnsCapable:ready,hosts:Array.from(recent.values()),note:'secure-dns indica conexión a la IP DoH conservando Host/SNI. system-fallback usa DNS del TV. No se afirma DNS alterado sin comparación concluyente.'}),snapshot:()=>({available:ready,reason,engine:ready?'samsung-wasm-curl':'xhr-system-dns',hosts:Array.from(recent.values()),cooldownUntil:cooldown}),dispose:()=>{slots.forEach(item=>item.worker.terminate());while(queue.length)queue.shift().reject(new Error('Transporte cerrado'));}};
+ return {ensure,request,diagnose:async()=>({available:await ensure(),dnsOverride:ready&&Array.from(recent.values()).some(item=>item.mode==='secure-dns'),secureDnsCapable:ready,hosts:Array.from(recent.values()),note:'resolver es el DNS consultado; ip es la dirección del portal/CDN. secure-dns indica el intento de usar esa IP conservando Host/SNI. system-fallback usa DNS del TV. No se afirma DNS alterado sin comparación concluyente.'}),snapshot:()=>({available:ready,reason,nativeDisabled:disabled,lastFailure,dnsServers:resolvers,fieldLegend:{resolver:'Servidor DNS consultado',ip:'IP del portal/CDN devuelta por DNS; no es otro resolutor'},engine:ready?'samsung-wasm-curl':'xhr-system-dns',hosts:Array.from(recent.values()),cooldownUntil:cooldown}),dispose:()=>{slots.forEach(item=>item.worker.terminate());while(queue.length)queue.shift().reject(new Error('Transporte cerrado'));}};
 }
