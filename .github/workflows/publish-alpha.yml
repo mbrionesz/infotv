@@ -30,9 +30,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
-          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
-            dist/XuperTizen-0.2.0-alpha-Tizen4plus-UNSIGNED.wgt \
-            dist/XuperTizen-0.2.0-source.zip \
-            dist/SHA256SUMS.json dist/release-info.json
-          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease
+          assets=(
+            dist/XuperTizen-0.2.0-alpha-Tizen4plus-UNSIGNED.wgt
+            dist/XuperTizen-0.2.0-source.zip
+            dist/SHA256SUMS.json
+            dist/release-info.json
+          )
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber "${assets[@]}"
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --prerelease --title "XuperTizen 0.2.0 alpha — Tizen 4.0+" \
+              --notes-file docs/RELEASE-0.2.0-alpha.1.md "${assets[@]}"
+          fi
