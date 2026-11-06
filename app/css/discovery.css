@@ -33,3 +33,7 @@
 .poster.is-focused,.bento.is-focused{transform:none!important;transition:none!important}.home-page{transition:none!important}
 
 .xt-guide-categories button[hidden],.xt-guide-channels button[hidden]{display:none}
+
+.xt-guide-channels button{font-size:16px}
+.xt-guide-technical{font-size:15px;line-height:1.5;color:#9db7c6;min-height:45px;margin:10px 0}
+.xt-playback-info{position:absolute;left:517.5px;right:40px;top:149.5px;font-size:17px;line-height:28px;color:#b7ccdb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

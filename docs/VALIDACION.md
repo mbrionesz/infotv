@@ -1,3 +1,13 @@
+# Validación actual — 0.5.5
+
+54 pruebas unitarias; integración Chromium de resolución/FPS/códecs, filas 16 px,
+reproducción y recuperación. Prueba HLS de 60 s con medición de fotogramas y
+normalización conservadora de TARGETDURATION duplicado. WASM recompilado con
+ocho direcciones DNS. [Notas](RELEASE-0.5.5-alpha.1.md). Prueba física pendiente;
+los registros previos no prueban bloqueo DNS ni el motivo preciso del parser.
+
+Los apartados siguientes son historial.
+
 # Validación actual — 0.5.4
 
 Se corrige la pausa indiscriminada del buffer 0.5.3, se delegan huecos a HLS y se

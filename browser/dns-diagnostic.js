@@ -1,5 +1,5 @@
 // Browser-safe DoH diagnostics. Results do NOT override the browser/AVPlay DNS.
-export const resolvers=['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15'];
+export const resolvers=['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15','9.9.9.9','149.112.112.112'];
 export function dnsQuestion(host){
   const name=String(host).toLowerCase().replace(/\.$/,'');
   if(name.length>253||!name.split('.').every(label=>/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)))throw new Error('Dominio inválido');

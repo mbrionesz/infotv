@@ -1,3 +1,5 @@
+import {createFrameMeter} from './media-info.js';
+import {playlistShape,playlistReason} from './playlist-shape.js';
 import {createLiveBuffer} from './live-buffer.js';
 import {mediaHealth,recoveryBudget} from './playback-health.js';
 import {playbackRejection,liveLoadPolicy} from './playback-policy.js';
@@ -13,10 +15,11 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 export function createPlayer(getStream) {
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
-  let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null;
+  let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null,frameMeter=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
+    if(frameMeter){frameMeter.destroy();frameMeter=null;}
     if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
     clearInterval(healthTimer);clearTimeout(sourceRefreshTimer);sourceRefreshTimer=null;clearTimeout(recoveryTimer);healthTimer=recoveryTimer=null;resumePlayback=null;++serial;clearTimeout(totalDeadline);clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
     if (video && playingListener) video.removeEventListener('playing', playingListener);
@@ -45,7 +48,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -96,7 +99,7 @@ export function createPlayer(getStream) {
     function recoverDecoder(){resuming=!video.paused;autoAttempts=0;playPending=false;diagnostics.recoveries++;hls.recoverMediaError();}
     healthTimer=setInterval(()=>{
       if(serial!==run||!video)return;
-      const sample=mediaHealth(video);diagnostics.media=sample;
+      const sample=mediaHealth(video);if(frameMeter){frameMeter.sample();Object.assign(sample,frameMeter.read());}diagnostics.media=sample;if(options.onInfo)options.onInfo(diagnostics);
       if(Math.abs(sample.time-lastTime)>0.05||sample.paused&&!(bufferGate&&bufferGate.waiting&&!bufferGate.userPaused)||document.hidden||!started){lastProgressAt=performance.now();lastTime=sample.time;return;}
       if(bufferGate&&bufferGate.waiting&&sample.bufferSeconds>0){lastProgressAt=performance.now();return;}
       if(refreshing||!hls||!options.live||performance.now()-lastProgressAt<12000)return;
@@ -117,6 +120,7 @@ export function createPlayer(getStream) {
       const next=routes[++routeIndex];playbackSource=next.url;headers=next.headers;
       diagnostics.httpsFallback=next.httpsFallback;diagnostics.cdnAttempt=next.cdnAttempt;
       attempt++;diagnostics.transport=/^https:/i.test(playbackSource)?'https':'http';
+      if(frameMeter){frameMeter.destroy();frameMeter=null;}
       if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
       clearTimeout(recoveryTimer);recoveryTimer=null;if(hls){hls.destroy();hls=null;}
       clearTimeout(deadline);started=ready=false;autoAttempts=0;playPending=false;gestureRequired=false;diagnostics.httpStatus=0;useHls();return true;
@@ -124,7 +128,7 @@ export function createPlayer(getStream) {
     function useHls() {
       if (serial !== run) return;
       if (!Hls.isSupported()) return fail('Este televisor no dispone de MediaSource compatible para este canal con autorización.');
-      const generation=attempt,playlistFacts=new Map();
+      const generation=attempt,playlistFacts=new Map();frameMeter=createFrameMeter(video);
       if(options.live)bufferGate=createLiveBuffer(video,{onState:state=>{diagnostics.bufferGate=state;if(started&&state.waiting&&!state.userPaused)diagnostics.stage='buffering';},onRejected:error=>{if(serial===run&&generation===attempt&&error.name==='NotAllowedError'){gestureRequired=true;diagnostics.autoplayBlocked=true;options.onError('Pulsa OK para iniciar el vídeo.');}}});
       engine = diagnostics.engine = 'hls.js';
       diagnostics.stage='manifest';diagnostics.worker=typeof Worker!=='undefined';
@@ -138,8 +142,8 @@ export function createPlayer(getStream) {
           if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
           const original=callbacks;callbacks=Object.assign({},original,{onSuccess:(response,stats,request,network)=>{
             if(typeof response.data==='string'){
-              const text=response.data,match=text.match(/^#EXT-X-TARGETDURATION:\s*([^\r\n]+)/m);
-              const facts={httpStatus:response.code||network&&network.status||null,characters:text.length,hasHeader:/^\s*#EXTM3U/.test(text),segments:(text.match(/#EXTINF:/g)||[]).length,hasTargetDuration:!!match,targetDuration:match&&Number.isFinite(Number(match[1]))?Number(match[1]):null};
+              const shape=playlistShape(response.data),facts=Object.assign({httpStatus:response.code||network&&network.status||null},shape.facts);response.data=shape.data;
+              if(shape.facts.removedIdenticalTargetTags){diagnostics.playlistRepairs=(diagnostics.playlistRepairs||0)+shape.facts.removedIdenticalTargetTags;record('removed-identical-target-duration');}
               playlistFacts.set(context.url,facts);if(playlistFacts.size>8)playlistFacts.delete(playlistFacts.keys().next().value);
             }
             original.onSuccess(response,stats,request,network);
@@ -168,7 +172,7 @@ export function createPlayer(getStream) {
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if(serial!==run||generation!==attempt)return;
-        if(/(?:level|manifest).*(?:Parsing|Empty)Error/i.test(data.details||'')){const text=data.response&&data.response.data;const reason=String(data.reason||data.error&&data.error.message||'');diagnostics.playlistError=Object.assign({kind:/no segments/i.test(reason)?'empty-playlist':/target.?duration/i.test(reason)?'target-duration':/EXTM3U/i.test(reason)?'missing-extm3u':/sequence/i.test(reason)?'sequence':/duration/i.test(reason)?'fragment-duration':'other-parsing-error'},playlistFacts.get(data.context&&data.context.url||data.url)||{characters:null,hasHeader:null,segments:null});}
+        if(/(?:level|manifest).*(?:Parsing|Empty)Error/i.test(data.details||'')){const text=data.response&&data.response.data;const reason=String(data.reason||data.error&&data.error.message||'');diagnostics.playlistError=Object.assign({kind:playlistReason(reason)},playlistFacts.get(data.context&&data.context.url||data.url)||{characters:null,hasHeader:null,segments:null});}
         diagnostics.detail=String(data.details||'').slice(0,70);record(data.details,data.response&&data.response.code||0,!!data.fatal);
         if(data.event==='demuxerWorker')diagnostics.worker=false;
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;

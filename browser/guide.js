@@ -1,3 +1,4 @@
+import {formatMediaInfo} from './media-info.js';
 import {addonPresets,savedAddons,playlistUrl,addonId,playlistMime} from './addons.js';
 import {createPlayer} from './player.js';
 import {createButtonWindow} from './button-window.js';
@@ -60,7 +61,7 @@ export function createGuide(core){
       if(error){status('Resolución: '+(error.message||String(error)));return;}
       stream=result;panel.querySelector('.xt-guide-title').textContent=item.name;
       panel.querySelector('.xt-guide-info').textContent=item.now||'En vivo';
-      preview.open(panel.querySelector('video'),result.url,{mime:result.mime,live:true,refreshStream:!item.streamUrl?done=>core.resolveLive(item.channelCode,(error,fresh)=>{if(!error)stream=fresh;done(error,fresh);},{force:true}):null,onStarted:()=>status('Reproduciendo · '+preview.diagnostics.engine),onError:message=>status(message)});
+      preview.open(panel.querySelector('video'),result.url,{mime:result.mime,live:true,onInfo:data=>{if(panel&&run===playSequence)panel.querySelector('.xt-guide-technical').textContent=formatMediaInfo(data);},refreshStream:!item.streamUrl?done=>core.resolveLive(item.channelCode,(error,fresh)=>{if(!error)stream=fresh;done(error,fresh);},{force:true}):null,onStarted:()=>status('Reproduciendo · '+preview.diagnostics.engine),onError:message=>status(message)});
       renderChannels();
     };
     if(item.streamUrl)resolved(null,{url:item.streamUrl,headers:{},mime:playlistMime(item.streamUrl)});else core.resolveLive(item.channelCode,resolved);
@@ -78,7 +79,7 @@ export function createGuide(core){
     if(active)return;
     if(window.__xuper)__xuper.show('home');
     active=true;panel=document.createElement('section');panel.id='xt-guide';panel.className='xt-panel';
-    panel.innerHTML='<header><div><span class="xt-eyebrow">TV EN VIVO</span><h1>Encuentra tu canal</h1><p>XuperTizen by Matias</p></div><button class="xt-guide-query">Buscar canal</button></header><div class="xt-guide-columns"><section><h2>Categorías</h2><div class="xt-guide-categories"></div></section><section><h2>Canales <small class="xt-guide-count"></small></h2><div class="xt-guide-channels"></div></section><section class="xt-guide-preview"><video playsinline></video><h2 class="xt-guide-title">Selecciona una señal</h2><p class="xt-guide-info">OK reproduce en esta vista. Azul abre pantalla completa.</p><div class="xt-guide-actions"></div><p class="xt-guide-status" role="status"></p></section></div><footer>← → Columnas · ↑ ↓ Elegir · OK Reproducir · Rojo Favorito · Verde Buscar · Amarillo Actualizar · Azul Pantalla completa · Return Volver</footer>';
+    panel.innerHTML='<header><div><span class="xt-eyebrow">TV EN VIVO</span><h1>Encuentra tu canal</h1><p>XuperTizen by Matias</p></div><button class="xt-guide-query">Buscar canal</button></header><div class="xt-guide-columns"><section><h2>Categorías</h2><div class="xt-guide-categories"></div></section><section><h2>Canales <small class="xt-guide-count"></small></h2><div class="xt-guide-channels"></div></section><section class="xt-guide-preview"><video playsinline></video><h2 class="xt-guide-title">Selecciona una señal</h2><p class="xt-guide-info">OK reproduce en esta vista. Azul abre pantalla completa.</p><p class="xt-guide-technical">Resolución y FPS pendientes</p><div class="xt-guide-actions"></div><p class="xt-guide-status" role="status"></p></section></div><footer>← → Columnas · ↑ ↓ Elegir · OK Reproducir · Rojo Favorito · Verde Buscar · Amarillo Actualizar · Azul Pantalla completa · Return Volver</footer>';
     document.getElementById('app').appendChild(panel);panel.querySelector('.xt-guide-query').onclick=search;
     categoryWindow=createButtonWindow(panel.querySelector('.xt-guide-categories'),item=>item.name||'Categoría',index=>{category=index;column=0;load();});
     channelWindow=createButtonWindow(panel.querySelector('.xt-guide-channels'),(item,i)=>(favorites[item.channelCode]?'★ ':'')+(item.index||i+1)+'  '+item.name,index=>{channel=index;column=1;play();});

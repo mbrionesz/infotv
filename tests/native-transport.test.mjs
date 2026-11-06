@@ -25,7 +25,7 @@ test('a failed native HTTP transfer returns control to XHR for that origin and r
   assert.equal(await transport.request({url:'https://cdn.example/'}),null);
   assert.equal(transport.snapshot().available,true);assert.equal(transport.snapshot().nativeDisabled,false);assert.deepEqual(transport.snapshot().originFallbacks,['https://cdn.example']);assert.equal(transport.snapshot().lastFailure.code,60);
   assert.equal(await transport.request({url:'https://cdn.example/again'}),null);assert.equal(count,1);
-  assert.deepEqual(transport.snapshot().dnsServers,['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15']);
+  assert.deepEqual(transport.snapshot().dnsServers,['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15','9.9.9.9','149.112.112.112']);
  }finally{transport.dispose();}
 });
 test('HTTP authorization errors remain HTTP errors and do not disable native DNS',async()=>{

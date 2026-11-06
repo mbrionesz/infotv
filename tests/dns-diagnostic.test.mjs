@@ -11,13 +11,13 @@ test('DoH validates question, flags and bounded records before accepting IPv4',(
 test('six DoH requests race, cancel losers, honor TTL and retain system routing',async()=>{
  let calls=0,canceled=0,time=0;
  const diag=createDnsDiagnostic({now:()=>time,query:ip=>{calls++;return {cancel:()=>canceled++,promise:ip===resolvers[1]?Promise.resolve({ips:['1.2.3.4'],ttl:60}):Promise.reject(new Error('offline'))};}});
- const result=await diag.lookup('example.com');assert.equal(calls,6);assert.equal(canceled,6);assert.equal(result.routing,'system-dns');assert.equal(result.status,'answered');
- assert.equal((await diag.lookup('example.com')).cached,true);assert.equal(calls,6);
- time=61000;await diag.lookup('example.com');assert.equal(calls,12);
+ const result=await diag.lookup('example.com');assert.equal(calls,resolvers.length);assert.equal(canceled,resolvers.length);assert.equal(result.routing,'system-dns');assert.equal(result.status,'answered');
+ assert.equal((await diag.lookup('example.com')).cached,true);assert.equal(calls,resolvers.length);
+ time=61000;await diag.lookup('example.com');assert.equal(calls,resolvers.length*2);
 });
 test('DoH timeout and failed resolvers enter five-minute cooldown without blocking app traffic',async()=>{
  let calls=0,time=0;const diag=createDnsDiagnostic({now:()=>time,timeout:10,query:()=>{calls++;return {cancel:()=>{},promise:new Promise(()=>{})};}});
- assert.equal((await diag.lookup('example.com')).status,'unavailable');assert.equal(calls,6);
- assert.equal((await diag.lookup('example.net')).status,'cooldown');assert.equal(calls,6);
- time=300001;await diag.lookup('example.net');assert.equal(calls,12);
+ assert.equal((await diag.lookup('example.com')).status,'unavailable');assert.equal(calls,resolvers.length);
+ assert.equal((await diag.lookup('example.net')).status,'cooldown');assert.equal(calls,resolvers.length);
+ time=300001;await diag.lookup('example.net');assert.equal(calls,resolvers.length*2);
 });

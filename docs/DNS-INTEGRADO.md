@@ -1,3 +1,15 @@
+# Estado actual — 0.5.5
+
+Ocho direcciones DoH de cuatro proveedores: Cloudflare 1.1.1.1/1.0.0.1,
+Google 8.8.8.8/8.8.4.4, AdGuard 94.140.14.14/94.140.15.15 y Quad9
+9.9.9.9/149.112.112.112. Quad9 usa https://dns.quad9.net/dns-query con
+CONNECT_TO por IP y verificación de certificado/nombre. Se mantiene carrera,
+presupuesto de 5 s, caché y fallback. [Direcciones oficiales Quad9](https://quad9.net/service/service-addresses-and-features/).
+No se afirma que agregar DNS corrija errores de parser, TLS o HTTP 404.
+Transporte nativo recompilado; disponibilidad en la red del TV pendiente.
+
+Los apartados siguientes son historial.
+
 # Estado actual — 0.4.2 experimental
 
 Las fotos del Samsung con 0.4.1 confirman respuesta DoH y errores nativos cURL 28

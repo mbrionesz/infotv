@@ -79,7 +79,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.4');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.5');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -121,6 +121,8 @@ try {
   assert.equal(await browser.evaluate('!!document.querySelector(".xt-keyboard")'),false);
   await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:39,bubbles:true}));document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:13,bubbles:true}))');
   await browser.waitFor('document.querySelector("#xt-guide video").currentTime>0.5',180);
+  await browser.waitFor('document.querySelector(".xt-guide-technical").textContent.includes("640×360")');
+  assert.equal(await browser.evaluate('getComputedStyle(document.querySelector(".xt-guide-channels button")).fontSize'),'16px');
   await browser.screenshot('dist/guide-v3.png');
   await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:406,bubbles:true}))');
   await browser.waitFor('!document.getElementById("xt-guide") && document.getElementById("player-video").currentTime>0.5',180);
@@ -134,6 +136,7 @@ try {
   assert.equal(await browser.evaluate('document.querySelector(".infotv-channel-credit").getBoundingClientRect().width'),0);
   await browser.waitFor('document.getElementById("player-video").currentTime > 0.5',180);
   assert.equal(await browser.evaluate('XuperPlayer.diagnostics.engine'),'hls.js');
+  await browser.waitFor('document.querySelector(".xt-playback-info").textContent.includes("640×360")');
   const progress = await browser.evaluate('document.getElementById("player-video").currentTime');
   assert.ok(progress>0);
   assert.ok(seen.some(request=>request.path.endsWith('.m3u8')));

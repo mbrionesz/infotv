@@ -6426,7 +6426,8 @@
     (u.appendChild(e("div", "bar")),
       we.appendChild(u),
       we.appendChild(e("div", "pi-menu", "info")),
-      we.appendChild(e("div", "pi-quality", "HD")),
+      we.appendChild(e("div", "pi-quality", "")),
+      we.appendChild(e("div", "xt-playback-info", "Resolución y FPS pendientes")),
       we.appendChild(e("div", "pi-scale", "Normal")),
       we.appendChild(e("div", "pi-func", "Selecion de función")));
     for (
@@ -7357,6 +7358,7 @@
         xe.classList.add("is-active");
         Te && (Te.style.display = "none");
         window.XuperPlayer.open(xe, e, { mime: s, live: "live" === X.playerMode,
+          onInfo: function (data) { var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
         return;
