@@ -1,0 +1,10 @@
+dist/
+.local/
+app/.buildResult/
+*.wgt
+*.p12
+*.pfx
+author-signature.xml
+signature1.xml
+__pycache__/
+node_modules/

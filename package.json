@@ -1,0 +1,22 @@
+{
+  "name": "infotv-tizen",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "build": "node tools/build-standalone.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tools/smoke-browser.mjs",
+    "package": "npm run build && python3 tools/package.py"
+  },
+  "devDependencies": {
+    "buffer": "6.0.3",
+    "crypto-js": "4.2.0",
+    "esbuild": "0.25.12",
+    "hls.js": "1.6.15"
+  }
+}

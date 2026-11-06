@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "providers": [
+    {
+      "id": "xuper-tizen",
+      "category": "media",
+      "url": "https://api.github.com/repos/mbrionesz/infotv/releases",
+      "prefix": "",
+      "displayName": "XuperTizen",
+      "take": 1
+    }
+  ],
+  "communityApps": []
+}

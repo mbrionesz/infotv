@@ -1,0 +1,19 @@
+/* Keep the 1080p design canvas; the original app scales it to the TV viewport. */
+.screen:not(.is-active) { content-visibility: hidden; }
+.scrollable { overscroll-behavior: contain; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+#infotv-connection { position: fixed; inset: 0; z-index: 100000; background: #101723; color: white; padding: 8vh 10vw; font: 24px sans-serif; }
+#infotv-connection input, #infotv-connection button { display: block; width: 80%; padding: 18px; margin: 20px 0; font: inherit; }
+#infotv-connection :focus { outline: 4px solid #60d6ff; }
+
+/* Branding belongs to the channel browser, never to fullscreen video. */
+.infotv-channel-credit {
+  display: block;
+  margin-top: 3px;
+  color: #aeb7c3;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 19px;
+}

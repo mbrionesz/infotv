@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://infotv.local/app" version="0.2.0" viewmodes="maximized">
+  <tizen:application id="Infotv2026.InfoTV" package="Infotv2026" required_version="4.0"/>
+  <content src="index.html"/>
+  <name>XuperTizen</name>
+  <icon src="images/icon.png"/>
+  <access origin="*" subdomains="true"/>
+  <tizen:profile name="tv-samsung"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+  <tizen:metadata key="http://samsung.com/tv/metadata/prelaunch.support" value="false"/>
+  <tizen:content-security-policy>default-src 'self' http: https: data: blob:; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; connect-src http: https:;</tizen:content-security-policy>
+</widget>
