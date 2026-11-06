@@ -1,3 +1,12 @@
+# Validación actual — 0.5.4
+
+Se corrige la pausa indiscriminada del buffer 0.5.3, se delegan huecos a HLS y se
+recupera AbortError interno. 49 pruebas unitarias, integración Chromium y 60 s de
+HLS con fallo de lista y diagnóstico de etiqueta ausente. [Notas](RELEASE-0.5.4-alpha.1.md).
+No se afirma corregida la lista real del proveedor. Prueba física pendiente.
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.5.3
 
 HLS.js y worker 1.6.19. 46 pruebas unitarias e integración Chromium; prueba de

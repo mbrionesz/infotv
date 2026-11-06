@@ -59,4 +59,4 @@ const sources = ['package.json','package-lock.json','tools/build-standalone.mjs'
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}
 const hlsVersion=JSON.parse(readFileSync(path.join(root,'node_modules/hls.js/package.json'),'utf8')).version;
-writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:'0.5.3',minimumTizen:'4.0',target:'chrome56',hlsVersion,hlsWorkerVersion:hlsVersion,hlsWorkerSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/hls-worker.js'))).digest('hex'),sourceSha256:hash.digest('hex')},null,2)+'\n');
+writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:'0.5.4',minimumTizen:'4.0',target:'chrome56',hlsVersion,hlsWorkerVersion:hlsVersion,hlsWorkerSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/hls-worker.js'))).digest('hex'),sourceSha256:hash.digest('hex')},null,2)+'\n');

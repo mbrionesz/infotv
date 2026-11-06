@@ -79,7 +79,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.3');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.4');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');

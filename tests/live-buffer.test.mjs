@@ -19,3 +19,16 @@ test('short live windows have a bounded initial fallback instead of waiting fore
 test('closing a channel rejects pending play and restores original controls',async()=>{
  const video=new Video(),play=video.play,pause=video.pause;const gate=createLiveBuffer(video);const pending=video.play();gate.destroy();await assert.rejects(pending,{name:'AbortError'});assert.equal(video.play,play);assert.equal(video.pause,pause);
 });
+test('buffer gate leaves a real forward hole to HLS instead of disabling its gap controller',async()=>{
+ const video=new Video();let state;const gate=createLiveBuffer(video,{onState:value=>state=value});
+ try{video.seconds=8;await video.play();video.currentTime=40.393;video.buffered={length:2,start:i=>[25.254923,45.321411][i],end:i=>[40.266985,50.314985][i]};video.dispatchEvent(new Event('waiting'));assert.equal(video.paused,false);assert.equal(state.handling,'hls-gap');assert.equal(gate.waiting,false);}finally{gate.destroy();}
+});
+test('waiting with ten buffered seconds does not add pause/play churn',async()=>{
+ const video=new Video();const gate=createLiveBuffer(video);
+ try{video.seconds=10;await video.play();video.dispatchEvent(new Event('waiting'));assert.equal(video.paused,false);assert.equal(video.calls,1);}finally{gate.destroy();}
+});
+test('an interrupted internal play retries without a permanently blocked gate',async()=>{
+ const video=new Video();let count=0;video.play=function(){if(++count===1)return Promise.reject(new DOMException('Interrupted','AbortError'));this.paused=false;this.dispatchEvent(new Event('playing'));return Promise.resolve();};
+ const gate=createLiveBuffer(video);
+ try{video.seconds=8;const pending=video.play();await Promise.resolve();gate.check();await pending;assert.equal(count,2);assert.equal(video.paused,false);}finally{gate.destroy();}
+});
