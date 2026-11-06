@@ -1,6 +1,6 @@
 # Instalar XuperTizen con Apps2Samsung
 
-La actualización autónoma es **0.5.0 alpha**. Requiere como mínimo Tizen 4.0
+La actualización autónoma es **0.5.1 alpha**. Requiere como mínimo Tizen 4.0
 en el manifiesto. Su aceptación y funcionamiento en cada TV siguen pendientes
 hasta probar el dispositivo. No requiere Windows ni un servidor durante el uso.
 
@@ -10,7 +10,7 @@ hasta probar el dispositivo. No requiere Windows ni un servidor durante el uso.
 3. En Apps del televisor abre Developer Mode (`12345`, si el firmware lo admite),
    actívalo, indica la IP del PC instalador y reinicia la TV según Samsung.
 4. En Apps2Samsung elige el televisor e importa
-   `XuperTizen-0.5.0-alpha-Tizen4plus-UNSIGNED.wgt` como archivo propio.
+   `XuperTizen-0.5.1-alpha-Tizen4plus-UNSIGNED.wgt` como archivo propio.
 5. Sigue los pasos de firma/instalación de Apps2Samsung. Su README indica que
    puede gestionar los certificados. Revisaremos ese paso al final; la firma debe corresponder al dispositivo que instale la actualización.
 6. Abre XuperTizen desde la TV. No debe pedir IP de PC, código de enlace ni
@@ -31,7 +31,7 @@ catálogo público consultado. Su importación específica como feed no se ha pr
 La ruta más sencilla para esta alfa es importar el WGT local. La inclusión en
 el catálogo comunitario general depende de Apps2Samsung y no es automática.
 Esta actualización corresponde a
-https://github.com/mbrionesz/infotv/releases/tag/v0.5.0-alpha.1.
+https://github.com/mbrionesz/infotv/releases/tag/v0.5.1-alpha.1.
 
 ## Primera prueba en el Samsung
 

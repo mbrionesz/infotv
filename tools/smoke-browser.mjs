@@ -78,7 +78,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.0');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.1');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -179,7 +179,7 @@ try {
   await browser.evaluate('__xuper.show("home");XuperNativeTransport.request=async function(){return null};__xuper.show("player")');
   await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
   assert.deepEqual(browser.errors,[]);
-  await browser.evaluate('__xuper.show("home");XuperStandalone.core.getLiveCategories=function(cb){cb(null,[])};XuperGuide.open();for(var i=0;i<15;i++)XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:13})');
+  await browser.evaluate('__xuper.show("home");XuperStandalone.core.getLiveCategories=function(cb){cb(null,[])};XuperGuide.open();for(var i=0;i<2;i++)XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:13})');
   await browser.waitFor('!!document.querySelector(".xt-keyboard")');
   await browser.evaluate('for(var i=0;i<5;i++)XuperGuide.handle({keyCode:40});for(var i=0;i<4;i++)XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13})');
   assert.equal(await browser.evaluate('document.querySelector(".xt-keyboard button").textContent'),'Q');
@@ -189,7 +189,7 @@ try {
   assert.equal(await browser.evaluate('JSON.parse(localStorage.getItem("xuper.m3uLists")).length'),1);
   await browser.evaluate('XuperGuide.handle({keyCode:13})');
   await browser.waitFor('document.querySelector("#xt-guide video").currentTime>0.5',180);
-  await browser.evaluate('XuperGuide.handle({keyCode:403});XuperGuide.handle({keyCode:37});for(var i=0;i<14;i++)XuperGuide.handle({keyCode:38});XuperGuide.handle({keyCode:13});XuperGuide.handle({keyCode:13})');
+  await browser.evaluate('XuperGuide.handle({keyCode:403});XuperGuide.handle({keyCode:37});for(var i=0;i<1;i++)XuperGuide.handle({keyCode:38});XuperGuide.handle({keyCode:13});XuperGuide.handle({keyCode:13})');
   await browser.waitFor('document.querySelector("#xt-guide video").currentTime>0.5',180);
   assert.ok(await browser.evaluate('Object.values(JSON.parse(localStorage.getItem("xuper.guideFavorites"))).some(row=>row.streamUrl&&row.streamUrl.includes("/public/"))'));
   await browser.evaluate('XuperGuide.handle({keyCode:406})');
@@ -203,7 +203,7 @@ try {
   assert.equal(await browser.evaluate('XuperGuide.diagnostics().httpStatus'),404);
   await browser.evaluate('XuperGuide.close()');
   assert.deepEqual(browser.errors,[]);
-  await browser.evaluate('XuperGuide.open();for(var i=0;i<15;i++)XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:13})');
+  await browser.evaluate('XuperGuide.open();for(var i=0;i<2;i++)XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:13})');
   await browser.waitFor('document.querySelector(".xt-guide-count").textContent.startsWith("1 canales")');
   const playlistReads=appRequests.filter(url=>url==='/addon-fixture.m3u').length;
   assert.equal(playlistReads,1);

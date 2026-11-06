@@ -85,7 +85,7 @@ export function createGuide(core){
     const empty=document.createElement('p');empty.className='xt-guide-empty';panel.querySelector('.xt-guide-channels').appendChild(empty);
     const actions=panel.querySelector('.xt-guide-actions');actions.appendChild(button('Pantalla completa',fullscreen));actions.appendChild(button('Diagnóstico',()=>window.XuperStandalone.openDiagnostics(preview.diagnostics)));
     actionButtons=Array.from(actions.children);
-    portalCategories=[];column=0;category=0;rebuildCategories();if(options.addons)category=categories.findIndex(item=>item.id===addonPresets[0].id);load();focus();
+    portalCategories=[];column=0;category=0;rebuildCategories();if(options.addons)category=customAddons.length?categories.findIndex(item=>item.id===customAddons[0].id):categories.findIndex(item=>item.id==='__m3u_add');if(options.addons&&!customAddons.length){renderCategories();renderChannels();addList();}else load();focus();
     core.getLiveCategories((error,result)=>{if(!active||error||!result||!result.length)return;portalCategories=result.filter(item=>String(item.id)!=='76182');rebuildCategories();});
   }
   function close(){

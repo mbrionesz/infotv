@@ -1,10 +1,4 @@
-const publicList=(id,name,path)=>({id:'m3u:'+id,name:'M3U · '+name,url:'https://iptv-org.github.io/iptv/'+path+'.m3u'});
-export const addonPresets=[
- publicList('cl','Chile','countries/cl'),publicList('ar','Argentina','countries/ar'),publicList('co','Colombia','countries/co'),
- publicList('mx','México','countries/mx'),publicList('pe','Perú','countries/pe'),publicList('uy','Uruguay','countries/uy'),
- publicList('es','España','countries/es'),publicList('spa','En español','languages/spa'),publicList('sports','Deportes','categories/sports'),
- publicList('movies','Cine','categories/movies'),publicList('news','Noticias','categories/news'),publicList('music','Música','categories/music'),publicList('kids','Infantil','categories/kids')
-];
+export const addonPresets=[];
 export function playlistUrl(value,base){
  const url=new URL(String(value).trim(),base);if(!/^https?:$/.test(url.protocol)||url.username||url.password)throw new Error('Usa una URL HTTP o HTTPS sin usuario y contraseña en el dominio.');return url.href;
 }

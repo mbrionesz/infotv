@@ -872,7 +872,7 @@
       {
         id: "addons",
         label: "Agregar Addons",
-        desc: "13 listas M3U y URL personalizada",
+        desc: "Añadir una URL M3U propia",
         group: "Contenido",
       },
       {
@@ -2205,32 +2205,7 @@
       l
     );
   }
-  var Tt = [
-    {
-      id: "es_tdt",
-      name: "España - Canales Nacionales y TDT",
-      url: "https://iptv-org.github.io/iptv/countries/es.m3u",
-      desc: "320+ canales: La 1, La 2, Antena 3, Telecinco, laSexta, autonómicas",
-    },
-    {
-      id: "latam_spa",
-      name: "Latinoamérica y Deportes (Hispano)",
-      url: "https://iptv-org.github.io/iptv/languages/spa.m3u",
-      desc: "Canales en español de Colombia, México, Argentina, Chile y Perú",
-    },
-    {
-      id: "sports_iptv",
-      name: "Deportes Internacionales",
-      url: "https://iptv-org.github.io/iptv/categories/sports.m3u",
-      desc: "Transmisiones deportivas y canales de competiciones",
-    },
-    {
-      id: "movies_iptv",
-      name: "Cine y Series 24/7",
-      url: "https://iptv-org.github.io/iptv/categories/movies.m3u",
-      desc: "Cine clásico, cine de acción y canales continuos de series",
-    },
-  ];
+  var Tt = [];
   function _t() {
     try {
       var e = localStorage.getItem("xuper_m3u_addons");
@@ -2239,7 +2214,7 @@
         if (Array.isArray(t) && t.length) return t;
       }
     } catch (e) {}
-    var a = [Tt[0]];
+    var a = [];
     try {
       localStorage.setItem("xuper_m3u_addons", JSON.stringify(a));
     } catch (e) {}

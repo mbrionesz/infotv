@@ -1,4 +1,4 @@
-# XuperTizen 0.5.0 alpha
+# XuperTizen 0.5.1 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.5.0-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.5.1-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.5.0-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.0-alpha.1).
+Esta actualización usa la etiqueta `v0.5.1-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.1-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -126,11 +126,7 @@ la calidad al detectar fotogramas perdidos. Recupera bloqueos de reproducción d
 forma acotada y añade datos de buffer, fotogramas y códecs al diagnóstico.
 [Notas de esta versión](docs/RELEASE-0.4.4-alpha.1.md).
 
-La 0.5.0 añade **13 listas M3U públicas** a las categorías de TV en vivo y permite
-hasta 20 URL propias. En Ajustes → Agregar Addons se abre la misma guía.
-Selecciona una lista y pulsa OK; «+ Añadir lista M3U» abre el teclado de URL.
-Amarillo actualiza; rojo sobre una categoría propia la elimina. Se puede buscar
-por nombre o grupo y guardar canales M3U como favoritos. Las listas se descargan
-solo al elegirlas, con caché temporal; su disponibilidad depende de cada fuente.
-Un 404 del portal solicita una dirección nueva una sola vez, sin reutilizar la
-resolución cacheada. [Notas](docs/RELEASE-0.5.0-alpha.1.md).
+La 0.5.1 retira todos los presets públicos. No se incluyen ni descargan listas
+externas automáticamente. La opción Agregar Addons permite únicamente añadir una
+URL M3U propia; se mantiene la renovación única de la dirección del portal tras
+HTTP 404. [Notas](docs/RELEASE-0.5.1-alpha.1.md).

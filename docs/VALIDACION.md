@@ -1,3 +1,12 @@
+# Validación actual — 0.5.1
+
+Se retiran los presets externos, incluidos los heredados. Se conserva la
+importación de URL propia y la renovación única tras HTTP 404. Validación local:
+40 pruebas unitarias e integración Chromium. Motor de reproducción sin cambios;
+prueba física pendiente. [Notas](RELEASE-0.5.1-alpha.1.md).
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.5.0
 
 40 pruebas unitarias; integración Chromium de listas M3U con mando, descarga y
