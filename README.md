@@ -1,4 +1,4 @@
-# XuperTizen 0.4.2 alpha
+# XuperTizen 0.4.3 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.4.2-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.4.3-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.4.2-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.4.2-alpha.1).
+Esta actualización usa la etiqueta `v0.4.3-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.4.3-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -111,7 +111,11 @@ Las licencias de HLS.js, CryptoJS y Buffer están incluidas en `app/vendor`.
 
 [Revisión de los PDF y repositorios de referencia](docs/REFERENCIAS-RENDIMIENTO-DNS.md).
 
-La 0.4.2 conecta HTTP/TLS por IP con la misma ruta que DoH, prueba IP alternativas
+La 0.4.3 conecta HTTP/TLS por IP con la misma ruta que DoH, prueba IP alternativas
 y permite recuperar el portal por XHR sin apagar la ruta nativa del vídeo de otros
 orígenes. El fallback XHR utiliza DNS del TV; consultar Diagnóstico para la ruta
 activa. Pendiente de prueba física de esta versión.
+
+La 0.4.3 corrige un Range inválido que provocaba HTTP 416, recupera errores
+temporales de HLS sin cambiar inmediatamente de CDN y reutiliza conexiones TLS.
+[Notas y límites de validación](docs/RELEASE-0.4.3-alpha.1.md).

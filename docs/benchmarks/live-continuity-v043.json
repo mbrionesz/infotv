@@ -1,0 +1,86 @@
+{
+  "synthetic": true,
+  "samsungHardware": false,
+  "manifestGets": 13,
+  "playlistFailures": 1,
+  "fragmentFailures": 1,
+  "samples": [
+    {
+      "time": 7.927127,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1
+    },
+    {
+      "time": 9.9289,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1
+    },
+    {
+      "time": 11.930864,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1
+    },
+    {
+      "time": 13.933315,
+      "error": "",
+      "stage": "playing",
+      "retries": 1,
+      "cdn": 1
+    },
+    {
+      "time": 15.935484,
+      "error": "",
+      "stage": "playing",
+      "retries": 1,
+      "cdn": 1
+    },
+    {
+      "time": 17.937662,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1
+    },
+    {
+      "time": 19.941821,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1
+    },
+    {
+      "time": 21.944476,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1
+    },
+    {
+      "time": 23.947908,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1
+    },
+    {
+      "time": 25.950463,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1
+    },
+    {
+      "time": 27.955785,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1
+    }
+  ]
+}

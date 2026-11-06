@@ -19,6 +19,7 @@
 #endif
 namespace {
 std::vector<unsigned char> body;
+CURL* httpHandle=nullptr;
 std::string responseHeaders,errorText,report,metrics;
 const size_t MAX_BODY=16*1024*1024;
 struct Reply {std::vector<unsigned char> bytes;size_t limit=65535;};
@@ -58,24 +59,25 @@ API const char* net_headers(){return responseHeaders.c_str();}
 API const char* net_report(){return report.c_str();}
 API const char* net_metrics(){return metrics.c_str();}
 API int net_request(const char* url,const char* method,const char* headerLines,const unsigned char* payload,int payloadSize,const char* host,int port,const char* ip,int timeout){
- body.clear();responseHeaders.clear();errorText.clear();metrics="{}";CURL* handle=curl_easy_init();if(!handle)return -1;secure(handle);
+ body.clear();responseHeaders.clear();errorText.clear();metrics="{}";if(!httpHandle)httpHandle=curl_easy_init();CURL* handle=httpHandle;if(!handle)return -1;curl_easy_reset(handle);secure(handle);
  Reply reply;reply.limit=MAX_BODY;curl_easy_setopt(handle,CURLOPT_URL,url);curl_easy_setopt(handle,CURLOPT_TIMEOUT_MS,long(std::min(15000,std::max(100,timeout))));
  curl_easy_setopt(handle,CURLOPT_WRITEFUNCTION,collect);curl_easy_setopt(handle,CURLOPT_WRITEDATA,&reply);curl_easy_setopt(handle,CURLOPT_HEADERFUNCTION,headers);
  curl_easy_setopt(handle,CURLOPT_ACCEPT_ENCODING,"");
  curl_slist* forced=nullptr;curl_slist* list=nullptr;
  if(ip&&*ip){std::string entry=std::string(host)+":"+std::to_string(port)+":"+ip+":"+std::to_string(port);forced=curl_slist_append(nullptr,entry.c_str());curl_easy_setopt(handle,CURLOPT_CONNECT_TO,forced);}
- std::string lines=headerLines?headerLines:"";size_t start=0;while(start<lines.size()){size_t end=lines.find('\n',start);if(end==std::string::npos)end=lines.size();std::string line=lines.substr(start,end-start);if(line.find('\r')!=std::string::npos){errorText="Invalid header";curl_easy_cleanup(handle);curl_slist_free_all(forced);curl_slist_free_all(list);return -1;}if(!line.empty())list=curl_slist_append(list,line.c_str());start=end+1;}
+ std::string lines=headerLines?headerLines:"";size_t start=0;while(start<lines.size()){size_t end=lines.find('\n',start);if(end==std::string::npos)end=lines.size();std::string line=lines.substr(start,end-start);if(line.find('\r')!=std::string::npos){errorText="Invalid header";curl_slist_free_all(forced);curl_slist_free_all(list);return -1;}if(!line.empty())list=curl_slist_append(list,line.c_str());start=end+1;}
+ if(std::strcmp(method,"POST")==0)list=curl_slist_append(list,"Expect:");
  curl_easy_setopt(handle,CURLOPT_HTTPHEADER,list);
  if(std::strcmp(method,"POST")==0){curl_easy_setopt(handle,CURLOPT_POST,1L);curl_easy_setopt(handle,CURLOPT_POSTFIELDS,payload);curl_easy_setopt(handle,CURLOPT_POSTFIELDSIZE,long(payloadSize));}
  else if(std::strcmp(method,"HEAD")==0)curl_easy_setopt(handle,CURLOPT_NOBODY,1L);
- else if(std::strcmp(method,"GET")!=0){errorText="Unsupported method";curl_easy_cleanup(handle);curl_slist_free_all(forced);curl_slist_free_all(list);return -1;}
+ else if(std::strcmp(method,"GET")!=0){errorText="Unsupported method";curl_slist_free_all(forced);curl_slist_free_all(list);return -1;}
  char error[CURL_ERROR_SIZE]={0};curl_easy_setopt(handle,CURLOPT_ERRORBUFFER,error);CURLcode result=curl_easy_perform(handle);long status=0;curl_easy_getinfo(handle,CURLINFO_RESPONSE_CODE,&status);
  double lookup=0,connect=0,tls=0,firstByte=0,total=0;
  curl_easy_getinfo(handle,CURLINFO_NAMELOOKUP_TIME,&lookup);curl_easy_getinfo(handle,CURLINFO_CONNECT_TIME,&connect);curl_easy_getinfo(handle,CURLINFO_APPCONNECT_TIME,&tls);curl_easy_getinfo(handle,CURLINFO_STARTTRANSFER_TIME,&firstByte);curl_easy_getinfo(handle,CURLINFO_TOTAL_TIME,&total);
  std::string phase=status?"http-response":connect<=0?"tcp-connect":std::strncmp(url,"https:",6)==0&&tls<=0?"tls-handshake":"http-wait";
  metrics="{\"phase\":\""+phase+"\",\"lookupMs\":"+std::to_string(lookup*1000)+",\"connectMs\":"+std::to_string(connect*1000)+",\"tlsMs\":"+std::to_string(tls*1000)+",\"firstByteMs\":"+std::to_string(firstByte*1000)+",\"totalMs\":"+std::to_string(total*1000)+"}";
  if(result!=CURLE_OK)errorText=curl_easy_strerror(result); // Do not return URLs, headers or library error buffers.
- body.swap(reply.bytes);curl_easy_cleanup(handle);curl_slist_free_all(forced);curl_slist_free_all(list);return result==CURLE_OK?int(status):-int(result)-1;
+ body.swap(reply.bytes);curl_slist_free_all(forced);curl_slist_free_all(list);return result==CURLE_OK?int(status):-int(result)-1;
 }
 API int net_doh(const char* input){
  const std::string host=input?input:"";if(host.empty()||host.size()>253||host.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789.-")!=std::string::npos)return -1;

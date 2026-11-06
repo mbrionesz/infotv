@@ -43,6 +43,7 @@ export function createGuide(core){
   }
   function play(){
     const item=visible[channel];if(!item)return;
+    if(selected&&selected.channelCode===item.channelCode&&preview.diagnostics.autoplayBlocked){preview.playFromGesture();return;}
     clearTimeout(switchTimer);const run=++playSequence;selected=item;status('Resolviendo '+item.name+'…');
     const resolved=(error,result)=>{
       if(!active||run!==playSequence)return;

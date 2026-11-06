@@ -33,13 +33,13 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
   }
   if(queue.length&&slots.every(item=>item.dead)){while(queue.length)queue.shift().reject(new Error('Transporte Samsung no disponible'));ready=false;}
  }
- function call(method,options){return new Promise((resolve,reject)=>{if(queue.length>=24){reject(new Error('Cola de red ocupada'));return;}queue.push({id:++serial,method,options,resolve,reject});pump();});}
- async function lookup(host,service){
+ function call(method,options){return new Promise((resolve,reject)=>{if(queue.length>=24){reject(new Error('Cola de red ocupada'));return;}const job={id:++serial,method,options,resolve,reject};const index=options.priority==='playback'?queue.findIndex(item=>item.options.priority!=='playback'):-1;if(index<0)queue.push(job);else queue.splice(index,0,job);pump();});}
+ async function lookup(host,service,priority){
   if(/^\d+\.\d+\.\d+\.\d+$/.test(host)||host.includes(':'))return {ip:'',mode:'literal-ip'};
   dnsQuestion(host);const hit=cache.get(host);if(hit&&hit.expires>now())return hit;
   if(inflight.has(host))return inflight.get(host);
   if(cooldown>now())return {ip:'',mode:'system-fallback',cooldown:true};
-  const task=call('dns',{host,service}).then(answer=>{
+  const task=call('dns',{host,service,priority}).then(answer=>{
    const result=answer.ip?{ip:answer.ip,ips:Array.isArray(answer.ips)?answer.ips:[answer.ip],resolver:answer.resolver,mode:'secure-dns',expires:now()+Math.min(600,answer.ttl)*1000}:{ip:'',mode:'system-fallback'};
    if(answer.ip){cooldown=0;cache.delete(host);cache.set(host,result);if(cache.size>64)cache.delete(cache.keys().next().value);}else cooldown=now()+300000;
    return result;
@@ -64,7 +64,7 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
   if(skip(options.method||'GET',target.origin))return null;
   let headers=Object.assign({},options.headers),method=options.method||'GET',body=options.body||null;
   for(let redirects=0;redirects<5;redirects++){
-   let address;try{address=await lookup(target.hostname,method==='POST'?'portal':'media');}catch(error){if(!error.portalFallback)cooldown=now()+300000;address={ip:'',mode:'system-fallback'};}
+   let address;try{address=await lookup(target.hostname,method==='POST'?'portal':'media',options.priority);}catch(error){if(!error.portalFallback)cooldown=now()+300000;address={ip:'',mode:'system-fallback'};}
    if(skip(method,target.origin))return null;
    const lines=Object.keys(headers).filter(name=>! /^(host|connection|content-length|accept-encoding)$/i.test(name)).map(name=>{
     const value=String(headers[name]);if(!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)||/[\r\n]/.test(value))throw new Error('Cabecera no válida');return name+': '+value;
@@ -79,8 +79,8 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
     const remaining=budget-(now()-startedAt);if(remaining<=0)break;
     record.ip=ips[i];
     try{
-      result=await call('http',{url:target.href,host:target.hostname,port,headers:lines,method,service:method==='POST'?'portal':'media',body:typeof body==='string'?new TextEncoder().encode(body).buffer:body,ip:ips[i],timeout:Math.max(100,Math.floor(remaining/(ips.length-i)))});
-      record.attempts.push({ip:ips[i],httpStatus:result.status,metrics:result.metrics||null});break;
+      result=await call('http',{url:target.href,host:target.hostname,port,headers:lines,method,service:method==='POST'?'portal':'media',priority:options.priority,body:typeof body==='string'?new TextEncoder().encode(body).buffer:body,ip:ips[i],timeout:Math.max(100,Math.floor(remaining/(ips.length-i)))});
+      record.attempts.push({ip:ips[i],httpStatus:result.status,metrics:result.metrics||null});if(cache.has(target.hostname)&&ips[i]){const hit=cache.get(target.hostname);hit.ips=[ips[i],...(hit.ips||[]).filter(value=>value!==ips[i])];hit.ip=ips[i];}break;
     }catch(error){failure=error;record.attempts.push({ip:ips[i],code:Number.isInteger(error.nativeCode)?error.nativeCode:null,metrics:error.metrics||null});}
    }
    record.pending=false;

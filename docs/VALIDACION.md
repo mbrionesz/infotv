@@ -1,3 +1,23 @@
+# Validación actual — 0.4.3
+
+El usuario confirmó vídeo real durante unos segundos en 0.4.2, seguido de cortes.
+Las fotos muestran HTTP 416 y fallos al cargar listas. En 0.4.3 se corrige el
+Range inválido, la recuperación de HLS y la solicitud de interacción.
+
+Validación local: 33 pruebas unitarias; integración Chromium; vídeo sintético
+H.264/AAC AES-128 con lista deslizante durante 22 segundos, recuperando un 404
+de lista y un 503 de segmento sin reiniciar el CDN ni pedir OK indebidamente.
+El adaptador HTTP de esa prueba no ejecuta sockets Samsung. Una prueba C++
+comprueba que tres peticiones reutilizan una sola conexión TLS y que POST no
+espera Expect: 100-continue. WASM Samsung recompilado con verificación TLS activa.
+
+La continuidad del proveedor y los tiempos de arranque en el QN70F con esta
+versión siguen pendientes de prueba física. El indicador startupMs mide desde
+la apertura del reproductor, sin incluir la resolución previa del canal.
+[Notas completas](RELEASE-0.4.3-alpha.1.md).
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.4.2
 
 28 pruebas y HLS real local aprobados. Fotos de la TV con 0.4.1: lista cargada,
