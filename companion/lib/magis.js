@@ -337,7 +337,7 @@ function post(e, r, t) {
                       console.log(
                         "[magis] portal respondió por HTTP plano en " +
                           r +
-                          " (TLS/SNI filtrado por el operador)",
+                          " (fallback HTTP; causa del fallo HTTPS no determinada)",
                       ));
                   var l = HOSTS.indexOf(r);
                   l > 0 && (HOSTS.splice(l, 1), HOSTS.unshift(r));

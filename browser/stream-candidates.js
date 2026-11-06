@@ -1,8 +1,9 @@
+import {httpsAlternative} from './stream-probe.js';
 export function streamCandidates(source,stream={}){
   const primary={url:source,headers:stream.headers||{}};
   const candidates=[primary],seen=new Set([source]);
   for(const entry of stream.backupUrls||[]){
-    if(candidates.length>=3)break;
+    if(candidates.length>=4)break;
     const url=typeof entry==='string'?entry:entry&&entry.url;
     try{
       const parsed=new URL(url);if(!/^https?:$/.test(parsed.protocol)||parsed.username||parsed.password||seen.has(parsed.href))continue;
@@ -14,4 +15,13 @@ export function streamCandidates(source,stream={}){
     }catch(_){}
   }
   return candidates;
+}
+
+// Try all supplied candidates before constructing optional HTTPS alternatives.
+export function streamRoutes(candidates){
+ const routes=candidates.map((item,index)=>Object.assign({},item,{cdnAttempt:index+1,httpsFallback:false}));
+ const seen=new Set(routes.map(item=>item.url));
+ candidates.forEach((item,index)=>{
+  const url=httpsAlternative(item.url);if(url&&!seen.has(url)){seen.add(url);routes.push({url,headers:item.headers,cdnAttempt:index+1,httpsFallback:true});}
+ });return routes;
 }

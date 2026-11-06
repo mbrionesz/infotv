@@ -1,3 +1,14 @@
+# Validación actual — 0.5.2
+
+42 pruebas unitarias y Chromium: los tres primeros candidatos fallan y el cuarto
+reproduce con sus credenciales. Se prueban candidatos recibidos antes de variantes
+HTTPS generadas. Verificación del adaptador por lectura del código y logs del
+usuario (cuatro alternativas para seis canales), sin acceso directo a su sesión
+ni prueba de disponibilidad real de esos hosts. Prueba física de esta versión
+pendiente. [Detalle](RELEASE-0.5.2-alpha.1.md).
+
+Los apartados siguientes son historial.
+
 # Validación actual — 0.5.1
 
 Se retiran los presets externos, incluidos los heredados. Se conserva la

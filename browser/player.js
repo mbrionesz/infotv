@@ -2,8 +2,7 @@ import {mediaHealth,recoveryBudget} from './playback-health.js';
 import {playbackRejection,liveLoadPolicy} from './playback-policy.js';
 import {nativeHlsLoad} from './native-hls-loader.js';
 import Hls from 'hls.js';
-import {streamCandidates} from './stream-candidates.js';
-import {httpsAlternative} from './stream-probe.js';
+import {streamCandidates,streamRoutes} from './stream-candidates.js';
 export function toAvDisplayRect(rect,width=1920,height=1080){
   const x=Math.max(0,Math.min(1919,Math.round(rect.left*1920/width)));
   const y=Math.max(0,Math.min(1079,Math.round(rect.top*1080/height)));
@@ -38,13 +37,13 @@ export function createPlayer(getStream) {
   }
   function open(element, source, options) {
     stop(); video = element; url = source;
-    const run = serial;let playbackSource=source,httpsTried=false;
+    const run = serial;let playbackSource=source;
     const stream = getStream(source) || {};
-    const candidates=streamCandidates(source,stream);let candidateIndex=0,attempt=0;
+    const candidates=streamCandidates(source,stream),routes=streamRoutes(candidates);let routeIndex=0,attempt=0;
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -111,13 +110,9 @@ export function createPlayer(getStream) {
       deadline = setTimeout(() => { if (!started && serial === run) {if(isHls&&engine==='hls.js'&&retrySource())return;fail('La señal no inició: etapa '+diagnostics.stage+(diagnostics.httpStatus?' · HTTP '+diagnostics.httpStatus:'')+'. Abre Diagnóstico con el botón azul.');} }, candidates.length>1?8000:20000);
     }
     function retrySource(){
-      const alternative=!httpsTried&&httpsAlternative(playbackSource);
-      if(alternative){httpsTried=true;playbackSource=alternative;diagnostics.httpsFallback=true;}
-      else {
-        if(candidateIndex+1>=candidates.length)return false;
-        candidateIndex++;playbackSource=candidates[candidateIndex].url;headers=candidates[candidateIndex].headers;
-        httpsTried=false;diagnostics.httpsFallback=false;diagnostics.cdnAttempt=candidateIndex+1;
-      }
+      if(routeIndex+1>=routes.length)return false;
+      const next=routes[++routeIndex];playbackSource=next.url;headers=next.headers;
+      diagnostics.httpsFallback=next.httpsFallback;diagnostics.cdnAttempt=next.cdnAttempt;
       attempt++;diagnostics.transport=/^https:/i.test(playbackSource)?'https':'http';
       clearTimeout(recoveryTimer);recoveryTimer=null;if(hls){hls.destroy();hls=null;}
       clearTimeout(deadline);started=ready=false;autoAttempts=0;playPending=false;gestureRequired=false;diagnostics.httpStatus=0;useHls();return true;
