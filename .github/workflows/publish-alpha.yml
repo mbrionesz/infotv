@@ -1,0 +1,38 @@
+name: Publish XuperTizen alpha
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Prepared alpha release
+        required: true
+        default: v0.2.0-alpha.1
+        type: choice
+        options:
+          - v0.2.0-alpha.1
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run package
+      - name: Upload verified build and publish the prepared prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            dist/XuperTizen-0.2.0-alpha-Tizen4plus-UNSIGNED.wgt \
+            dist/XuperTizen-0.2.0-source.zip \
+            dist/SHA256SUMS.json dist/release-info.json
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease
