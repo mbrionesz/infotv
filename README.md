@@ -1,4 +1,4 @@
-# XuperTizen 0.3.1 alpha
+# XuperTizen 0.4.0 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -9,6 +9,17 @@ el usuario confirmó que la versión 0.2 carga la lista de canales, pero los men
 y la reproducción termina esperando 20 segundos. La 0.3 corrige trabajo excesivo
 de la interfaz y añade diagnóstico por etapa; todavía no confirma la reproducción
 de esos canales en hardware. Tizen 4–9+ es un objetivo, no una certificación.
+
+## DNS integrado experimental en 0.4
+
+Ahora hay un transporte WebAssembly/cURL empaquetado para **portal y HLS**, que
+conecta a IP resuelta por DoH conservando Host/SNI y TLS verificado. Requiere
+Tizen Sockets Extension; si no está disponible, vuelve a XHR/DNS del TV y lo
+informa. **Pendiente de prueba en el QN70F; no se garantiza que se active.**
+
+La distribución es experimental: el SDK usa ramas antiguas de cURL/OpenSSL sin
+mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
+[Alcance, pruebas y limitaciones del DNS integrado](docs/DNS-INTEGRADO.md).
 
 ## Qué incluye
 
@@ -42,7 +53,7 @@ de esos canales en hardware. Tizen 4–9+ es un objetivo, no una certificación.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.3.1-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.4.0-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -51,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.3.1-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.3.1-alpha.1).
+Esta actualización usa la etiqueta `v0.4.0-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.4.0-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -76,7 +87,7 @@ No es un servicio requerido por el WGT instalado.
 
 ## Límites de esta alfa
 
-- La 0.3 no tiene validación física; la 0.2 presentó los fallos descritos en el QN70F.
+- La 0.4 no tiene validación física; la 0.2 presentó los fallos descritos en el QN70F.
 - CORS, cabeceras restringidas por el navegador, TLS del firmware, sesiones y
   disponibilidad del proveedor pueden impedir que cargue un canal real.
 - MP4/TS progresivo que requiera cabeceras arbitrarias no está soportado por la
@@ -85,9 +96,8 @@ No es un servicio requerido por el WGT instalado.
   opción funcional sin su proceso externo. HLS adaptativo es una ruta distinta.
 - La guía reproduce sólo al pulsar OK y cierra la vista previa antes de pasar
   a pantalla completa. La caché de catálogo no permite reproducir canales offline.
-- El vídeo sigue usando el DNS del TV. La 0.3.1 incorpora comprobación DoH por
-  IP en Diagnóstico (Amarillo), con TLS validado, caché y cooldown. Es diagnóstico,
-  no sustitución del resolver ni personalización de Host/SNI de AVPlay/XHR.
+- La 0.4 añade transporte DoH para portal y HLS si existen sockets Samsung.
+  AVPlay progresivo y los dispositivos sin esa extensión siguen usando DNS del TV.
 - Medición local con Chromium y CPU limitada: P95 del manejo de flechas pasó de
   9,3 a 0,8 ms entre 0.3.0 y 0.3.1; en la guía pasó de 5,6 a 2,4 ms. Es un ensayo sintético, no una medida de FPS del Samsung.
 

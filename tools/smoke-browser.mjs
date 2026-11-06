@@ -33,6 +33,8 @@ const server = http.createServer((req, res) => {
   appRequests.push(req.url);
   res.setHeader('Content-Security-Policy',widgetPolicy);
   if(req.url==='/vendor/core-worker.js')res.setHeader('Content-Security-Policy',widgetPolicy.replace(/connect-src[^;]+;/,"connect-src 'self' http://127.0.0.1:*;"));
+  if(req.url==='/vendor/native-worker-probe.js'){res.setHeader('Content-Type','text/javascript');res.end(`self.tizentvwasm={SocketsHostBindings:new Proxy({},{get:function(){return function(){return -1}}}),SockFlags:{SOCK_CLOEXEC:524288,SOCK_NONBLOCK:2048}};importScripts('/vendor/native-worker.js');`);return;}
+  if(req.url==='/native-list.m3u'){res.setHeader('Content-Type','text/plain');res.end('#EXTM3U\n#EXTINF:-1,Native bridge fixture\nhttps://example.com/fixture.m3u8');return;}
   if (req.url.includes('$WEBAPIS/')) { res.setHeader('Content-Type','text/javascript'); res.end('// No Samsung AVPlay in desktop Chromium.'); return; }
   const file = path.resolve(appRoot, '.' + new URL(req.url,'http://localhost').pathname);
   if (!file.startsWith(appRoot + path.sep)) { res.writeHead(403); res.end(); return; }
@@ -74,7 +76,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.3.1');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.4.0');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -87,6 +89,8 @@ try {
   await browser.evaluate('__xuper.openSearch()');
   await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}));document.dispatchEvent(new KeyboardEvent("keyup",{keyCode:10009,bubbles:true}))');
   assert.equal(await browser.evaluate('__xuper.state.screen'),'home');
+  const nativeProbe=await browser.evaluate('new Promise(function(resolve,reject){var worker=new Worker("/vendor/native-worker-probe.js");var timer=setTimeout(function(){worker.terminate();reject(new Error("Native wasm initialization timeout"))},10000);worker.onmessage=function(event){clearTimeout(timer);worker.terminate();resolve(event.data)};worker.onerror=function(){clearTimeout(timer);worker.terminate();reject(new Error("Native wasm worker initialization failed"))}})');
+  assert.equal(nativeProbe.ready,false);assert.equal(nativeProbe.reason,'No inició HTTP/TLS');
   const worker = await browser.evaluate('new Promise(function(resolve){XuperStandalone.core.call("parseM3u",{text:"#EXTM3U\\n#EXTINF:-1,Prueba worker\\nhttps://example.com/test.m3u8"},function(error,result){resolve({error:error&&error.message,count:result&&result.channels.length})})})');
   assert.equal(worker.error,null);assert.equal(worker.count,1);
   const cache=await browser.evaluate('new Promise(function(resolve){XuperStandalone.core.diagnostics(function(error,data){resolve(data)})})');
@@ -163,7 +167,13 @@ try {
   assert.ok(backups.every(request=>request.auth==='backup-auth'&&request.license==='backup-license'));
   await browser.evaluate('__xuper.show("home");__xuper.settingsPanel("netdiag");__xuper.focus(".xt-open-diagnostics");__xuper.key(13)');
   await browser.waitFor('!!document.querySelector(".xt-diagnostics .xt-diag-network")');
-  assert.equal(await browser.evaluate('document.querySelector("#screen-settings .settings-panel.is-active").textContent.includes("no cambia el DNS")'),true);
+  assert.equal(await browser.evaluate('document.querySelector("#screen-settings .settings-panel.is-active").textContent.includes("transporte activo")'),true);
+  await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}));__xuper.show("home");window.nativeRouteCalls=[];XuperNativeTransport.snapshot=function(){return {available:true,engine:"local-test-adapter"}};XuperNativeTransport.ensure=function(){return Promise.resolve(true)};XuperNativeTransport.request=async function(options){nativeRouteCalls.push(new URL(options.url).pathname);var headers={};Object.keys(options.headers||{}).forEach(function(name){if(!/^(user-agent|host|content-length|connection|accept-encoding|cookie)$/i.test(name))headers[name]=options.headers[name]});var response=await fetch(options.url,{method:options.method||"GET",headers:headers,body:options.body||undefined});return {status:response.status,body:await response.arrayBuffer(),headers:"",url:options.url}}');
+  const bridge=await browser.evaluate('new Promise(function(resolve){XuperStandalone.core.fetchM3u(location.origin+"/native-list.m3u",function(error,items){resolve({error:error&&error.message,count:items&&items.length})})})');
+  assert.equal(bridge.error,null);assert.equal(bridge.count,1);
+  await browser.evaluate('__xuper.show("player")');
+  await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
+  const nativeCalls=await browser.evaluate('nativeRouteCalls');assert.ok(nativeCalls.some(url=>url.endsWith('.m3u8')));assert.ok(nativeCalls.some(url=>url.endsWith('.ts')));assert.ok(nativeCalls.some(url=>url.endsWith('/key.bin')));
   assert.deepEqual(browser.errors,[]);
   console.log('PASS: worker, IndexedDB, paged catalog, three-column guide, QWERTY; autonomous startup without pairing/RPC; real HLS.js decodes AES-128 H.264/AAC via cross-origin authorized manifest+segments+key; pause/resume, channel change, teardown, UI and branding. Provider catalog mocked; not a real channel or Samsung test.');
 } catch(error) {

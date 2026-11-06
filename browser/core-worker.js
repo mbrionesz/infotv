@@ -118,7 +118,14 @@ async function execute(method,payload){
   if(stale){stats.staleHits++;work.catch(()=>{});return Object.assign({},stale,{cached:true,stale:true});}
   return work;
 }
+let nativeSerial=0;const nativePending=new Map();
+self.__xuperNativeRequest=options=>new Promise((resolve,reject)=>{
+  const id=++nativeSerial;const timer=setTimeout(()=>{nativePending.delete(id);reject(new Error('Tiempo agotado en transporte Samsung'));},22000);
+  nativePending.set(id,{resolve,reject,timer});self.postMessage({nativeRequest:id,options});
+});
 self.onmessage=event=>{
+  if(event.data&&event.data.nativeReply){const entry=nativePending.get(event.data.nativeReply);if(entry){nativePending.delete(event.data.nativeReply);clearTimeout(entry.timer);if(event.data.error)entry.reject(new Error(event.data.error));else entry.resolve(event.data.result);}return;}
+
   const {id,method,payload}=event.data||{};
   execute(method,payload||{}).then(result=>self.postMessage({id,result}),error=>self.postMessage({id,error:String(error.message||error),code:error.portalCode||''}));
 };

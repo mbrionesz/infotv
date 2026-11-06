@@ -1,3 +1,10 @@
+# Arquitectura actual — 0.4 experimental
+
+La ruta adicional de sockets WebAssembly permite conectar portal/HLS a las IP DoH.
+Su activación depende del dispositivo. [Arquitectura y límites](DNS-INTEGRADO.md).
+
+El documento siguiente describe la 0.3.1, conservada como referencia histórica.
+
 # Arquitectura autónoma de 0.3.1 alpha
 
 Un WGT, sin proceso Node/FFmpeg ni PC durante el uso. Mínimo declarado Tizen 4.0,

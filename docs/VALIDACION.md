@@ -1,3 +1,10 @@
+# Validación actual — 0.4.0 alpha.1
+
+22 pruebas aprobadas, más integración Chromium. El transporte de sockets/DoH
+Samsung aún no tiene prueba física. [Resultados y límites completos](DNS-INTEGRADO.md).
+
+Los resultados siguientes corresponden a la 0.3.1 y se conservan como historial.
+
 # Validación de XuperTizen 0.3.1 alpha
 
 La prueba física disponible corresponde a **0.2**, realizada por el usuario en

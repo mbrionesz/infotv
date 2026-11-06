@@ -4110,7 +4110,7 @@
     (ze.netdiag = (function () {
       if(window.XuperStandalone){
         var nativePanel=Fa("Diagnóstico Samsung");
-        nativePanel.appendChild(i(e("div","dg-note","Consulta el estado del reproductor, los tiempos del mando y la respuesta DNS segura. La comprobación DoH no cambia el DNS del vídeo. Un fallo de red, TLS o CORS no demuestra bloqueo DNS."),52,128,1350,180));
+        nativePanel.appendChild(i(e("div","dg-note","Consulta el reproductor, los tiempos del mando y el transporte activo. Si los sockets Samsung están disponibles, el portal y HLS conectan usando DNS seguro. El fallback del sistema se indica en el informe."),52,128,1350,180));
         var nativeButton=e("div","dg-btn focusable xt-open-diagnostics","Abrir diagnóstico");
         i(nativeButton,52,340,430,66);nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
         return nativePanel;

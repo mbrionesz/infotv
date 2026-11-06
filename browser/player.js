@@ -1,3 +1,4 @@
+import {nativeHlsLoad} from './native-hls-loader.js';
 import Hls from 'hls.js';
 import {streamCandidates} from './stream-candidates.js';
 import {probeManifest,httpsAlternative} from './stream-probe.js';
@@ -87,8 +88,13 @@ export function createPlayer(getStream) {
       const Loader=Hls.DefaultConfig.loader;
       const useHttps=diagnostics.httpsFallback;
       class SourceLoader extends Loader{
+        getResponseHeader(name){if(this.nativeActive){const line=(this.nativeHeaders||'').split(/[\r\n]+/).find(value=>value.toLowerCase().startsWith(name.toLowerCase()+':'));return line?line.slice(line.indexOf(':')+1).trim():null;}return super.getResponseHeader(name);}
+        abort(){if(this.cancelNative){this.cancelNative();this.stats.aborted=true;}super.abort();}
+        destroy(){if(this.cancelNative)this.cancelNative();super.destroy();}
         load(context,config,callbacks){
           if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
+          const transport=window.XuperNativeTransport;
+          if(transport&&transport.snapshot().available)return nativeHlsLoad(this,transport,context,config,callbacks,headers);
           return super.load(context,config,callbacks);
         }
       }
@@ -189,14 +195,21 @@ export function createPlayer(getStream) {
         nativeTimer=setTimeout(function(){diagnostics.detail='avplay-prepare-timeout';fallback();},8000);arm();
       } catch (_) { fallback(); }
     }
+    function begin(){
+      if(serial!==run)return;
     // AVPlay only receives headers its documented API can actually represent.
     if (custom.length) {
       if (isHls) useHls();
       else fail('Este vídeo requiere cabeceras de autorización que el reproductor nativo no admite. La primera versión soporta esas cabeceras en HLS.');
-    } else if (window.webapis && webapis.avplay) avplay();
+    } else if (isHls&&window.XuperNativeTransport&&window.XuperNativeTransport.snapshot().available) useHls();
+    else if (window.webapis && webapis.avplay) avplay();
     else if (isHls && Hls.isSupported()) useHls();
     else native();
+    }
+    const transport=window.XuperNativeTransport;
+    if(transport&&!transport.snapshot().available)transport.ensure().then(begin,begin);else begin();
   }
+
   function selectAudio(index) {
     if (hls) { if (index < 0 || index >= hls.audioTracks.length) return false; hls.audioTrack = index; return true; }
     if (av && ready) {

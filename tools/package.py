@@ -39,7 +39,7 @@ def build(output=None):
                 add(archive, file, file.relative_to(app))
     kit = out / f'XuperTizen-{version}-source.zip'
     with zipfile.ZipFile(kit, 'w') as archive:
-        for name in ['app', 'browser', 'companion', 'tools', 'docs', 'tests', '.github']:
+        for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github']:
             for file in sorted((ROOT / name).rglob('*')):
                 if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult'}:
                     add(archive, file, Path('XuperTizen') / file.relative_to(ROOT))
@@ -50,7 +50,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': 'alpha', 'minimumTizen': '4.0',
-        'hardwareValidation': 'v0.3.1-pending-on-QN55QN70FAGXZS', 'providerValidation': 'v0.2-channel-list-loaded-on-TV-playback-timeout-v0.3.1-pending',
+        'hardwareValidation': 'v0.4-pending-on-QN55QN70FAGXZS', 'providerValidation': 'v0.2-channel-list-loaded-on-TV-playback-timeout-v0.4-pending',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion']
     }, indent=2) + '\n')

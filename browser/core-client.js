@@ -6,7 +6,14 @@ export function createCoreClient() {
     try{
       worker=new Worker(new URL('vendor/core-worker.js',document.baseURI).href);
       worker.onmessage=event=>{
-        const message=event.data||{},entry=pending.get(message.id);
+        const message=event.data||{};
+        if(message.nativeRequest){
+          const transport=window.XuperNativeTransport;
+          Promise.resolve(transport?transport.request(message.options):null).then(result=>{
+            if(!worker)return;const reply={nativeReply:message.nativeRequest,result};worker.postMessage(reply,result&&result.body?[result.body]:[]);
+          },error=>{if(worker)worker.postMessage({nativeReply:message.nativeRequest,error:error.message});});return;
+        }
+        const entry=pending.get(message.id);
         if(!entry)return;pending.delete(message.id);clearTimeout(entry.timer);
         const error=message.error?new Error(message.error):null;if(error)error.portalCode=message.code;
         entry.callback(error,message.result);
