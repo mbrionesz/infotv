@@ -1,0 +1,767 @@
+{
+  "synthetic": true,
+  "samsungHardware": false,
+  "manifestGets": 45,
+  "playlistFailures": 1,
+  "fragmentFailures": 1,
+  "outageFailures": 9,
+  "workerMessages": 282,
+  "parsingFailures": 1,
+  "initialGate": {
+    "waiting": false,
+    "targetSeconds": 3,
+    "bufferSeconds": 5.98,
+    "userPaused": false,
+    "releaseCount": 2,
+    "limited": false,
+    "releaseTargetSeconds": 3,
+    "releasedBufferSeconds": 5.98
+  },
+  "resumedGate": {
+    "waiting": false,
+    "targetSeconds": 6,
+    "bufferSeconds": 5.92,
+    "userPaused": false,
+    "releaseCount": 3,
+    "limited": false,
+    "releaseTargetSeconds": 6,
+    "releasedBufferSeconds": 5.97
+  },
+  "samples": [
+    {
+      "time": 8.075032,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1,
+      "media": {
+        "time": 7.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 44,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 10.076654,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1,
+      "media": {
+        "time": 9.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 92,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 12.079442,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1,
+      "media": {
+        "time": 11.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 140,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 14.083476,
+      "error": "",
+      "stage": "playing",
+      "retries": 1,
+      "cdn": 1,
+      "media": {
+        "time": 13.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 188,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 16.0887,
+      "error": "",
+      "stage": "playing",
+      "retries": 1,
+      "cdn": 1,
+      "media": {
+        "time": 15.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 236,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 18.091658,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 17.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 284,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 20.094933,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 19.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 332,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 22.097707,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 21.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 380,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 24.101272,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 23.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 428,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": null,
+      "networkRecoveries": 0
+    },
+    {
+      "time": 26.104813,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 25.64,
+        "bufferSeconds": 2.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 476,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 28.10711,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 27.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 524,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 30.109845,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 29.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 572,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 32.112281,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 31.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 620,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 34.118706,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 33.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 668,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 36.122583,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 35.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 716,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 38.125443,
+      "error": "",
+      "stage": "buffering",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 37.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 764,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 40.128273,
+      "error": "",
+      "stage": "buffering",
+      "retries": 6,
+      "cdn": 1,
+      "media": {
+        "time": 39.64,
+        "bufferSeconds": 2.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 812,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 42.1311,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 41.64,
+        "bufferSeconds": 0.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 860,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 44.132652,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 43.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 908,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 46.135966,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 45.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 956,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 48.138254,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 47.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1004,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 50.140936,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 49.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1052,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 52.143418,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 51.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1100,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 54.14618,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 53.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1148,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 56.149445,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 55.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1196,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 58.15023,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 57.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1244,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 60.15337,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 59.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1292,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 62.155168,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 61.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1340,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 64.159686,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 63.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1388,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    },
+    {
+      "time": 66.162305,
+      "error": "",
+      "stage": "buffering",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 65.64,
+        "bufferSeconds": 4.36,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1436,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true,
+      "playlistError": {
+        "kind": "target-duration",
+        "characters": 33,
+        "hasHeader": true,
+        "segments": 1
+      },
+      "networkRecoveries": 1
+    }
+  ]
+}

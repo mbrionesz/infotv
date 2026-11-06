@@ -22,6 +22,8 @@ def build(output=None):
         digest.update((ROOT / name).read_bytes())
     if info['sourceSha256'] != digest.hexdigest():
         raise RuntimeError('Bundle out of date. Run npm run build first.')
+    assert info['hlsVersion'] == info['hlsWorkerVersion'] == json.loads((ROOT / 'package.json').read_text())['devDependencies']['hls.js']
+    assert hashlib.sha256((app / 'vendor/hls-worker.js').read_bytes()).hexdigest() == info['hlsWorkerSha256']
     config = ET.parse(app / 'config.xml').getroot()
     application = config.find('{http://tizen.org/ns/widgets}application')
     assert application.attrib['required_version'] == '4.0'
@@ -50,7 +52,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': 'alpha', 'minimumTizen': '4.0',
-        'hardwareValidation': 'v0.4.4-live-720p-worker-active-on-QN55QN70FAGXZS-v0.5.2-pending', 'providerValidation': 'v0.4.4-71s-playback-http200-one-reported-404-v0.5.2-pending',
+        'hardwareValidation': 'v0.4.4-live-720p-worker-active-on-QN55QN70FAGXZS-v0.5.3-pending', 'providerValidation': 'v0.4.4-71s-playback-http200-one-reported-404-v0.5.3-pending',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion']
     }, indent=2) + '\n')

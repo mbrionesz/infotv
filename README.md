@@ -1,4 +1,4 @@
-# XuperTizen 0.5.2 alpha
+# XuperTizen 0.5.3 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -40,7 +40,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 - Protocolo del catálogo y sesión adaptado de Node a JavaScript del widget:
   transporte XHR, 3DES/MD5 del protocolo, caché local y generación aleatoria segura.
   Sin descarga de sesiones prestadas ni dependencia de `localhost`.
-- **HLS.js 1.6.15** empaquetado dentro del WGT: HLS con cabeceras de autorización
+- **HLS.js 1.6.19** empaquetado dentro del WGT: HLS con cabeceras de autorización
   en listas, segmentos y claves; ABR automático, buffer acotado y limpieza
   al cambiar de señal. Requiere MSE y permiso CORS del origen cuando corresponda.
 - **AVPlay** detectado en el dispositivo para fuentes que su API puede abrir.
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.5.2-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.5.3-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.5.2-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.2-alpha.1).
+Esta actualización usa la etiqueta `v0.5.3-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.3-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -135,3 +135,9 @@ La 0.5.2 admite hasta cuatro candidatos CDN y prueba las direcciones del
 adaptador antes de construir alternativas HTTPS. Mantiene la autorización propia
 de cada host. Diagnóstico muestra cdnReceived, cdnAvailable y cdnAttempt.
 [Notas y límites](docs/RELEASE-0.5.2-alpha.1.md).
+
+La 0.5.3 actualiza HLS.js y su worker a **1.6.19**. En HLS en vivo busca 3 s de
+buffer antes de empezar y 6 s para reanudar tras un atasco, respetando Pausa. Las
+ventanas cortas pueden reanudar con menos buffer tras una espera limitada. Se
+reintentan listas rotas en el mismo candidato antes de cambiar de CDN.
+[Notas y validación](docs/RELEASE-0.5.3-alpha.1.md).

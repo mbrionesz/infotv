@@ -1,3 +1,13 @@
+# Validación actual — 0.5.3
+
+HLS.js y worker 1.6.19. 46 pruebas unitarias e integración Chromium; prueba de
+60 s de HLS cifrado con umbrales medidos de 3/6 s y lista inválida recuperada sin
+cambiar de CDN. Se verifica explícitamente Pausa y cancelación de esperas.
+[Notas y límites](RELEASE-0.5.3-alpha.1.md). Prueba física de esta versión pendiente;
+no se afirma resuelto el fallo del proveedor, los FPS o el desfase audiovisual.
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.5.2
 
 42 pruebas unitarias y Chromium: los tres primeros candidatos fallan y el cuarto

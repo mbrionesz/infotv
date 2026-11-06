@@ -1,3 +1,4 @@
+import {createLiveBuffer} from './live-buffer.js';
 import {mediaHealth,recoveryBudget} from './playback-health.js';
 import {playbackRejection,liveLoadPolicy} from './playback-policy.js';
 import {nativeHlsLoad} from './native-hls-loader.js';
@@ -12,10 +13,11 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 export function createPlayer(getStream) {
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
-  let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null;
+  let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
+    if(bufferGate){bufferGate.destroy();bufferGate=null;}
     clearInterval(healthTimer);clearTimeout(sourceRefreshTimer);sourceRefreshTimer=null;clearTimeout(recoveryTimer);healthTimer=recoveryTimer=null;resumePlayback=null;++serial;clearTimeout(totalDeadline);clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
     if (video && playingListener) video.removeEventListener('playing', playingListener);
     if(video&&canPlayListener)video.removeEventListener('canplay',canPlayListener);
@@ -43,7 +45,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -52,13 +54,13 @@ export function createPlayer(getStream) {
     totalDeadline=setTimeout(()=>fail('La señal no inició tras probar las rutas disponibles: etapa '+diagnostics.stage+'. Abre Diagnóstico.'),30000);
     const openedAt=performance.now();let playPending=false,autoAttempts=0,gestureRequired=false,resuming=false;const networkBudget=recoveryBudget(),decoderBudget=recoveryBudget(1);let lastProgressAt=performance.now(),lastTime=0;
     function tryPlay(){
-      if(serial!==run||started&&!resuming||playPending||gestureRequired||!video.paused||autoAttempts>=3)return;
-      autoAttempts++;playPending=true;
+      if(serial!==run||started&&!resuming||bufferGate&&bufferGate.userPaused||playPending||gestureRequired||!video.paused||autoAttempts>=3)return;
+      const playGeneration=attempt;autoAttempts++;playPending=true;
       let result;try{result=video.play();}catch(error){result=Promise.reject(error);}
-      Promise.resolve(result).then(()=>{playPending=false;},error=>{
-        playPending=false;if(serial!==run)return;const rejection=playbackRejection(error);diagnostics.playRejection=rejection;
+      Promise.resolve(result).then(()=>{if(serial===run&&playGeneration===attempt)playPending=false;},error=>{
+        if(serial!==run||playGeneration!==attempt)return;playPending=false;const rejection=playbackRejection(error);diagnostics.playRejection=rejection;
         if(rejection==='gesture'){gestureRequired=true;diagnostics.autoplayBlocked=true;options.onError('Pulsa OK para iniciar el vídeo.');}
-        else if(rejection==='interrupted'&&video.readyState>=2&&autoAttempts<3)setTimeout(tryPlay,0);
+        else if(rejection==='interrupted'&&!(bufferGate&&bufferGate.userPaused)&&video.readyState>=2&&autoAttempts<3)setTimeout(tryPlay,0);
       });
     }
     resumePlayback=()=>{gestureRequired=false;autoAttempts=0;diagnostics.autoplayBlocked=false;tryPlay();};
@@ -95,7 +97,8 @@ export function createPlayer(getStream) {
     healthTimer=setInterval(()=>{
       if(serial!==run||!video)return;
       const sample=mediaHealth(video);diagnostics.media=sample;
-      if(Math.abs(sample.time-lastTime)>0.05||sample.paused||document.hidden||!started){lastProgressAt=performance.now();lastTime=sample.time;return;}
+      if(Math.abs(sample.time-lastTime)>0.05||sample.paused&&!(bufferGate&&bufferGate.waiting&&!bufferGate.userPaused)||document.hidden||!started){lastProgressAt=performance.now();lastTime=sample.time;return;}
+      if(bufferGate&&bufferGate.waiting&&sample.bufferSeconds>0){lastProgressAt=performance.now();return;}
       if(refreshing||!hls||!options.live||performance.now()-lastProgressAt<12000)return;
       lastProgressAt=performance.now();diagnostics.stallRecoveries++;record('no-progress-12s');
       if(sample.bufferSeconds<1)recoverNetwork();
@@ -114,6 +117,7 @@ export function createPlayer(getStream) {
       const next=routes[++routeIndex];playbackSource=next.url;headers=next.headers;
       diagnostics.httpsFallback=next.httpsFallback;diagnostics.cdnAttempt=next.cdnAttempt;
       attempt++;diagnostics.transport=/^https:/i.test(playbackSource)?'https':'http';
+      if(bufferGate){bufferGate.destroy();bufferGate=null;}
       clearTimeout(recoveryTimer);recoveryTimer=null;if(hls){hls.destroy();hls=null;}
       clearTimeout(deadline);started=ready=false;autoAttempts=0;playPending=false;gestureRequired=false;diagnostics.httpStatus=0;useHls();return true;
     }
@@ -121,6 +125,7 @@ export function createPlayer(getStream) {
       if (serial !== run) return;
       if (!Hls.isSupported()) return fail('Este televisor no dispone de MediaSource compatible para este canal con autorización.');
       const generation=attempt;
+      if(options.live)bufferGate=createLiveBuffer(video,{onState:state=>{diagnostics.bufferGate=state;if(started&&state.waiting&&!state.userPaused)diagnostics.stage='buffering';},onRejected:error=>{if(serial===run&&generation===attempt&&error.name==='NotAllowedError'){gestureRequired=true;diagnostics.autoplayBlocked=true;options.onError('Pulsa OK para iniciar el vídeo.');}}});
       engine = diagnostics.engine = 'hls.js';
       diagnostics.stage='manifest';diagnostics.worker=typeof Worker!=='undefined';
       const Loader=Hls.DefaultConfig.loader;
@@ -155,12 +160,14 @@ export function createPlayer(getStream) {
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if(serial!==run||generation!==attempt)return;
+        if(/(?:level|manifest).*(?:Parsing|Empty)Error/i.test(data.details||'')){const text=data.response&&data.response.data;const reason=String(data.reason||data.error&&data.error.message||'');diagnostics.playlistError={kind:/no segments/i.test(reason)?'empty-playlist':/target.?duration/i.test(reason)?'target-duration':/EXTM3U/i.test(reason)?'missing-extm3u':/sequence/i.test(reason)?'sequence':/duration/i.test(reason)?'fragment-duration':'other-parsing-error',characters:typeof text==='string'?text.length:null,hasHeader:typeof text==='string'?/^\s*#EXTM3U/.test(text):null,segments:typeof text==='string'?(text.match(/#EXTINF:/g)||[]).length:null};}
         diagnostics.detail=String(data.details||'').slice(0,70);record(data.details,data.response&&data.response.code||0,!!data.fatal);
         if(data.event==='demuxerWorker')diagnostics.worker=false;
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;
         if (!data.fatal || serial !== run||refreshing) return;
         if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
           const code=data.response&&data.response.code||0;
+          if(options.live&&/level(?:Parsing|Empty)Error/.test(data.details||'')&&recoverNetwork())return;
           if(code===404&&refreshSource())return;
           if(started&&options.live&&![401,403,416].includes(code)&&recoverNetwork())return;
           if(retrySource())return;
@@ -232,7 +239,7 @@ export function createPlayer(getStream) {
         if (typeof av.setBufferingParam === 'function') {
           try {
             av.setBufferingParam('PLAYER_BUFFER_FOR_PLAY', 'PLAYER_BUFFER_SIZE_IN_SECOND', 3);
-            av.setBufferingParam('PLAYER_BUFFER_FOR_RESUME', 'PLAYER_BUFFER_SIZE_IN_SECOND', 5);
+            av.setBufferingParam('PLAYER_BUFFER_FOR_RESUME', 'PLAYER_BUFFER_SIZE_IN_SECOND', 6);
           } catch (_) {} // Older firmwares retain their documented defaults.
         }
         const rect = video.getBoundingClientRect();
