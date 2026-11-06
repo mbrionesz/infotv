@@ -15,13 +15,15 @@
   };
   var previous = 0;
   document.addEventListener('keydown', function (event) {
+    var now=performance.now();
+    if(event.keyCode>=37&&event.keyCode<=40){
+      if(event.repeat&&now-previous<65){event.preventDefault();event.stopImmediatePropagation();return;}
+      previous=now;
+    }
     if(window.XuperStandalone&&window.XuperStandalone.handleRemote(event)){event.preventDefault();event.stopImmediatePropagation();return;}
     if (event.keyCode === 10009) {
       event.preventDefault(); event.stopImmediatePropagation();
       if (window.__xuper) window.__xuper.key(461);
-    } else if (event.repeat && event.keyCode >= 37 && event.keyCode <= 40) {
-      var now = performance.now();
-      if (now - previous < 85) { event.preventDefault(); event.stopImmediatePropagation(); } else previous = now;
     }
   }, true);
   document.addEventListener('keyup', function (event) {

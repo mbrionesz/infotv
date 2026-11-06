@@ -1,4 +1,5 @@
 import Hls from 'hls.js';
+import {streamCandidates} from './stream-candidates.js';
 import {probeManifest,httpsAlternative} from './stream-probe.js';
 export function toAvDisplayRect(rect,width=1920,height=1080){
   const x=Math.max(0,Math.min(1919,Math.round(rect.left*1920/width)));
@@ -8,12 +9,12 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 
 export function createPlayer(getStream) {
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
-  let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null;
+  let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
   let restored = null, playingListener = null, probe=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
-    ++serial; clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
+    ++serial;clearTimeout(totalDeadline);clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
     if (video && playingListener) video.removeEventListener('playing', playingListener);
     playingListener = null;
     if(probe){probe.cancel();probe=null;}
@@ -36,40 +37,48 @@ export function createPlayer(getStream) {
     stop(); video = element; url = source;
     const run = serial;let playbackSource=source,httpsTried=false;
     const stream = getStream(source) || {};
-    const headers = stream.headers || {};
+    const candidates=streamCandidates(source,stream);let candidateIndex=0,attempt=0;
+    let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.worker=false;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
       const failedStage=diagnostics.stage;diagnostics.error = message; stop();diagnostics.stage=failedStage; options.onError(message);
     };
-    const onPlaying = () => { if (serial !== run) return; started = ready = true; paused = false;diagnostics.stage='playing'; clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
+    totalDeadline=setTimeout(()=>fail('La señal no inició tras probar las rutas disponibles: etapa '+diagnostics.stage+'. Abre Diagnóstico.'),30000);
+    const onPlaying = () => { if (serial !== run) return; started = ready = true; paused = false;diagnostics.stage='playing';clearTimeout(totalDeadline);clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
     playingListener = onPlaying;
     video.addEventListener('playing', onPlaying);
     // HLS.js owns recovery. Do not invoke the inherited webOS/FFmpeg retry path.
     video.onerror = () => { if (engine === 'html5') fail('Formato de vídeo o audio no compatible con este televisor.'); };
     function arm() {
       clearTimeout(deadline);
-      deadline = setTimeout(() => { if (!started && serial === run) fail('La señal no inició: etapa '+diagnostics.stage+(diagnostics.httpStatus?' · HTTP '+diagnostics.httpStatus:'')+'. Abre Diagnóstico con el botón azul.'); }, 20000);
+      deadline = setTimeout(() => { if (!started && serial === run) {if(isHls&&engine==='hls.js'&&retrySource())return;fail('La señal no inició: etapa '+diagnostics.stage+(diagnostics.httpStatus?' · HTTP '+diagnostics.httpStatus:'')+'. Abre Diagnóstico con el botón azul.');} }, candidates.length>1?8000:20000);
     }
-    function retryHttps(){
+    function retrySource(){
       const alternative=!httpsTried&&httpsAlternative(playbackSource);
-      if(!alternative)return false;
-      httpsTried=true;playbackSource=alternative;diagnostics.transport='https';diagnostics.httpsFallback=true;
-      if(hls){hls.destroy();hls=null;}clearTimeout(deadline);started=ready=false;
-      useHls();return true;
+      if(alternative){httpsTried=true;playbackSource=alternative;diagnostics.httpsFallback=true;}
+      else {
+        if(candidateIndex+1>=candidates.length)return false;
+        candidateIndex++;playbackSource=candidates[candidateIndex].url;headers=candidates[candidateIndex].headers;
+        httpsTried=false;diagnostics.httpsFallback=false;diagnostics.cdnAttempt=candidateIndex+1;
+      }
+      attempt++;diagnostics.transport=/^https:/i.test(playbackSource)?'https':'http';
+      if(probe){probe.cancel();probe=null;}if(hls){hls.destroy();hls=null;}
+      clearTimeout(deadline);started=ready=false;diagnostics.httpStatus=0;useHls();return true;
     }
     function useHls(verified=false) {
       if (serial !== run) return;
       if (!Hls.isSupported()) return fail('Este televisor no dispone de MediaSource compatible para este canal con autorización.');
+      const generation=attempt;
       if(custom.length&&!verified){
         engine=diagnostics.engine='hls.js';diagnostics.stage='manifest';
         probe=probeManifest(playbackSource,headers);
-        probe.promise.then(result=>{if(serial!==run)return;probe=null;diagnostics.httpStatus=result.status;useHls(true);},error=>{
-          if(serial!==run)return;probe=null;diagnostics.httpStatus=error.status||0;diagnostics.detail=error.kind||'';
-          if(['network-or-cors','timeout','http','invalid-playlist'].includes(error.kind)&&retryHttps())return;
+        probe.promise.then(result=>{if(serial!==run||generation!==attempt)return;probe=null;diagnostics.httpStatus=result.status;useHls(true);},error=>{
+          if(serial!==run||generation!==attempt)return;probe=null;diagnostics.httpStatus=error.status||0;diagnostics.detail=error.kind||'';
+          if(['network-or-cors','timeout','http','invalid-playlist'].includes(error.kind)&&retrySource())return;
           fail(error.message);
         });return;
       }
@@ -93,19 +102,19 @@ export function createPlayer(getStream) {
           });
         }
       });
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run) hls.loadSource(playbackSource); });
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run&&generation===attempt) hls.loadSource(playbackSource); });
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (serial !== run) return;
+        if (serial !== run||generation!==attempt) return;
         diagnostics.stage='segments';
         const promise = video.play();
         if (promise && promise.catch) promise.catch(() => { if (serial === run) options.onError('Pulsa OK para iniciar el vídeo.'); });
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if(serial!==run)return;
+        if(serial!==run||generation!==attempt)return;
         diagnostics.detail=String(data.details||'').slice(0,70);
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;
         if (!data.fatal || serial !== run) return;
-        if(data.type===Hls.ErrorTypes.NETWORK_ERROR&&retryHttps())return;
+        if(data.type===Hls.ErrorTypes.NETWORK_ERROR&&retrySource())return;
         if (data.type === Hls.ErrorTypes.MEDIA_ERROR && diagnostics.recoveries < 1) {
           diagnostics.recoveries++; hls.recoverMediaError();
         } else {
@@ -113,8 +122,8 @@ export function createPlayer(getStream) {
           fail('No se pudo reproducir HLS' + (status ? ' (HTTP ' + status + ')' : '') + '. Puede faltar autorización, CORS o soporte de audio/vídeo.');
         }
       });
-      hls.on(Hls.Events.FRAG_LOADING,()=>{if(serial===run&&!started)diagnostics.stage='segments';});
-      hls.on(Hls.Events.FRAG_LOADED,()=>{if(serial===run&&!started)diagnostics.stage='decoder';});
+      hls.on(Hls.Events.FRAG_LOADING,()=>{if(serial===run&&generation===attempt&&!started)diagnostics.stage='segments';});
+      hls.on(Hls.Events.FRAG_LOADED,()=>{if(serial===run&&generation===attempt&&!started)diagnostics.stage='decoder';});
       hls.attachMedia(video); arm();
     }
     function native() {

@@ -31,3 +31,5 @@
 .xt-diagnostics h1{font-size:32px}.xt-diagnostics p{font-size:18px;color:#aac4cd;margin:15px 0}.xt-diagnostics pre{font:20px/1.4 monospace;max-height:640px;overflow:auto;white-space:pre-wrap;overflow-wrap:break-word}.xt-diagnostics button{font-size:23px;background:#85efd1;color:#092a29;border:0;border-radius:8px;padding:13px 25px;margin-top:15px}
 /* Fixed geometry and solid focus colors avoid layout/animation churn on TVs. */
 .poster.is-focused,.bento.is-focused{transform:none!important;transition:none!important}.home-page{transition:none!important}
+
+.xt-guide-categories button[hidden],.xt-guide-channels button[hidden]{display:none}

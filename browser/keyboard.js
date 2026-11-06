@@ -12,7 +12,8 @@ export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()
     const group=document.createElement('div');group.className='xt-keyboard-row';grid.appendChild(group);
     return line.map((key,c)=>{const b=document.createElement('button');b.textContent=key;group.appendChild(b);b.onclick=()=>{row=r;column=c;activate();};return b;});
   });
-  function render(){panel.querySelector('.xt-keyboard-value').textContent=text||'Escribe el nombre…';buttons.forEach((line,r)=>line.forEach((b,c)=>b.classList.toggle('selected',r===row&&c===column)));}
+  let selected=null;
+  function render(){panel.querySelector('.xt-keyboard-value').textContent=text||'Escribe el nombre…';const next=buttons[row][column];if(next!==selected){if(selected)selected.classList.remove('selected');next.classList.add('selected');selected=next;}}
   function remember(){if(!text.trim())return;history=[text.trim(),...history.filter(item=>item!==text.trim())].slice(0,8);try{localStorage.setItem('xuper.searchHistory',JSON.stringify(history));}catch(_){}}
   function update(){text=text.slice(0,100);render();onChange(text);}
   function activate(){

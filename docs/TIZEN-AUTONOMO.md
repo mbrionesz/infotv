@@ -1,4 +1,4 @@
-# Arquitectura autónoma de 0.3.0 alpha
+# Arquitectura autónoma de 0.3.1 alpha
 
 Un WGT, sin proceso Node/FFmpeg ni PC durante el uso. Mínimo declarado Tizen 4.0,
 JavaScript compilado para Chrome 56. La detección de APIs evita asumir soporte,
@@ -66,3 +66,7 @@ en búsqueda/selección; desaparece en vídeo a pantalla completa.
 
 El WGT se distribuye sin firma para Apps2Samsung. Publicar la release de GitHub
 no publica ni modifica la configuración de este entorno en la nube.
+
+La 0.3.1 añade diagnóstico DoH por IP y recuperación de CDN documentados en
+[la revisión de referencias](REFERENCIAS-RENDIMIENTO-DNS.md). Las IP obtenidas
+no sustituyen el resolver del vídeo. El límite global de arranque es 30 s.

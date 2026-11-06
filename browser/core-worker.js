@@ -1,7 +1,9 @@
+import {createDnsDiagnostic} from './dns-diagnostic.js';
 import core from '../companion/lib/magis.js';
 import { createCache } from './cache.js';
 import { createCatalogIndex } from './catalog-index.js';
 import crypto from './crypto.js';
+const dnsDiagnostic=createDnsDiagnostic();let lastStreamHost='',lastPortalCode='';
 const cache = createCache(self.indexedDB);
 const catalog = createCatalogIndex();
 const pageProgress=new Map();
@@ -74,6 +76,11 @@ async function execute(method,payload){
     const key=root+':'+(Number(payload.pageNum)||1);if(!pageProgress.has(key))pageProgress.set(key,catalog.query(root).loaded>before);
     return Object.assign(catalog.query(root,payload),{hasMore:pageProgress.get(key)});
   }
+  if(method==='networkDiagnostic'){
+    const hosts=Array.from(new Set([lastStreamHost,...core.constants.HOSTS.slice(0,2)].filter(Boolean)));
+    const answers=await Promise.all(hosts.map(host=>dnsDiagnostic.lookup(host)));
+    return {routing:'system-dns',dnsOverride:false,hosts:answers,portalCode:lastPortalCode,regionalRejection:lastPortalCode==='portal100024',note:'DoH es diagnóstico. Un fallo puede ser TLS, CORS o red; no demuestra bloqueo DNS. El código regional no se corrige cambiando DNS.'};
+  }
   if(method==='diagnostics')return {worker:true,cryptoVerified,cache:await cache.available(),sessionReady:!!core.session.ready,stats};
   if(method==='poster'){
     if(!/^https?:\/\//i.test(payload.url||''))throw new Error('URL inválida');
@@ -91,6 +98,7 @@ async function execute(method,payload){
   const work=new Promise((resolve,reject)=>{
     try{invoke(method,payload,(error,result)=>error?reject(error):resolve(result));}catch(error){reject(error);}
   }).then(async result=>{
+    if((method==='resolve'||method==='resolveLive')&&result&&result.url){try{lastStreamHost=new URL(result.url).hostname;}catch(_) {}}
     if(method==='home')catalog.add(payload.root||'movies',result.items);
     if(metadata.has(method)){
       await cache.put('metadata',key,result,method==='liveChannels'?300000:600000);
@@ -98,7 +106,7 @@ async function execute(method,payload){
     }
     return result;
   },async error=>{
-    stats.errors++;
+    stats.errors++;if(error.portalCode)lastPortalCode=String(error.portalCode);
     if(metadata.has(method)){
       const hit=await cache.get('metadata',key,true);
       if(hit){stats.staleHits++;return Object.assign({},hit,{cached:true,stale:true});}

@@ -1723,6 +1723,10 @@ function liveCdnsOf(e) {
   }
   return t;
 }
+function signLiveCdn(authBase) {
+  var match=authBase.match(/token=([0-9a-fA-F]{32})/),moment=Math.floor(Date.now());
+  return authBase+"&sign2_method=sign_o3&instance=0&start_moment="+moment+"&sign2="+signO3(match?match[1]:"",moment);
+}
 function resolveLive(e, r) {
   var t = liveResolveCache[e];
   if (t && Date.now() - t.at < LIVE_RESOLVE_CACHE_MS)
@@ -1801,7 +1805,10 @@ function resolveLive(e, r) {
               p < t.length;
               p++
             )
-              m.push("http://" + t[p].cflHost + "/live/" + s + ".m3u8");
+              m.push({url:"http://" + t[p].cflHost + "/live/" + s + ".m3u8",headers:{
+                "Content-Auth":signLiveCdn(t[p].authBase),"Content-License":a,
+                "User-Agent":"Ranger/4.9.4-17294ac0",App:"com.android.msandroid","App-Version":"49902","X-Buffer":"0"
+              }});
             var v = {
               url: i,
               backupUrls: m,

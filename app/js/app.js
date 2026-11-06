@@ -1190,7 +1190,8 @@
           var s = t("screen-home");
           s && s.classList.toggle("is-rail-open", !!r);
         }
-        (a || nt(e), wt());
+        (a || (window.XuperStandalone && "home" === X.screen && typeof e._tab === "number") || nt(e),
+          (window.XuperStandalone && "home" === X.screen && typeof e._tab === "number") || wt());
       } else a || nt(e);
   }
   function ot(e) {
@@ -4107,6 +4108,13 @@
       );
     })()),
     (ze.netdiag = (function () {
+      if(window.XuperStandalone){
+        var nativePanel=Fa("Diagnóstico Samsung");
+        nativePanel.appendChild(i(e("div","dg-note","Consulta el estado del reproductor, los tiempos del mando y la respuesta DNS segura. La comprobación DoH no cambia el DNS del vídeo. Un fallo de red, TLS o CORS no demuestra bloqueo DNS."),52,128,1350,180));
+        var nativeButton=e("div","dg-btn focusable xt-open-diagnostics","Abrir diagnóstico");
+        i(nativeButton,52,340,430,66);nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
+        return nativePanel;
+      }
       var t = Fa("Diagnóstico de red");
       (t.appendChild(
         e(
@@ -4386,7 +4394,7 @@
           e(
             "div",
             "sp-about-update-desc",
-            "Versión instalada: v2.2.60. Puedes actualizar la app directamente desde tu televisor sin necesidad de usar un PC.",
+            window.XuperStandalone ? "Versión instalada: "+window.XuperStandalone.version+". Descarga las actualizaciones desde GitHub e instálalas con Apps2Samsung." : "Versión instalada: v2.2.60.",
           ),
         ));
       var s = e("div", "sp-about-update-row"),
@@ -7815,7 +7823,7 @@
       setTimeout(oo, 250),
       setTimeout(oo, 1200),
       setTimeout(oo, 3e3),
-      document.addEventListener("keydown", ut, !1),
+      document.addEventListener("keydown", function(event){if(window.XuperStandalone)return window.XuperStandalone.measureRemote(function(){return ut(event);});return ut(event);}, !1),
       document.addEventListener(
         "keyup",
         function (e) {

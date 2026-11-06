@@ -20,6 +20,10 @@ try{
  const metrics=await browser.evaluate(`(async function(){var times=[],frames=[];__xuper.focus(document.querySelector('.tab-item'));for(var i=0;i<40;i++){var start=performance.now();__xuper.key(i%16<8?40:38);times.push(performance.now()-start);await new Promise(requestAnimationFrame);frames.push(performance.now()-start);}times.sort(function(a,b){return a-b});frames.sort(function(a,b){return a-b});return {cpuThrottle:6,simulatedChannels:2000,domNodes:document.querySelectorAll('*').length,homeChannelRows:document.querySelectorAll('.live-row').length,handlerP50Ms:times[20],handlerP95Ms:times[38],nextFrameP95Ms:frames[38]};})()`);
  if(await browser.evaluate('!!window.XuperGuide')){
    await browser.evaluate('XuperGuide.open()');await browser.waitFor('document.querySelectorAll(".xt-guide-channels button").length===12');
+   metrics.guide=await browser.evaluate(`(async function(){var times=[],frames=[];XuperGuide.handle({keyCode:39});for(var i=0;i<100;i++){var start=performance.now();XuperGuide.handle({keyCode:i%40<20?40:38});times.push(performance.now()-start);await new Promise(requestAnimationFrame);frames.push(performance.now()-start);}times.sort(function(a,b){return a-b});frames.sort(function(a,b){return a-b});return {handlerP50Ms:times[50],handlerP95Ms:times[95],nextFrameP95Ms:frames[95]};})()`);
+   await browser.evaluate('XuperGuide.handle({keyCode:404})');
+   metrics.keyboard=await browser.evaluate(`(async function(){var times=[];for(var i=0;i<100;i++){var start=performance.now();XuperGuide.handle({keyCode:i%16<8?39:37});times.push(performance.now()-start);await new Promise(requestAnimationFrame);}times.sort(function(a,b){return a-b});return {handlerP50Ms:times[50],handlerP95Ms:times[95]};})()`);
+   await browser.evaluate('XuperGuide.handle({keyCode:10009})');
    metrics.guideRows=await browser.evaluate('document.querySelectorAll(".xt-guide-channels button").length');
    await browser.screenshot('dist/guide-2000-channels.png');
  }

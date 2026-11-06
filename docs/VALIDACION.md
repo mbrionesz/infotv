@@ -1,12 +1,12 @@
-# Validación de XuperTizen 0.3.0 alpha
+# Validación de XuperTizen 0.3.1 alpha
 
 La prueba física disponible corresponde a **0.2**, realizada por el usuario en
 QN55QN70FAGXZS, Tizen 9, firmware T-PTMFUABC-0090-1301.0: lista de canales cargada,
-menús lentos y reproducción sin inicio tras 20 s. **0.3 todavía no probada en TV.**
+menús lentos y reproducción sin inicio tras 20 s. **0.3.1 todavía no probada en TV.**
 
 | Comprobación de 0.3 | Resultado local |
 |---|---|
-| Pruebas unitarias | 14 aprobadas, incluidas 4 de la pasarela histórica |
+| Pruebas unitarias | 19 aprobadas, incluidas 4 de la pasarela histórica |
 | Inicio autónomo y protocolo/TripleDES en worker | Aprobados en Chromium; sin PC/RPC |
 | IndexedDB | Caducidad, límites, recuperación offline acotada y actualización en segundo plano |
 | Miniaturas | Reducción y reutilización de blob cacheado verificadas en Chromium |
@@ -18,7 +18,9 @@ menús lentos y reproducción sin inicio tras 20 s. **0.3 todavía no probada en
 | HTTP 403 de manifiesto | Error temprano con etapa/estado, sin exponer los headers |
 | AVPlay y rectángulo en viewport 4K | API Samsung simulada; no hardware real |
 | Códecs HEVC/AC-3/E-AC-3/DTS | Sin validación física; no hay transcodificador en el WGT |
-| DoH por IP / Host / SNI personalizados | No implementado; DNS del TV |
+| DoH por IP | Diagnóstico de carrera/caché/cooldown probado con transporte simulado; fallo de acceso controlado en Chromium |
+| Cambio del resolver de vídeo / Host / SNI personalizados | No implementado; DNS del TV |
+| CDN alternativo | HTTP 403 inicial → HLS real con otras credenciales en manifiesto/segmentos/clave |
 | Canal real del proveedor en 0.3 | Pendiente en TV |
 | Tizen 4–9+ y Apps2Samsung con 0.3 | Pendientes en hardware |
 
@@ -53,3 +55,5 @@ npm run package
 Chromium y FFmpeg se necesitan sólo en desarrollo para generar la señal de
 prueba. El catálogo y canales de las capturas están simulados. Las pruebas de
 companion no se presentan como evidencia de funcionamiento autónomo.
+
+Comparación 0.3.0 → 0.3.1 y alcance DNS: [revisión de referencias](REFERENCIAS-RENDIMIENTO-DNS.md).

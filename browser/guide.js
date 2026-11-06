@@ -1,4 +1,5 @@
 import {createPlayer} from './player.js';
+import {createButtonWindow} from './button-window.js';
 import {openKeyboard} from './keyboard.js';
 const fold=text=>String(text||'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 export function createGuide(core){
@@ -8,28 +9,18 @@ export function createGuide(core){
   const preview=createPlayer(()=>stream);
   function button(text,handler){const node=document.createElement('button');node.textContent=text;node.onclick=handler;return node;}
   function status(text){if(panel)panel.querySelector('.xt-guide-status').textContent=text;}
-  function renderCategories(){
-    const list=panel.querySelector('.xt-guide-categories');list.textContent='';
-    categories.slice(Math.max(0,category-5),Math.max(0,category-5)+12).forEach((item,i)=>{
-      const index=Math.max(0,category-5)+i;const node=button(item.name||'Categoría',()=>{category=index;column=0;load();});
-      node.className=index===category?'selected':'';list.appendChild(node);
-    });
-  }
+  let categoryWindow,channelWindow,actionButtons;
+  function renderCategories(){categoryWindow.render(categories,category);}
   function renderChannels(){
-    const list=panel.querySelector('.xt-guide-channels');list.textContent='';
-    const start=Math.max(0,channel-5);
-    for(let i=start;i<Math.min(visible.length,start+12);i++){
-      const item=visible[i];const node=button((favorites[item.channelCode]?'★ ':'')+(item.index||i+1)+'  '+item.name,()=>{channel=i;column=1;play();});
-      node.className=(i===channel?'selected':'')+(selected&&selected.channelCode===item.channelCode?' playing':'');list.appendChild(node);
-    }
+    channelWindow.render(visible,channel,item=>selected&&selected.channelCode===item.channelCode);
     panel.querySelector('.xt-guide-count').textContent=visible.length+' canales'+(loading?' · cargando…':hasMore?' · ↓ para cargar más':'');
     panel.querySelector('.xt-guide-query').textContent=query?'Buscar: '+query:'Buscar canal';
-    if(!visible.length)list.textContent=loading?'Cargando canales…':'No hay coincidencias';
+    panel.querySelector('.xt-guide-empty').textContent=visible.length?'':loading?'Cargando canales…':'No hay coincidencias';
   }
   function focus(){
     if(!panel)return;
     panel.dataset.column=String(column);
-    panel.querySelectorAll('.xt-guide-actions button').forEach((node,i)=>node.classList.toggle('selected',column===2&&i===action));
+    actionButtons.forEach((node,i)=>node.classList.toggle('selected',column===2&&i===action));
   }
   function filter(){
     const key=fold(query);visible=key?all.filter(item=>item._search.indexOf(key)>=0):all.slice();channel=Math.min(channel,Math.max(0,visible.length-1));renderChannels();focus();
@@ -78,7 +69,11 @@ export function createGuide(core){
     active=true;panel=document.createElement('section');panel.id='xt-guide';panel.className='xt-panel';
     panel.innerHTML='<header><div><span class="xt-eyebrow">TV EN VIVO</span><h1>Encuentra tu canal</h1><p>XuperTizen by Matias</p></div><button class="xt-guide-query">Buscar canal</button></header><div class="xt-guide-columns"><section><h2>Categorías</h2><div class="xt-guide-categories"></div></section><section><h2>Canales <small class="xt-guide-count"></small></h2><div class="xt-guide-channels"></div></section><section class="xt-guide-preview"><video playsinline></video><h2 class="xt-guide-title">Selecciona una señal</h2><p class="xt-guide-info">OK reproduce en esta vista. Azul abre pantalla completa.</p><div class="xt-guide-actions"></div><p class="xt-guide-status" role="status"></p></section></div><footer>← → Columnas · ↑ ↓ Elegir · OK Reproducir · Rojo Favorito · Verde Buscar · Amarillo Actualizar · Azul Pantalla completa · Return Volver</footer>';
     document.getElementById('app').appendChild(panel);panel.querySelector('.xt-guide-query').onclick=search;
+    categoryWindow=createButtonWindow(panel.querySelector('.xt-guide-categories'),item=>item.name||'Categoría',index=>{category=index;column=0;load();});
+    channelWindow=createButtonWindow(panel.querySelector('.xt-guide-channels'),(item,i)=>(favorites[item.channelCode]?'★ ':'')+(item.index||i+1)+'  '+item.name,index=>{channel=index;column=1;play();});
+    const empty=document.createElement('p');empty.className='xt-guide-empty';panel.querySelector('.xt-guide-channels').appendChild(empty);
     const actions=panel.querySelector('.xt-guide-actions');actions.appendChild(button('Pantalla completa',fullscreen));actions.appendChild(button('Diagnóstico',()=>window.XuperStandalone.openDiagnostics(preview.diagnostics)));
+    actionButtons=Array.from(actions.children);
     categories=[{id:76182,name:'Todos'},{id:'__favorites',name:'Favoritos'}];column=0;category=0;load();focus();
     core.getLiveCategories((error,result)=>{if(!active||error||!result||!result.length)return;categories=[{id:76182,name:'Todos'},{id:'__favorites',name:'Favoritos'},...result.filter(item=>String(item.id)!=='76182')];renderCategories();});
   }

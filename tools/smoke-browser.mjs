@@ -18,9 +18,10 @@ const media = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   seen.push({ path:req.url, auth:req.headers['content-auth'], license:req.headers['content-license'] });
-  if (req.headers['content-auth'] !== 'local-test' || req.headers['content-license'] !== 'local-license') { res.writeHead(403); res.end(); return; }
+  const backup=req.url.startsWith('/backup/');
+  if (req.headers['content-auth'] !== (backup?'backup-auth':'local-test') || req.headers['content-license'] !== (backup?'backup-license':'local-license')) { res.writeHead(403); res.end(); return; }
   if(req.url==='/denied.m3u8'){res.writeHead(403);res.end('Denied');return;}
-  const file = path.resolve(temporary, '.' + req.url);
+  const file = path.resolve(temporary, '.' + req.url.replace(/^\/backup/,''));
   if (!file.startsWith(temporary + path.sep)) { res.writeHead(403); res.end(); return; }
   try {
     res.setHeader('Content-Type', file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : file.endsWith('.bin') ? 'application/octet-stream' : 'video/mp2t');
@@ -73,7 +74,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.3.0');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.3.1');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -103,7 +104,9 @@ try {
   const stale=await browser.evaluate('new Promise(function(resolve){var start=performance.now();XuperStandalone.core.call("liveCategories",{},function(error,data){resolve({error:error&&error.message,stale:data&&data.stale,name:data&&data.categories[0].name,ms:performance.now()-start})})})');
   assert.equal(stale.error,null);assert.equal(stale.stale,true);assert.equal(stale.name,'Guardada sin conexión');assert.ok(stale.ms<1000);
   await browser.evaluate('XuperGuide.open()');
-  await browser.waitFor('document.querySelectorAll(".xt-guide-channels button").length===2');
+  await browser.waitFor('document.querySelectorAll(".xt-guide-channels button:not([hidden])").length===2');
+  const sameRows=await browser.evaluate('(()=>{var nodes=Array.from(document.querySelectorAll(".xt-guide-channels button"));XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:38});XuperGuide.handle({keyCode:37});return nodes.every((node,i)=>node===document.querySelectorAll(".xt-guide-channels button")[i])})()');
+  assert.equal(sameRows,true);
   await browser.screenshot('dist/guide-v3.png');
   await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:404,bubbles:true}))');
   assert.equal(await browser.evaluate('!!document.querySelector(".xt-keyboard")'),true);
@@ -149,6 +152,18 @@ try {
   await browser.waitFor('!!document.querySelector(".xt-diagnostics")');
   assert.equal(await browser.evaluate('document.querySelector(".xt-diagnostics pre").textContent.includes("local-license")'),false);
   await browser.screenshot('dist/error-manifest-403.png');
+  await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:405,bubbles:true}))');
+  await browser.waitFor('document.querySelector(".xt-diagnostics pre").textContent.includes("dnsOverride")');
+  assert.equal(await browser.evaluate('JSON.parse(document.querySelector(".xt-diagnostics pre").textContent).red.dnsOverride'),false);
+  await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}));__xuper.show("home")');
+  await browser.evaluate('XuperStandalone.core.resolveLive=function(code,cb){cb(null,{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/denied.m3u8'))+',mime:"application/vnd.apple.mpegurl",headers:{"Content-Auth":"local-test","Content-License":"local-license"},backupUrls:[{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/backup/live.m3u8'))+',headers:{"Content-Auth":"backup-auth","Content-License":"backup-license"}}]})};__xuper.show("player")');
+  await browser.waitFor('XuperPlayer.diagnostics.cdnAttempt===2 && document.getElementById("player-video").currentTime>0.5',180);
+  const backups=seen.filter(request=>request.path.startsWith('/backup/'));
+  assert.ok(backups.some(request=>request.path.endsWith('.ts')));assert.ok(backups.some(request=>request.path.endsWith('/key.bin')));
+  assert.ok(backups.every(request=>request.auth==='backup-auth'&&request.license==='backup-license'));
+  await browser.evaluate('__xuper.show("home");__xuper.settingsPanel("netdiag");__xuper.focus(".xt-open-diagnostics");__xuper.key(13)');
+  await browser.waitFor('!!document.querySelector(".xt-diagnostics .xt-diag-network")');
+  assert.equal(await browser.evaluate('document.querySelector("#screen-settings .settings-panel.is-active").textContent.includes("no cambia el DNS")'),true);
   assert.deepEqual(browser.errors,[]);
   console.log('PASS: worker, IndexedDB, paged catalog, three-column guide, QWERTY; autonomous startup without pairing/RPC; real HLS.js decodes AES-128 H.264/AAC via cross-origin authorized manifest+segments+key; pause/resume, channel change, teardown, UI and branding. Provider catalog mocked; not a real channel or Samsung test.');
 } catch(error) {

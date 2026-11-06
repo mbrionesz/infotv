@@ -1,7 +1,7 @@
 import {openKeyboard} from './keyboard.js';
 export function createCatalog(core){
   let panel=null,active=false,root='movies',remotePage=1,offset=0,items=[],total=0,loaded=0,hasMore=true,loading=false,run=0,keyboard=null,filterTimer=null;
-  let focus=0,searchMode=false,posterObserver=null;const filters={text:'',genre:'',year:'',country:'',resolution:''};
+  let focus=0,searchMode=false,posterObserver=null,focusNodes=[],selectedNode=null,previousRow=-1;const filters={text:'',genre:'',year:'',country:'',resolution:''};
   function status(text){if(panel)panel.querySelector('.xt-catalog-status').textContent=text;}
   function query(fetchPage=false){
     const token=++run;loading=true;status(fetchPage?'Consultando catálogo…':'Filtrando…');
@@ -13,12 +13,22 @@ export function createCatalog(core){
     });
   }
   function search(){if(keyboard)return;keyboard=openKeyboard({title:'Buscar · filtra al escribir; Buscar consulta el proveedor',value:filters.text,onChange:value=>{filters.text=value;searchMode=false;offset=0;clearTimeout(filterTimer);filterTimer=setTimeout(()=>query(),120);},onClose:()=>{keyboard=null;if(active&&filters.text.trim().length>=2){clearTimeout(filterTimer);searchMode=true;offset=0;query();}}});}
-  function controls(){return Array.from(panel.querySelectorAll('button,select')).filter(node=>!node.disabled);}
-  function mark(){const nodes=controls();focus=Math.max(0,Math.min(focus,nodes.length-1));nodes.forEach((node,i)=>node.classList.toggle('selected',i===focus));if(nodes[focus]&&nodes[focus].classList.contains('xt-catalog-card')){const grid=panel.querySelector('.xt-catalog-grid');const node=nodes[focus];if(node.offsetTop<grid.scrollTop)grid.scrollTop=node.offsetTop;else if(node.offsetTop+node.offsetHeight>grid.scrollTop+grid.clientHeight)grid.scrollTop=node.offsetTop+node.offsetHeight-grid.clientHeight;}}
+  function controls(){return focusNodes;}
+  function refreshControls(){focusNodes=Array.from(panel.querySelectorAll('button,select')).filter(node=>!node.disabled);previousRow=-1;}
+  function mark(){
+    const nodes=controls();focus=Math.max(0,Math.min(focus,nodes.length-1));const next=nodes[focus];
+    if(next!==selectedNode){if(selectedNode)selectedNode.classList.remove('selected');if(next)next.classList.add('selected');selectedNode=next;}
+    if(next&&next.classList.contains('xt-catalog-card')){
+      const row=Number(next.dataset.row);if(row!==previousRow){
+        previousRow=row;const grid=panel.querySelector('.xt-catalog-grid'),top=8+row*308,bottom=top+290;
+        if(top<grid.scrollTop)grid.scrollTop=top;else if(bottom>grid.scrollTop+650)grid.scrollTop=bottom-650;
+      }
+    }
+  }
   function render(facets){
     const grid=panel.querySelector('.xt-catalog-grid');if(posterObserver)posterObserver.disconnect();grid.textContent='';
     for(const item of items){
-      const card=document.createElement('button');card.className='xt-catalog-card';
+      const card=document.createElement('button');card.className='xt-catalog-card';card.dataset.row=String(Math.floor(grid.children.length/6));
       const image=document.createElement('img');image.alt='';image.decoding='async';
       const title=document.createElement('strong');title.textContent=item.title;
       const meta=document.createElement('small');meta.textContent=[item.year,item.country,item.resolution||item.quality].filter(Boolean).join(' · ');
@@ -32,7 +42,7 @@ export function createCatalog(core){
       select.value=filters[key];select.disabled=!(facets[list]||[]).length;
     }
     panel.querySelector('.xt-catalog-prev').disabled=offset===0;panel.querySelector('.xt-catalog-next').disabled=offset+36>=total;
-    panel.querySelector('.xt-catalog-more').disabled=!hasMore||searchMode;mark();
+    panel.querySelector('.xt-catalog-more').disabled=!hasMore||searchMode;refreshControls();mark();
   }
   function open(kind='movies'){
     if(active)close();root=kind;remotePage=1;offset=0;focus=0;hasMore=true;searchMode=false;Object.keys(filters).forEach(key=>filters[key]='');active=true;

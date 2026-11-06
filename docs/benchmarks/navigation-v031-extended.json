@@ -1,0 +1,19 @@
+{
+  "cpuThrottle": 6,
+  "simulatedChannels": 2000,
+  "domNodes": 568,
+  "homeChannelRows": 24,
+  "handlerP50Ms": 0.09999999962747097,
+  "handlerP95Ms": 0.7999999998137355,
+  "nextFrameP95Ms": 18.700000000186265,
+  "guide": {
+    "handlerP50Ms": 0.40000000037252903,
+    "handlerP95Ms": 2.3999999994412065,
+    "nextFrameP95Ms": 18.299999999813735
+  },
+  "keyboard": {
+    "handlerP50Ms": 0.10000000055879354,
+    "handlerP95Ms": 1.300000000745058
+  },
+  "guideRows": 12
+}
