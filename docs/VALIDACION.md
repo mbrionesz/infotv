@@ -1,3 +1,18 @@
+# Validación actual — 0.5.0
+
+40 pruebas unitarias; integración Chromium de listas M3U con mando, descarga y
+parseo, favoritos, pantalla completa, caché/actualización/eliminación y renovación
+única de resolución tras 404. Se mantiene la prueba HLS de 60 s con caída de lista
+tras el segundo 30. Trece listas públicas respondieron HTTP 200 y contenido M3U;
+esto no valida sus canales individualmente. [Notas](RELEASE-0.5.0-alpha.1.md).
+
+El usuario confirmó en 0.4.4 vídeo H.264/AAC 720p a los 71,6 s, worker activo y
+12,8 s de buffer; un atasco de arranque no fatal y un 404 en otro canal. Sus
+contadores de fotogramas devolvieron cero y no permiten verificar FPS. Prueba
+física de 0.5.0 pendiente; no se da por resuelto el pequeño desfase audiovisual.
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.4.4
 
 Prueba física de 0.4.3: arranque más rápido, algunos canales estables, otros con

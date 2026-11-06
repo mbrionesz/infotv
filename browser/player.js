@@ -13,11 +13,11 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 export function createPlayer(getStream) {
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
-  let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null;
+  let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
-    clearInterval(healthTimer);clearTimeout(recoveryTimer);healthTimer=recoveryTimer=null;resumePlayback=null;++serial;clearTimeout(totalDeadline);clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
+    clearInterval(healthTimer);clearTimeout(sourceRefreshTimer);sourceRefreshTimer=null;clearTimeout(recoveryTimer);healthTimer=recoveryTimer=null;resumePlayback=null;++serial;clearTimeout(totalDeadline);clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
     if (video && playingListener) video.removeEventListener('playing', playingListener);
     if(video&&canPlayListener)video.removeEventListener('canplay',canPlayListener);
     canPlayListener=null;playingListener = null;
@@ -44,7 +44,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -68,6 +68,22 @@ export function createPlayer(getStream) {
       diagnostics.events.push({atMs:Math.round(performance.now()-openedAt),detail:String(detail).slice(0,70),status,fatal});
       if(diagnostics.events.length>12)diagnostics.events.shift();
     }
+    let refreshing=false,refreshAttempted=!!options._sourceRefreshed;
+    function refreshSource(){
+      const refresh=options.refreshStream||stream.refreshStream;
+      if(refreshAttempted||typeof refresh!=='function')return false;
+      refreshAttempted=true;refreshing=true;clearTimeout(deadline);clearTimeout(recoveryTimer);recoveryTimer=null;diagnostics.sourceRefreshes=1;diagnostics.stage='refreshing-source';record('refresh-source-after-404',404);
+      let settled=false;
+      function completed(error,result){
+        if(settled||serial!==run)return;settled=true;clearTimeout(sourceRefreshTimer);sourceRefreshTimer=null;refreshing=false;
+        if(!error&&result&&/^https?:\/\//i.test(result.url||'')){
+          open(video,result.url,Object.assign({},options,{mime:result.mime||options.mime,_sourceRefreshed:true}));return;
+        }
+        if(!retrySource())fail('HTTP 404: el canal no está disponible tras renovar su dirección. Prueba otra señal o actualiza la lista.');
+      }
+      sourceRefreshTimer=setTimeout(()=>completed(new Error('refresh-timeout')),8000);
+      try{refresh(completed);}catch(error){completed(error);}return true;
+    }
     function recoverNetwork(){
       if(recoveryTimer)return true;
       const count=networkBudget.take(performance.now());if(!count)return false;
@@ -81,7 +97,7 @@ export function createPlayer(getStream) {
       if(serial!==run||!video)return;
       const sample=mediaHealth(video);diagnostics.media=sample;
       if(Math.abs(sample.time-lastTime)>0.05||sample.paused||document.hidden||!started){lastProgressAt=performance.now();lastTime=sample.time;return;}
-      if(!hls||!options.live||performance.now()-lastProgressAt<12000)return;
+      if(refreshing||!hls||!options.live||performance.now()-lastProgressAt<12000)return;
       lastProgressAt=performance.now();diagnostics.stallRecoveries++;record('no-progress-12s');
       if(sample.bufferSeconds<1)recoverNetwork();
       else if(decoderBudget.take(performance.now())){recoverDecoder();}
@@ -147,9 +163,10 @@ export function createPlayer(getStream) {
         diagnostics.detail=String(data.details||'').slice(0,70);record(data.details,data.response&&data.response.code||0,!!data.fatal);
         if(data.event==='demuxerWorker')diagnostics.worker=false;
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;
-        if (!data.fatal || serial !== run) return;
+        if (!data.fatal || serial !== run||refreshing) return;
         if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
           const code=data.response&&data.response.code||0;
+          if(code===404&&refreshSource())return;
           if(started&&options.live&&![401,403,416].includes(code)&&recoverNetwork())return;
           if(retrySource())return;
         }
@@ -157,7 +174,7 @@ export function createPlayer(getStream) {
           recoverDecoder();
         } else {
           const status = data.response && data.response.code;
-          fail('No se pudo reproducir HLS' + (status ? ' (HTTP ' + status + ')' : '') + '. Puede faltar autorización, CORS o soporte de audio/vídeo.');
+          fail((status===404?'Señal no disponible en el servidor':'No se pudo reproducir HLS') + (status ? ' (HTTP ' + status + ')' : '') + '. Puede faltar autorización, CORS o soporte de audio/vídeo.');
         }
       });
       hls.on(Hls.Events.LEVEL_SWITCHED,(_event,data)=>{

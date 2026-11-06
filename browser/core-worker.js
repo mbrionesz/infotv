@@ -1,3 +1,4 @@
+import {fetchPlaylist} from './addon-fetch.js';
 import {createDnsDiagnostic} from './dns-diagnostic.js';
 import core from '../companion/lib/magis.js';
 import { createCache } from './cache.js';
@@ -25,8 +26,7 @@ function invoke(method,payload,done) {
   if (method==='detail') return core.detail(payload.contentId,done);
   if (method==='mediaInfo') return core.mediaInfo(payload.contentId,payload.seriesContentId,done);
   if (method==='resolve') return core.resolve(payload.contentId,payload.seriesContentId,{trackIndex:payload.trackIndex},done);
-  if (method==='resolveLive') return core.resolveLive(payload.channelCode,done);
-  if (method==='fetchM3u') return core.fetchM3u(payload.url,(error,channels)=>done(error,{channels:channels||[]}));
+  if (method==='resolveLive') return core.resolveLive(payload.channelCode,done,{force:!!payload.force});
   if (method==='parseM3u') return done(null,{channels:core.parseM3u(payload.text||'')});
   done(new Error('Método no disponible'));
 }
@@ -82,6 +82,7 @@ async function execute(method,payload){
     return {routing:'system-dns',dnsOverride:false,hosts:answers,portalCode:lastPortalCode,regionalRejection:lastPortalCode==='portal100024',note:'DoH es diagnóstico. Un fallo puede ser TLS, CORS o red; no demuestra bloqueo DNS. El código regional no se corrige cambiando DNS.'};
   }
   if(method==='diagnostics')return {worker:true,cryptoVerified,cache:await cache.available(),sessionReady:!!core.session.ready,stats};
+  if(method==='fetchM3u')return {channels:await fetchPlaylist(payload.url)};
   if(method==='poster'){
     if(!/^https?:\/\//i.test(payload.url||''))throw new Error('URL inválida');
     return {blob:await poster(payload.url)};

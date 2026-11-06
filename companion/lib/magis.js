@@ -1727,7 +1727,8 @@ function signLiveCdn(authBase) {
   var match=authBase.match(/token=([0-9a-fA-F]{32})/),moment=Math.floor(Date.now());
   return authBase+"&sign2_method=sign_o3&instance=0&start_moment="+moment+"&sign2="+signO3(match?match[1]:"",moment);
 }
-function resolveLive(e, r) {
+function resolveLive(e, r, options) {
+  if(options && options.force) delete liveResolveCache[e];
   var t = liveResolveCache[e];
   if (t && Date.now() - t.at < LIVE_RESOLVE_CACHE_MS)
     return setTimeout(function () {

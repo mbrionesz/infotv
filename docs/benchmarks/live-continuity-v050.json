@@ -1,0 +1,581 @@
+{
+  "synthetic": true,
+  "samsungHardware": false,
+  "manifestGets": 41,
+  "playlistFailures": 1,
+  "fragmentFailures": 1,
+  "outageFailures": 9,
+  "workerMessages": 266,
+  "samples": [
+    {
+      "time": 7.950991,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1,
+      "media": {
+        "time": 7.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 48,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 9.955038,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1,
+      "media": {
+        "time": 9.8,
+        "bufferSeconds": 2.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 96,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 11.957059,
+      "error": "",
+      "stage": "playing",
+      "retries": 0,
+      "cdn": 1,
+      "media": {
+        "time": 11.8,
+        "bufferSeconds": 2.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 144,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 13.958703,
+      "error": "",
+      "stage": "playing",
+      "retries": 1,
+      "cdn": 1,
+      "media": {
+        "time": 13.8,
+        "bufferSeconds": 2.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 192,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 15.96088,
+      "error": "",
+      "stage": "playing",
+      "retries": 1,
+      "cdn": 1,
+      "media": {
+        "time": 15.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 240,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 17.962734,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 17.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 288,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 19.966645,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 19.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 336,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 21.971328,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 21.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 384,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 23.973162,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 23.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 432,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 25.976122,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 25.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 480,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 27.978391,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 27.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 528,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 29.980371,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 29.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 576,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 31.983344,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 31.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 624,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 33.98738,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 33.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 672,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 35.989153,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 35.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 720,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 37.992116,
+      "error": "",
+      "stage": "playing",
+      "retries": 2,
+      "cdn": 1,
+      "media": {
+        "time": 37.8,
+        "bufferSeconds": 4.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 768,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 39.993993,
+      "error": "",
+      "stage": "playing",
+      "retries": 6,
+      "cdn": 1,
+      "media": {
+        "time": 39.8,
+        "bufferSeconds": 2.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 816,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 41.941474,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 41.8,
+        "bufferSeconds": 0.2,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 863,
+        "droppedFrames": 0,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 43.872098,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 43.67,
+        "bufferSeconds": 4.33,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 910,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 45.874237,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 45.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 958,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 47.877949,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 47.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1006,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 49.880939,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 49.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1054,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 51.883968,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 51.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1102,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 53.888459,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 53.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1150,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 55.89153,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 55.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1198,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 57.894196,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 57.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1246,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 59.896161,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 59.67,
+        "bufferSeconds": 4.33,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1294,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 61.89838,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 61.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1342,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 63.899952,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 63.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1390,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    },
+    {
+      "time": 65.903048,
+      "error": "",
+      "stage": "playing",
+      "retries": 8,
+      "cdn": 1,
+      "media": {
+        "time": 65.68,
+        "bufferSeconds": 4.32,
+        "width": 320,
+        "height": 180,
+        "playbackRate": 1,
+        "totalFrames": 1438,
+        "droppedFrames": 3,
+        "paused": false,
+        "readyState": 4
+      },
+      "worker": true
+    }
+  ]
+}

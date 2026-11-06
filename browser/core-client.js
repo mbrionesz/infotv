@@ -40,7 +40,7 @@ export function createCoreClient() {
   api.detail=(contentId,callback)=>call('detail',{contentId},callback);
   api.mediaInfo=(contentId,seriesContentId,callback)=>call('mediaInfo',{contentId,seriesContentId},callback);
   api.resolve=(contentId,seriesContentId,options,callback)=>call('resolve',Object.assign({contentId,seriesContentId},options),callback);
-  api.resolveLive=(channelCode,callback)=>call('resolveLive',{channelCode},callback);
+  api.resolveLive=(channelCode,callback,options={})=>call('resolveLive',{channelCode,force:!!options.force},callback);
   api.fetchM3u=(url,callback)=>call('fetchM3u',{url},(error,result)=>callback(error,result&&result.channels));
   api.getLiveCategories=callback=>call('liveCategories',{},(error,result)=>callback(error,result&&result.categories));
   api.getLiveChannels=(columnId,pageNum,pageSize,callback)=>call('liveChannels',{columnId,pageNum,pageSize},(error,result)=>callback(error,result&&result.channels,result&&result.hasMore,result));

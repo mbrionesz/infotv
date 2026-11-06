@@ -1,3 +1,4 @@
+import {addonPresets,savedAddons,playlistUrl,addonId,playlistMime} from './addons.js';
 import {createPlayer} from './player.js';
 import {createButtonWindow} from './button-window.js';
 import {openKeyboard} from './keyboard.js';
@@ -6,7 +7,9 @@ export function createGuide(core){
   let panel=null,active=false,column=0,category=0,channel=0,action=0,categories=[],all=[],visible=[],query='',keyboard=null;
   let sequence=0,playSequence=0,page=1,hasMore=false,loading=false,selected=null,stream=null,filterTimer=null,switchTimer=null;
   let favorites={};try{favorites=JSON.parse(localStorage.getItem('xuper.guideFavorites')||'{}');}catch(_){}
-  const preview=createPlayer(()=>stream);
+  const preview=createPlayer(()=>stream);const addonCache=new Map();let customAddons=savedAddons(localStorage),portalCategories=[];
+  function rebuildCategories(){const id=categories[category]&&categories[category].id;categories=[{id:76182,name:'Todos'},{id:'__favorites',name:'Favoritos'},...portalCategories,...addonPresets,...customAddons,{id:'__m3u_add',name:'+ Añadir lista M3U'}];category=Math.max(0,categories.findIndex(item=>item.id===id));if(panel)renderCategories();}
+  function addList(){if(keyboard)return;keyboard=openKeyboard({title:'URL de lista M3U · Guardar para añadir',mode:'url',onSubmit:value=>{try{const url=playlistUrl(value);const exists=[...addonPresets,...customAddons].find(item=>item.url===url);if(exists){category=categories.findIndex(item=>item.id===exists.id);return;}if(customAddons.length>=20)throw new Error('Máximo 20 listas personalizadas.');const item={id:'m3u:custom:'+addonId(url),name:'M3U · '+new URL(url).hostname,url,custom:true};customAddons.push(item);localStorage.setItem('xuper.m3uLists',JSON.stringify(customAddons));rebuildCategories();category=categories.findIndex(row=>row.id===item.id);}catch(error){status(error.message);}},onClose:()=>{keyboard=null;if(categories[category]&&categories[category].url)load();}});}
   function button(text,handler){const node=document.createElement('button');node.textContent=text;node.onclick=handler;return node;}
   function status(text){if(panel)panel.querySelector('.xt-guide-status').textContent=text;}
   let categoryWindow,channelWindow,actionButtons;
@@ -25,13 +28,20 @@ export function createGuide(core){
   function filter(){
     const key=fold(query);visible=key?all.filter(item=>item._search.indexOf(key)>=0):all.slice();channel=Math.min(channel,Math.max(0,visible.length-1));renderChannels();focus();
   }
-  function load(more=false){
+  function load(more=false,force=false){
+    if(categories[category]&&categories[category].id==='__m3u_add'){addList();return;}
     if(loading&&more)return;
     const run=more?sequence:++sequence;
     if(!more){playSequence++;page=1;all=[];visible=[];channel=0;preview.stop();selected=null;stream=null;}
     loading=true;renderCategories();renderChannels();status('Consulta de canales…');
     if(categories[category]&&categories[category].id==='__favorites'){
       all=Object.keys(favorites).map(key=>Object.assign({},favorites[key],{_search:fold(favorites[key].name)}));loading=false;hasMore=false;filter();status('Tus favoritos guardados');return;
+    }
+    const addon=categories[category];
+    if(addon&&addon.url){
+      const apply=(error,items)=>{if(!active||run!==sequence)return;loading=false;hasMore=false;if(error){status(error.message||String(error));renderChannels();return;}all=(items||[]).map(item=>Object.assign({},item,{_search:fold(item.name+' '+item.group)}));filter();status('Lista M3U · '+all.length+' canales · busca también por grupo · Amarillo actualiza'+(addon.custom?' · Rojo en categoría elimina':''));};
+      const hit=addonCache.get(addon.url);if(!force&&hit&&Date.now()-hit.at<300000)apply(null,hit.items);
+      else core.fetchM3u(addon.url,(error,items)=>{if(!error){addonCache.delete(addon.url);addonCache.set(addon.url,{at:Date.now(),items});if(addonCache.size>3)addonCache.delete(addonCache.keys().next().value);}apply(error,items);});return;
     }
     core.getLiveChannels(categories[category]&&categories[category].id,page,100,(error,items,moreAvailable,metadata)=>{
       if(!active||run!==sequence)return;loading=false;
@@ -50,10 +60,10 @@ export function createGuide(core){
       if(error){status('Resolución: '+(error.message||String(error)));return;}
       stream=result;panel.querySelector('.xt-guide-title').textContent=item.name;
       panel.querySelector('.xt-guide-info').textContent=item.now||'En vivo';
-      preview.open(panel.querySelector('video'),result.url,{mime:result.mime,live:true,onStarted:()=>status('Reproduciendo · '+preview.diagnostics.engine),onError:message=>status(message)});
+      preview.open(panel.querySelector('video'),result.url,{mime:result.mime,live:true,refreshStream:!item.streamUrl?done=>core.resolveLive(item.channelCode,(error,fresh)=>{if(!error)stream=fresh;done(error,fresh);},{force:true}):null,onStarted:()=>status('Reproduciendo · '+preview.diagnostics.engine),onError:message=>status(message)});
       renderChannels();
     };
-    if(item.streamUrl)resolved(null,{url:item.streamUrl,headers:{},mime:'application/vnd.apple.mpegurl'});else core.resolveLive(item.channelCode,resolved);
+    if(item.streamUrl)resolved(null,{url:item.streamUrl,headers:{},mime:playlistMime(item.streamUrl)});else core.resolveLive(item.channelCode,resolved);
   }
   function fullscreen(){
     const target=selected||visible[channel];if(!target)return;
@@ -64,7 +74,7 @@ export function createGuide(core){
     if(keyboard)return;
     keyboard=openKeyboard({title:'Buscar canales',value:query,onChange:value=>{query=value;clearTimeout(filterTimer);filterTimer=setTimeout(filter,100);},onClose:()=>{keyboard=null;filter();}});
   }
-  function open(){
+  function open(options={}){
     if(active)return;
     if(window.__xuper)__xuper.show('home');
     active=true;panel=document.createElement('section');panel.id='xt-guide';panel.className='xt-panel';
@@ -75,8 +85,8 @@ export function createGuide(core){
     const empty=document.createElement('p');empty.className='xt-guide-empty';panel.querySelector('.xt-guide-channels').appendChild(empty);
     const actions=panel.querySelector('.xt-guide-actions');actions.appendChild(button('Pantalla completa',fullscreen));actions.appendChild(button('Diagnóstico',()=>window.XuperStandalone.openDiagnostics(preview.diagnostics)));
     actionButtons=Array.from(actions.children);
-    categories=[{id:76182,name:'Todos'},{id:'__favorites',name:'Favoritos'}];column=0;category=0;load();focus();
-    core.getLiveCategories((error,result)=>{if(!active||error||!result||!result.length)return;categories=[{id:76182,name:'Todos'},{id:'__favorites',name:'Favoritos'},...result.filter(item=>String(item.id)!=='76182')];renderCategories();});
+    portalCategories=[];column=0;category=0;rebuildCategories();if(options.addons)category=categories.findIndex(item=>item.id===addonPresets[0].id);load();focus();
+    core.getLiveCategories((error,result)=>{if(!active||error||!result||!result.length)return;portalCategories=result.filter(item=>String(item.id)!=='76182');rebuildCategories();});
   }
   function close(){
     if(keyboard){keyboard.close();keyboard=null;}
@@ -89,9 +99,10 @@ export function createGuide(core){
     const key=event.keyCode;
     if([10009,461,27].includes(key)){close();return true;}
     if(key===403){
-      const item=visible[channel];if(item&&item.channelCode){if(favorites[item.channelCode])delete favorites[item.channelCode];else favorites[item.channelCode]={name:item.name,channelCode:item.channelCode,index:item.index};try{localStorage.setItem('xuper.guideFavorites',JSON.stringify(favorites));}catch(_){}renderChannels();status('Favoritos actualizados');}return true;
+      const cat=categories[category];if(column===0&&cat&&cat.custom){customAddons=customAddons.filter(item=>item.id!==cat.id);try{localStorage.setItem('xuper.m3uLists',JSON.stringify(customAddons));}catch(_){}addonCache.delete(cat.url);rebuildCategories();load();return true;}
+      const item=visible[channel];if(item&&item.channelCode){if(favorites[item.channelCode])delete favorites[item.channelCode];else favorites[item.channelCode]={name:item.name,channelCode:item.channelCode,index:item.index,streamUrl:item.streamUrl||''};try{localStorage.setItem('xuper.guideFavorites',JSON.stringify(favorites));}catch(_){}renderChannels();status('Favoritos actualizados');}return true;
     }
-    if(key===404){search();return true;}if(key===405){load();return true;}if(key===406){fullscreen();return true;}
+    if(key===404){search();return true;}if(key===405){load(false,true);return true;}if(key===406){fullscreen();return true;}
     if(key===37)column=Math.max(0,column-1);else if(key===39){if(column===0)load();column=Math.min(2,column+1);}
     else if(key===38||key===40){
       const delta=key===40?1:-1;
@@ -103,5 +114,5 @@ export function createGuide(core){
     else if([415,19,10252].includes(key)){const video=panel.querySelector('video');if(video.paused)video.play().catch(()=>{});else video.pause();}
     focus();return true;
   }
-  return {open,close,handle,get active(){return active;},diagnostics:()=>preview.diagnostics};
+  return {open,openAddons:()=>open({addons:true}),close,handle,get active(){return active;},diagnostics:()=>preview.diagnostics};
 }

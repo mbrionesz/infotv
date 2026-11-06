@@ -18,10 +18,11 @@ const media = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   seen.push({ path:req.url, auth:req.headers['content-auth'], license:req.headers['content-license'] });
+  const publicStream=req.url.startsWith('/public/');
   const backup=req.url.startsWith('/backup/');
-  if (req.headers['content-auth'] !== (backup?'backup-auth':'local-test') || req.headers['content-license'] !== (backup?'backup-license':'local-license')) { res.writeHead(403); res.end(); return; }
+  if (!publicStream&&(req.headers['content-auth'] !== (backup?'backup-auth':'local-test') || req.headers['content-license'] !== (backup?'backup-license':'local-license'))) { res.writeHead(403); res.end(); return; }
   if(req.url==='/denied.m3u8'){res.writeHead(403);res.end('Denied');return;}
-  const file = path.resolve(temporary, '.' + req.url.replace(/^\/backup/,''));
+  const file = path.resolve(temporary, '.' + req.url.replace(/^\/(?:backup|public)/,''));
   if (!file.startsWith(temporary + path.sep)) { res.writeHead(403); res.end(); return; }
   try {
     res.setHeader('Content-Type', file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : file.endsWith('.bin') ? 'application/octet-stream' : 'video/mp2t');
@@ -34,6 +35,7 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Security-Policy',widgetPolicy);
   if(req.url==='/vendor/core-worker.js')res.setHeader('Content-Security-Policy',widgetPolicy.replace(/connect-src[^;]+;/,"connect-src 'self' http://127.0.0.1:*;"));
   if(req.url==='/vendor/native-worker-probe.js'){res.setHeader('Content-Type','text/javascript');res.end(`self.tizentvwasm={SocketsHostBindings:new Proxy({},{get:function(){return function(){return -1}}}),SockFlags:{SOCK_CLOEXEC:524288,SOCK_NONBLOCK:2048}};importScripts('/vendor/native-worker.js');`);return;}
+  if(req.url==='/addon-fixture.m3u'){res.setHeader('Content-Type','text/plain');res.end('#EXTM3U\n#EXTINF:-1 group-title="Noticias",Canal M3U fixture\nhttp://127.0.0.1:'+media.address().port+'/public/live.m3u8');return;}
   if(req.url==='/native-list.m3u'){res.setHeader('Content-Type','text/plain');res.end('#EXTM3U\n#EXTINF:-1,Native bridge fixture\nhttps://example.com/fixture.m3u8');return;}
   if (req.url.includes('$WEBAPIS/')) { res.setHeader('Content-Type','text/javascript'); res.end('// No Samsung AVPlay in desktop Chromium.'); return; }
   const file = path.resolve(appRoot, '.' + new URL(req.url,'http://localhost').pathname);
@@ -76,7 +78,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.4.4');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.0');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -177,6 +179,41 @@ try {
   await browser.evaluate('__xuper.show("home");XuperNativeTransport.request=async function(){return null};__xuper.show("player")');
   await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
   assert.deepEqual(browser.errors,[]);
+  await browser.evaluate('__xuper.show("home");XuperStandalone.core.getLiveCategories=function(cb){cb(null,[])};XuperGuide.open();for(var i=0;i<15;i++)XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('!!document.querySelector(".xt-keyboard")');
+  await browser.evaluate('for(var i=0;i<5;i++)XuperGuide.handle({keyCode:40});for(var i=0;i<4;i++)XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13})');
+  assert.equal(await browser.evaluate('document.querySelector(".xt-keyboard button").textContent'),'Q');
+  await browser.evaluate('XuperGuide.handle({keyCode:13});for(var i=0;i<5;i++)XuperGuide.handle({keyCode:38});for(var i=0;i<4;i++)XuperGuide.handle({keyCode:37})');
+  await browser.evaluate('var listUrl='+JSON.stringify(`http://127.0.0.1:${server.address().port}/addon-fixture.m3u`)+';for(var c of listUrl)XuperGuide.handle({keyCode:0,key:c});for(var i=0;i<5;i++)XuperGuide.handle({keyCode:40});for(var i=0;i<3;i++)XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('document.querySelector(".xt-guide-count").textContent.startsWith("1 canales")');
+  assert.equal(await browser.evaluate('JSON.parse(localStorage.getItem("xuper.m3uLists")).length'),1);
+  await browser.evaluate('XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('document.querySelector("#xt-guide video").currentTime>0.5',180);
+  await browser.evaluate('XuperGuide.handle({keyCode:403});XuperGuide.handle({keyCode:37});for(var i=0;i<14;i++)XuperGuide.handle({keyCode:38});XuperGuide.handle({keyCode:13});XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('document.querySelector("#xt-guide video").currentTime>0.5',180);
+  assert.ok(await browser.evaluate('Object.values(JSON.parse(localStorage.getItem("xuper.guideFavorites"))).some(row=>row.streamUrl&&row.streamUrl.includes("/public/"))'));
+  await browser.evaluate('XuperGuide.handle({keyCode:406})');
+  await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
+  await browser.evaluate('__xuper.show("home");window.refreshCalls=0;XuperStandalone.core.getLiveChannels=function(c,p,s,cb){cb(null,[{channelCode:"renew-fixture",name:"Renovación 404"}],false)};XuperStandalone.core.resolveLive=function(code,cb,options){if(options&&options.force)refreshCalls++;cb(null,{url:' + JSON.stringify(streamUrl.replace('/live.m3u8','/public/live.m3u8')) + '.replace("/public/live.m3u8",options&&options.force?"/public/live.m3u8":"/public/expired.m3u8"),mime:"application/vnd.apple.mpegurl",headers:{}})};XuperGuide.open();XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('XuperGuide.diagnostics().sourceRefreshes===1&&document.querySelector("#xt-guide video").currentTime>0.5',180);
+  assert.equal(await browser.evaluate('refreshCalls'),1);
+  await browser.evaluate('XuperGuide.close();XuperStandalone.core.resolveLive=function(code,cb,options){if(options&&options.force)refreshCalls++;cb(null,{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/public/expired.m3u8'))+',mime:"application/vnd.apple.mpegurl",headers:{}})};refreshCalls=0;XuperGuide.open();XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('XuperGuide.diagnostics().sourceRefreshes===1&&!!XuperGuide.diagnostics().error',180);
+  assert.equal(await browser.evaluate('refreshCalls'),1);
+  assert.equal(await browser.evaluate('XuperGuide.diagnostics().httpStatus'),404);
+  await browser.evaluate('XuperGuide.close()');
+  assert.deepEqual(browser.errors,[]);
+  await browser.evaluate('XuperGuide.open();for(var i=0;i<15;i++)XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:13})');
+  await browser.waitFor('document.querySelector(".xt-guide-count").textContent.startsWith("1 canales")');
+  const playlistReads=appRequests.filter(url=>url==='/addon-fixture.m3u').length;
+  assert.equal(playlistReads,1);
+  await browser.evaluate('XuperGuide.handle({keyCode:405})');
+  await browser.waitFor('document.querySelector(".xt-guide-count").textContent.startsWith("1 canales")');
+  assert.equal(appRequests.filter(url=>url==='/addon-fixture.m3u').length,2);
+  await browser.evaluate('XuperGuide.handle({keyCode:37});XuperGuide.handle({keyCode:403});XuperGuide.close()');
+  assert.equal(await browser.evaluate('JSON.parse(localStorage.getItem("xuper.m3uLists")).length'),0);
+  assert.equal(await browser.evaluate('(localStorage.getItem("xuper.searchHistory")||"").includes("addon-fixture")'),false);
+  console.log('PASS: custom M3U URL via D-Pad keyboard, worker fetch/parse, playback, favorite, fullscreen; expired portal 404 renews once, permanent 404 remains an error.');
   console.log('PASS: worker, IndexedDB, paged catalog, three-column guide, QWERTY; autonomous startup without pairing/RPC; real HLS.js decodes AES-128 H.264/AAC via cross-origin authorized manifest+segments+key; pause/resume, channel change, teardown, UI and branding. Provider catalog mocked; not a real channel or Samsung test.');
 } catch(error) {
   console.error('Unexpected fixture requests:',seen.filter(request=>request.auth!=='local-test'||request.license!=='local-license').map(request=>request.path));

@@ -872,7 +872,7 @@
       {
         id: "addons",
         label: "Agregar Addons",
-        desc: "Anime, Cine, Novelas y TDT",
+        desc: "13 listas M3U y URL personalizada",
         group: "Contenido",
       },
       {
@@ -2870,6 +2870,7 @@
     );
   }
   function sa() {
+    if(window.XuperGuide){window.XuperGuide.openAddons();return;}
     Ht = !0;
     var e = t("dialog-addons");
     if (e) {

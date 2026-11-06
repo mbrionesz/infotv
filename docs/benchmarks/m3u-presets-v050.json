@@ -1,0 +1,98 @@
+{
+  "checkedAt": "2026-11-06T21:00:11.740652+00:00",
+  "playlistAvailabilityOnly": true,
+  "channelPlaybackVerified": false,
+  "results": [
+    {
+      "name": "M3U · Chile",
+      "url": "https://iptv-org.github.io/iptv/countries/cl.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 211
+    },
+    {
+      "name": "M3U · Argentina",
+      "url": "https://iptv-org.github.io/iptv/countries/ar.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 217
+    },
+    {
+      "name": "M3U · Colombia",
+      "url": "https://iptv-org.github.io/iptv/countries/co.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 162
+    },
+    {
+      "name": "M3U · México",
+      "url": "https://iptv-org.github.io/iptv/countries/mx.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 178
+    },
+    {
+      "name": "M3U · Perú",
+      "url": "https://iptv-org.github.io/iptv/countries/pe.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 207
+    },
+    {
+      "name": "M3U · Uruguay",
+      "url": "https://iptv-org.github.io/iptv/countries/uy.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 52
+    },
+    {
+      "name": "M3U · España",
+      "url": "https://iptv-org.github.io/iptv/countries/es.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 325
+    },
+    {
+      "name": "M3U · En español",
+      "url": "https://iptv-org.github.io/iptv/languages/spa.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 2401
+    },
+    {
+      "name": "M3U · Deportes",
+      "url": "https://iptv-org.github.io/iptv/categories/sports.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 477
+    },
+    {
+      "name": "M3U · Cine",
+      "url": "https://iptv-org.github.io/iptv/categories/movies.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 769
+    },
+    {
+      "name": "M3U · Noticias",
+      "url": "https://iptv-org.github.io/iptv/categories/news.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 1050
+    },
+    {
+      "name": "M3U · Música",
+      "url": "https://iptv-org.github.io/iptv/categories/music.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 781
+    },
+    {
+      "name": "M3U · Infantil",
+      "url": "https://iptv-org.github.io/iptv/categories/kids.m3u",
+      "httpStatus": 200,
+      "m3u": true,
+      "entries": 435
+    }
+  ]
+}
