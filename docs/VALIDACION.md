@@ -1,3 +1,10 @@
+# Validación actual — 0.4.2
+
+28 pruebas y HLS real local aprobados. Fotos de la TV con 0.4.1: lista cargada,
+respuestas DoH y timeout cURL 28; reproducción detenida antes del manifiesto.
+La 0.4.2 cambia conexión por IP y aislamiento de fallos; su resultado en TV está
+pendiente. [Detalle](DNS-INTEGRADO.md). Lo siguiente es historial de versiones.
+
 # Validación actual — 0.4.0 alpha.1
 
 22 pruebas aprobadas, más integración Chromium. El transporte de sockets/DoH

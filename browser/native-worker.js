@@ -26,8 +26,8 @@ self.onmessage=event=>{
    api.HEAPU8.set(bytes,ptr);
    status=api.cwrap('net_request','number',['string','string','string','number','number','string','number','string','number'])(options.url,options.method||'GET',options.headers||'',ptr,bytes.length,options.host,options.port,options.ip||'',options.timeout||12000);
   }finally{api._free(ptr);}
-  if(status<0){self.postMessage({id,error:'Fallo HTTP/TLS nativo',nativeCode:-status-1});return;}
+  if(status<0){self.postMessage({id,error:'Fallo HTTP/TLS nativo',nativeCode:-status-1,metrics:JSON.parse(api.UTF8ToString(api._net_metrics()))});return;}
   const body=api.HEAPU8.slice(api._net_body(),api._net_body()+api._net_size()).buffer;
-  self.postMessage({id,result:{status,body,headers:api.UTF8ToString(api._net_headers())}},[body]);
+  self.postMessage({id,result:{status,body,headers:api.UTF8ToString(api._net_headers()),metrics:JSON.parse(api.UTF8ToString(api._net_metrics()))}},[body]);
  }catch(error){self.postMessage({id,error:String(error.message||'Fallo del transporte')});}
 };

@@ -1,3 +1,36 @@
+# Estado actual — 0.4.2 experimental
+
+Las fotos del Samsung con 0.4.1 confirman respuesta DoH y errores nativos cURL 28
+en hosts del portal. La reproducción falla en `manifest`, HTTP 0 y timeout tras
+varios CDN. Eso localiza el fallo antes de la decodificación, pero no identifica
+por sí solo bloqueo DNS, IP, SNI, certificado o servidor.
+
+La 0.4.2 utiliza **CURLOPT_CONNECT_TO para HTTP/HTTPS y DoH**, conservando Host/SNI,
+TLS verificado y TLS 1.2 mínimo. Sustituye la ruta CURLOPT_RESOLVE del prototipo.
+El parser conserva hasta ocho IPv4 públicas alternativas de la primera respuesta
+DoH válida; el broker prueba hasta dos con presupuesto total de 12 s o el plazo
+menor de la solicitud. Se rechazan direcciones nulas/privadas y se respeta el TTL
+hasta un máximo de 10 min. Los seis resolutores y su carrera de 5 s permanecen.
+
+Un fallo nativo de POST del portal activa recuperación XHR para las peticiones
+del portal durante la sesión. **No suspende el transporte GET de HLS de otros
+orígenes.** Fallar un origen de vídeo activa XHR para ese origen; otros CDN pueden
+seguir conectando por IP segura. Si todos los workers fallan, queda XHR. Cada ruta
+XHR utiliza DNS del TV; no se presenta como bypass DNS activo.
+
+Diagnóstico añade `scheme`, `port`, `attempts`, respuesta/código y `metrics`:
+`tcp-connect`, `tls-handshake`, `http-wait` o `http-response`. Incluye tiempos de
+lookup/conexión/TLS/primer byte/total. Los tiempos no contienen tokens o rutas.
+`tlsVerified:false` junto a timeout no demuestra un certificado incorrecto.
+
+28 pruebas y la integración HLS local aprobadas. El código C++ se ensaya con
+libcurl/OpenSSL del host para verificar IP, Host/SNI y certificado; no sustituye
+la prueba del binario Samsung en hardware. La 0.4.2 aún requiere esa prueba.
+El SDK sigue usando cURL 7.68.0/OpenSSL 1.1.1w, ramas antiguas sin mantenimiento
+actual: es experimental, pendiente de modernización y auditoría.
+
+El contenido siguiente documenta las entregas anteriores y sus limitaciones.
+
 # Corrección 0.4.1
 
 El usuario confirmó que la 0.4.0, instalada en su Samsung, deja de cargar y muestra

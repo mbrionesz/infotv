@@ -20,7 +20,7 @@ for(const name of ['crypto.py','ssl.py']){
 const output=path.join(root,'app/vendor/native');mkdirSync(output,{recursive:true});
 const env={...process.env,EM_CONFIG:path.join(sdk,'.emscripten'),EM_CACHE:process.env.EM_CACHE||path.join(sdk,'.cache'),EM_PORTS:process.env.EM_PORTS||path.join(sdk,'.ports')};
 if(upgraded)for(const name of ['libcrypto.bc','libssl.bc','libcurl.bc']){const file=path.join(env.EM_CACHE,'asmjs',name);if(existsSync(file))unlinkSync(file);}
-const functions=['net_probe','net_init','net_request','net_doh','net_error','net_body','net_size','net_headers','net_report','malloc','free'].map(name=>'_'+name);
+const functions=['net_probe','net_init','net_request','net_doh','net_error','net_body','net_size','net_headers','net_report','net_metrics','malloc','free'].map(name=>'_'+name);
 execFileSync(path.join(sdk,'fastcomp/emscripten/em++'),['native/transport.cpp','-std=c++14','-Os','-s','WASM=1','-s','ENVIRONMENT_MAY_BE_TIZEN=1','-s','USE_CURL=1','-s','MODULARIZE=1','-s','EXPORT_NAME=XuperNative','-s','NO_EXIT_RUNTIME=1','-s','ALLOW_MEMORY_GROWTH=1','-s','TOTAL_MEMORY=33554432','-s','EXPORTED_FUNCTIONS='+JSON.stringify(functions),'-s','EXTRA_EXPORTED_RUNTIME_METHODS=["cwrap","UTF8ToString"]','--preload-file','native/cacert.pem@/cacert.pem','-o','app/vendor/native/transport.js'],{cwd:root,env,stdio:'inherit'});
 copyFileSync(path.join(sdk,'LICENSE'),path.join(output,'Emscripten-LICENSE.txt'));
 copyFileSync(path.join(env.EM_PORTS,'crypto/openssl-1.1.1w/LICENSE'),path.join(output,'OpenSSL-LICENSE.txt'));
