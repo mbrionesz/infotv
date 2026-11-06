@@ -1,0 +1,33 @@
+.xt-panel{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:220;background:#0b1423;color:#e9f4f7;padding:38px 40px;font-family:'Segoe UI',Arial,sans-serif}
+.xt-panel header{height:130px;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid #253c4c;margin-bottom:22px}
+.xt-eyebrow{font-size:13px;letter-spacing:3px;color:#85efd1}
+.xt-panel h1{font-size:38px;font-weight:500;margin:10px 0}.xt-panel header p{font-size:16px;color:#85efd1}
+.xt-panel button,.xt-panel select{font-family:inherit;color:#adbfcd;border:1px solid #30485d;border-radius:10px;background:#142538;padding:12px 17px;font-size:20px;text-align:left}
+.xt-panel button.selected,.xt-panel select.selected{background:#254d48;border-color:#85efd1;outline:2px solid #85efd1;color:#fff}
+.xt-panel button:disabled,.xt-panel select:disabled{opacity:.4}
+.xt-panel footer{position:absolute;left:40px;bottom:22px;right:40px;min-height:45px;border-top:1px solid #30485d;padding-top:17px;color:#8fa7bb;font-size:16px}
+.xt-guide-query{margin-top:20px;min-width:270px}
+.xt-guide-columns{display:flex;height:780px}
+.xt-guide-columns>section{position:relative;border:1px solid #233b4d;padding:18px;border-radius:16px;overflow:hidden}
+.xt-guide-columns>section+section{margin-left:20px}
+.xt-guide-columns>section:nth-child(1){width:250px;flex-shrink:0}.xt-guide-columns>section:nth-child(2){width:430px;flex-shrink:0}
+.xt-guide-preview{flex:1;min-width:0;background:#0c1a2c}
+.xt-guide-columns h2{font-size:24px;font-weight:500;margin:0 0 19px}.xt-guide-count{display:block;font-size:13px;color:#91adbc;margin-top:8px}
+.xt-guide-categories button,.xt-guide-channels button{display:block;width:100%;height:51px;margin-bottom:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:19px}
+.xt-guide-channels button.playing{border-left:5px solid #85efd1}
+#xt-guide[data-column="0"] .xt-guide-columns>section:nth-child(1),#xt-guide[data-column="1"] .xt-guide-columns>section:nth-child(2),#xt-guide[data-column="2"] .xt-guide-preview{border-color:#85efd1}
+.xt-guide-preview video{width:100%;height:535px;background:#000;object-fit:contain}
+.xt-guide-preview .xt-guide-title{margin-top:20px;margin-bottom:9px;font-size:30px}.xt-guide-info{color:#8fa7bb;font-size:18px}
+.xt-guide-actions{margin:18px 0}.xt-guide-actions button+button{margin-left:12px}.xt-guide-status{color:#b8d8d6;font-size:18px;line-height:27px;max-height:82px;overflow:hidden}
+.xt-keyboard{position:absolute;left:370px;top:90px;width:1180px;z-index:400;border-radius:24px;padding:35px;background:#102539;border:2px solid #4f9c8c;box-shadow:0 0 0 900px rgba(0,0,0,.75);font-family:'Segoe UI',Arial,sans-serif}
+.xt-keyboard h2{font-size:31px;font-weight:500}.xt-keyboard-value{padding:20px;margin:20px 0;border-radius:10px;background:#081523;color:#e4fff7;font-size:28px;min-height:76px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.xt-keyboard-row{display:flex;justify-content:center;margin-bottom:10px}.xt-keyboard-row button{min-width:82px;height:66px;margin:0 5px;padding:10px 15px;border-radius:8px;border:1px solid #345366;background:#182f44;color:#bed5df;font-size:25px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.xt-keyboard-row button.selected{background:#85efd1;color:#092d28;outline:2px solid #b9ffeb}.xt-keyboard-row:last-child button{max-width:260px}.xt-keyboard p{font-size:16px;color:#8fa7bb;margin-top:18px}
+.xt-catalog-filters{display:flex;margin-bottom:15px}.xt-catalog-filters select{width:230px;margin-right:16px;font-size:18px}.xt-catalog-status{font-size:18px;color:#94b5c2;margin-bottom:12px;height:30px}
+.xt-catalog-grid{position:relative;display:flex;flex-wrap:wrap;align-content:flex-start;height:650px;overflow-y:auto;padding:8px 0;scrollbar-width:none}.xt-catalog-grid::-webkit-scrollbar{display:none}
+.xt-catalog-card{width:calc(16.666% - 18px);height:290px;margin:0 9px 18px;padding:8px!important;overflow:hidden;flex-shrink:0}.xt-catalog-card img{width:100%;height:200px;object-fit:cover;border-radius:6px;background:#1c3b47}.xt-catalog-card strong{display:block;margin:10px 4px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:19px;font-weight:500}.xt-catalog-card small{display:block;font-size:14px;color:#8fa7bb;margin-left:4px;white-space:nowrap;overflow:hidden}
+#xt-catalog footer{display:flex;align-items:center}#xt-catalog footer button{font-size:17px;margin-right:15px}#xt-catalog footer span{margin-left:auto}
+.xt-diagnostics{position:absolute;left:120px;top:65px;width:1680px;max-height:950px;z-index:500;padding:35px;border:1px solid #85efd1;border-radius:18px;background:#0d2032;box-shadow:0 0 0 900px rgba(0,0,0,.8);color:#e7fcf4;font-family:'Segoe UI',Arial,sans-serif}
+.xt-diagnostics h1{font-size:32px}.xt-diagnostics p{font-size:18px;color:#aac4cd;margin:15px 0}.xt-diagnostics pre{font:20px/1.4 monospace;max-height:640px;overflow:auto;white-space:pre-wrap;overflow-wrap:break-word}.xt-diagnostics button{font-size:23px;background:#85efd1;color:#092a29;border:0;border-radius:8px;padding:13px 25px;margin-top:15px}
+/* Fixed geometry and solid focus colors avoid layout/animation churn on TVs. */
+.poster.is-focused,.bento.is-focused{transform:none!important;transition:none!important}.home-page{transition:none!important}

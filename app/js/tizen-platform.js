@@ -15,6 +15,7 @@
   };
   var previous = 0;
   document.addEventListener('keydown', function (event) {
+    if(window.XuperStandalone&&window.XuperStandalone.handleRemote(event)){event.preventDefault();event.stopImmediatePropagation();return;}
     if (event.keyCode === 10009) {
       event.preventDefault(); event.stopImmediatePropagation();
       if (window.__xuper) window.__xuper.key(461);
@@ -27,7 +28,7 @@
     if (event.keyCode === 10009) { event.preventDefault(); event.stopImmediatePropagation(); }
   }, true);
   try {
-    ['MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop', 'MediaRewind', 'MediaFastForward'].forEach(function (key) {
+    ['MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop', 'MediaRewind', 'MediaFastForward','ChannelUp','ChannelDown','ColorF0Red','ColorF1Green','ColorF2Yellow','ColorF3Blue'].forEach(function (key) {
       try { tizen.tvinputdevice.registerKey(key); } catch (_) {}
     });
   } catch (_) {}

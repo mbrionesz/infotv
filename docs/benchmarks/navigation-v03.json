@@ -1,0 +1,10 @@
+{
+  "cpuThrottle": 6,
+  "simulatedChannels": 2000,
+  "domNodes": 543,
+  "homeChannelRows": 24,
+  "handlerP50Ms": 3,
+  "handlerP95Ms": 10.399999999441206,
+  "nextFrameP95Ms": 17.800000000745058,
+  "guideRows": 12
+}

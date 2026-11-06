@@ -5,10 +5,11 @@ on:
       tag:
         description: Prepared alpha release
         required: true
-        default: v0.2.0-alpha.1
+        default: v0.3.0-alpha.1
         type: choice
         options:
           - v0.2.0-alpha.1
+          - v0.3.0-alpha.1
 permissions:
   contents: write
 jobs:
@@ -31,8 +32,8 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           assets=(
-            dist/XuperTizen-0.2.0-alpha-Tizen4plus-UNSIGNED.wgt
-            dist/XuperTizen-0.2.0-source.zip
+            dist/XuperTizen-*-alpha-Tizen4plus-UNSIGNED.wgt
+            dist/XuperTizen-*-source.zip
             dist/SHA256SUMS.json
             dist/release-info.json
           )
@@ -41,6 +42,6 @@ jobs:
             gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease
           else
             gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-              --verify-tag --prerelease --title "XuperTizen 0.2.0 alpha — Tizen 4.0+" \
-              --notes-file docs/RELEASE-0.2.0-alpha.1.md "${assets[@]}"
+              --verify-tag --prerelease --title "XuperTizen ${RELEASE_TAG#v} — Tizen 4.0+" \
+              --notes-file "docs/RELEASE-${RELEASE_TAG#v}.md" "${assets[@]}"
           fi

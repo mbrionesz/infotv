@@ -1,21 +1,28 @@
 import Hls from 'hls.js';
+import {probeManifest,httpsAlternative} from './stream-probe.js';
+export function toAvDisplayRect(rect,width=1920,height=1080){
+  const x=Math.max(0,Math.min(1919,Math.round(rect.left*1920/width)));
+  const y=Math.max(0,Math.min(1079,Math.round(rect.top*1080/height)));
+  return [x,y,Math.max(1,Math.min(1920-x,Math.round(rect.width*1920/width))),Math.max(1,Math.min(1080-y,Math.round(rect.height*1080/height)))];
+}
 
 export function createPlayer(getStream) {
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
-  let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null;
-  let restored = null, playingListener = null;
-  const diagnostics = { engine: '', error: '', recoveries: 0, hlsVersion: Hls.version };
+  let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null;
+  let restored = null, playingListener = null, probe=null;
+  const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
-    ++serial; clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
+    ++serial; clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
     if (video && playingListener) video.removeEventListener('playing', playingListener);
     playingListener = null;
+    if(probe){probe.cancel();probe=null;}
     if (hls) { hls.destroy(); hls = null; }
     if (av) { try { av.stop(); av.close(); } catch (_) {} av = null; }
     if (avObject) { avObject.remove(); avObject = null; }
     if (restored) { restored(); restored = null; }
     if (video) { try { video.pause(); video.removeAttribute('src'); video.load(); } catch (_) {} }
-    engine = ''; diagnostics.engine = ''; paused = true; ready = started = false;
+    engine = ''; diagnostics.engine = '';diagnostics.stage='idle'; paused = true; ready = started = false;
   }
   function capabilities() {
     const v = document.createElement('video');
@@ -27,29 +34,56 @@ export function createPlayer(getStream) {
   }
   function open(element, source, options) {
     stop(); video = element; url = source;
-    const run = serial;
+    const run = serial;let playbackSource=source,httpsTried=false;
     const stream = getStream(source) || {};
     const headers = stream.headers || {};
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';
+    diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
-      diagnostics.error = message; stop(); options.onError(message);
+      const failedStage=diagnostics.stage;diagnostics.error = message; stop();diagnostics.stage=failedStage; options.onError(message);
     };
-    const onPlaying = () => { if (serial !== run) return; started = ready = true; paused = false; clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
+    const onPlaying = () => { if (serial !== run) return; started = ready = true; paused = false;diagnostics.stage='playing'; clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
     playingListener = onPlaying;
-    video.addEventListener('playing', onPlaying, { once: true });
+    video.addEventListener('playing', onPlaying);
     // HLS.js owns recovery. Do not invoke the inherited webOS/FFmpeg retry path.
-    video.onerror = () => { if (engine !== 'hls.js') fail('Formato de vídeo o audio no compatible con este televisor.'); };
+    video.onerror = () => { if (engine === 'html5') fail('Formato de vídeo o audio no compatible con este televisor.'); };
     function arm() {
-      deadline = setTimeout(() => { if (!started && serial === run) fail('La señal no inició en 20 segundos. Revisa conexión, autorización y compatibilidad del canal.'); }, 20000);
+      clearTimeout(deadline);
+      deadline = setTimeout(() => { if (!started && serial === run) fail('La señal no inició: etapa '+diagnostics.stage+(diagnostics.httpStatus?' · HTTP '+diagnostics.httpStatus:'')+'. Abre Diagnóstico con el botón azul.'); }, 20000);
     }
-    function useHls() {
+    function retryHttps(){
+      const alternative=!httpsTried&&httpsAlternative(playbackSource);
+      if(!alternative)return false;
+      httpsTried=true;playbackSource=alternative;diagnostics.transport='https';diagnostics.httpsFallback=true;
+      if(hls){hls.destroy();hls=null;}clearTimeout(deadline);started=ready=false;
+      useHls();return true;
+    }
+    function useHls(verified=false) {
       if (serial !== run) return;
       if (!Hls.isSupported()) return fail('Este televisor no dispone de MediaSource compatible para este canal con autorización.');
+      if(custom.length&&!verified){
+        engine=diagnostics.engine='hls.js';diagnostics.stage='manifest';
+        probe=probeManifest(playbackSource,headers);
+        probe.promise.then(result=>{if(serial!==run)return;probe=null;diagnostics.httpStatus=result.status;useHls(true);},error=>{
+          if(serial!==run)return;probe=null;diagnostics.httpStatus=error.status||0;diagnostics.detail=error.kind||'';
+          if(['network-or-cors','timeout','http','invalid-playlist'].includes(error.kind)&&retryHttps())return;
+          fail(error.message);
+        });return;
+      }
       engine = diagnostics.engine = 'hls.js';
-      hls = new Hls({ enableWorker: true, lowLatencyMode: false, backBufferLength: 15,
+      diagnostics.stage='manifest';diagnostics.worker=!/Tizen|SMART-TV|SmartTV/i.test(navigator.userAgent);
+      const Loader=Hls.DefaultConfig.loader;
+      const useHttps=diagnostics.httpsFallback;
+      class SourceLoader extends Loader{
+        load(context,config,callbacks){
+          if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
+          return super.load(context,config,callbacks);
+        }
+      }
+      hls = new Hls({loader:SourceLoader, enableWorker: diagnostics.worker, lowLatencyMode: false, backBufferLength: 10,
         maxBufferLength: 20, maxMaxBufferLength: 40, maxBufferSize: 24 * 1000 * 1000,
         liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 7, capLevelToPlayerSize: true,
         startLevel: -1, fragLoadingMaxRetry: 2, manifestLoadingMaxRetry: 2, levelLoadingMaxRetry: 2,
@@ -59,14 +93,19 @@ export function createPlayer(getStream) {
           });
         }
       });
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run) hls.loadSource(source); });
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run) hls.loadSource(playbackSource); });
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (serial !== run) return;
+        diagnostics.stage='segments';
         const promise = video.play();
         if (promise && promise.catch) promise.catch(() => { if (serial === run) options.onError('Pulsa OK para iniciar el vídeo.'); });
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
+        if(serial!==run)return;
+        diagnostics.detail=String(data.details||'').slice(0,70);
+        diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;
         if (!data.fatal || serial !== run) return;
+        if(data.type===Hls.ErrorTypes.NETWORK_ERROR&&retryHttps())return;
         if (data.type === Hls.ErrorTypes.MEDIA_ERROR && diagnostics.recoveries < 1) {
           diagnostics.recoveries++; hls.recoverMediaError();
         } else {
@@ -74,6 +113,8 @@ export function createPlayer(getStream) {
           fail('No se pudo reproducir HLS' + (status ? ' (HTTP ' + status + ')' : '') + '. Puede faltar autorización, CORS o soporte de audio/vídeo.');
         }
       });
+      hls.on(Hls.Events.FRAG_LOADING,()=>{if(serial===run&&!started)diagnostics.stage='segments';});
+      hls.on(Hls.Events.FRAG_LOADED,()=>{if(serial===run&&!started)diagnostics.stage='decoder';});
       hls.attachMedia(video); arm();
     }
     function native() {
@@ -84,7 +125,7 @@ export function createPlayer(getStream) {
       arm();
     }
     function avplay() {
-      engine = diagnostics.engine = 'avplay';
+      engine = diagnostics.engine = 'avplay';diagnostics.stage='native-prepare';
       av = webapis.avplay;
       avObject = document.createElement('object'); avObject.type = 'application/avplayer';
       avObject.style.cssText = 'position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;z-index:0';
@@ -108,6 +149,7 @@ export function createPlayer(getStream) {
       video.pause = () => { if (av && ready) { av.pause(); paused = true; emit('pause'); } };
       function fallback() {
         if (serial !== run || engine !== 'avplay') return;
+        clearTimeout(nativeTimer);started=ready=false;paused=true;
         try { av.stop(); av.close(); } catch (_) {} av = null;
         avObject.remove(); avObject = null; restored(); restored = null; clearTimeout(deadline);
         if (Object.keys(headers).some(key => /^cookie$/i.test(key))) return fail('AVPlay no pudo abrir esta señal con su cookie de autorización.');
@@ -126,16 +168,16 @@ export function createPlayer(getStream) {
           } catch (_) {} // Older firmwares retain their documented defaults.
         }
         const rect = video.getBoundingClientRect();
-        av.setDisplayRect(Math.round(rect.left), Math.round(rect.top), Math.round(rect.width), Math.round(rect.height));
+        av.setDisplayRect(...toAvDisplayRect(rect,window.innerWidth||1920,window.innerHeight||1080));
         av.setDisplayMethod('PLAYER_DISPLAY_MODE_LETTER_BOX');
         av.setListener({ onbufferingstart: () => emit('waiting'), onbufferingcomplete: () => emit('canplay'),
           oncurrentplaytime: ms => { currentTime = ms / 1000; emit('timeupdate'); },
           onstreamcompleted: () => { paused = true; emit('ended'); }, onerror: fallback });
         av.prepareAsync(() => {
           if (serial !== run || !av) return;
-          ready = true; emit('loadedmetadata'); emit('loadeddata'); av.play(); paused = false; emit('play'); emit('playing');
+          clearTimeout(nativeTimer);ready = true; emit('loadedmetadata'); emit('loadeddata'); av.play(); paused = false; emit('play'); emit('playing');
         }, fallback);
-        arm();
+        nativeTimer=setTimeout(function(){diagnostics.detail='avplay-prepare-timeout';fallback();},8000);arm();
       } catch (_) { fallback(); }
     }
     // AVPlay only receives headers its documented API can actually represent.

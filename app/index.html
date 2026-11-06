@@ -93,6 +93,7 @@ if (!Array.prototype.findIndex) {
 </script>
 <link rel="stylesheet" href="css/tizen.css">
 <link rel="stylesheet" href="css/modern.css">
+<link rel="stylesheet" href="css/discovery.css">
 </head>
 <body>
 <div id="app">
@@ -103,7 +104,7 @@ if (!Array.prototype.findIndex) {
        ============================================================ -->
   <section id="screen-welcome" class="screen is-active">
     <div class="welcome-name">InfoTV Samsung</div>
-    <div class="welcome-version">v0.2.0 · alpha</div>
+    <div class="welcome-version">v0.3.0 · alpha</div>
     <div class="welcome-loading"><img id="welcome-loading-img" alt="" src="assets/original/welcome/img_welcome_loading1.png"></div>
     <div class="welcome-free">100% GRATIS · Prohibida su venta · Grupo oficial: t.me/+9f4I_N2BqddkZGYx</div>
   </section>
@@ -395,7 +396,7 @@ if (!Array.prototype.findIndex) {
 
 <!-- Real Magis portal catalog snapshot (anonymous session, generated at
      build time). Provides an instant first paint with the real catalog. -->
-<script src="data/portal.js"></script>
+<!-- Catalog is requested on demand in a worker; no 500KB startup snapshot. -->
 <!-- Bundled sample catalog (open movies). Replace it or point
      config/api.js at an authorized backend to load your own VOD catalog. -->
 <script src="data/catalog.js"></script>

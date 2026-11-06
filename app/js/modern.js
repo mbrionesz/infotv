@@ -44,6 +44,7 @@
       var grid = element('div', 'modern-quick-grid');
       var definitions = [
         [icons.search, 'Encuentra tu canal', 'Busca por nombre, sin perderte.', function () {
+          if(window.XuperGuide){window.XuperGuide.open();return;}
           __xuper.show('player'); __xuper.key(37);
           var search = document.querySelector('.pc-search');
           if (search && search._activate) search._activate();
@@ -64,6 +65,9 @@
         grid.appendChild(card);
       });
       quick.appendChild(grid); page.appendChild(quick);
+      if(window.XuperGuide){
+        var liveTarget=page.querySelector('.live-focus');if(liveTarget)liveTarget._activate=function(){window.XuperGuide.open();};
+      }
       var menuLabels = ['TV en vivo', 'Destacados', 'Películas', 'Series', 'Kids', 'Anime', 'Novelas', 'Explorar', 'Historial'];
       home.querySelectorAll('.tab-item .tab-title').forEach(function (title, index) {
         title.textContent = menuLabels[index] || title.textContent;
@@ -85,6 +89,7 @@
         glyph.style.backgroundImage = 'none'; glyph.innerHTML = item[1];
         control.setAttribute('aria-label', item[2]);
         if (item[0] === 'filter') control._activate = definitions[0][3];
+        if(item[0]==='search'&&window.XuperCatalog)control._activate=function(){window.XuperCatalog.open('movies');window.XuperCatalog.search();};
       });
     }
     decorate();

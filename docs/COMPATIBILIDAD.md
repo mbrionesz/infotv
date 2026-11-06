@@ -1,8 +1,8 @@
-# Compatibilidad de vídeo y audio: primera alfa
+# Compatibilidad de vídeo y audio: 0.3 alpha
 
 El mínimo del manifiesto es Tizen 4.0 y no se fija un máximo. Esto permite
 intentar instalar el mismo WGT en 4–9+, pero no acredita todos los modelos.
-La TV debe ser Tizen: no se soporta Orsay. El QN70F sigue pendiente de prueba.
+La TV debe ser Tizen: no se soporta Orsay. La 0.2 cargó listas pero no reprodujo en el QN70F del usuario; la 0.3 está pendiente de prueba.
 
 | Elemento | Ruta implementada | Límite |
 |---|---|---|

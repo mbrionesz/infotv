@@ -36,6 +36,9 @@ mkdirSync(path.join(root, 'app/vendor'), { recursive: true });
 await build({ entryPoints: [path.join(root, 'browser/standalone.js')], outfile: path.join(root, 'app/vendor/standalone.js'),
   bundle: true, platform: 'browser', format: 'iife', target: ['chrome56'], minify: true,
   inject: [path.join(root, 'browser/globals.js')], define: { __dirname: '"/embedded"' }, plugins: [plugin], legalComments: 'eof' });
+await build({ entryPoints: [path.join(root,'browser/core-worker.js')], outfile:path.join(root,'app/vendor/core-worker.js'),
+  bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,
+  banner:{js:'var globalThis = self;'},inject:[path.join(root,'browser/globals.js')],define:{__dirname:'"/embedded"'},plugins:[plugin],legalComments:'eof' });
 for (const [folder, license] of [['hls.js','LICENSE'], ['crypto-js','LICENSE'], ['buffer','LICENSE'], ['base64-js','LICENSE'], ['ieee754','LICENSE']]) {
   copyFileSync(path.join(root, 'node_modules', folder, license), path.join(root, 'app/vendor', folder + '-LICENSE.txt'));
 }
@@ -46,4 +49,4 @@ const sources = ['package.json','package-lock.json','tools/build-standalone.mjs'
   ...readdirSync(path.join(root,'browser')).filter(name=>name.endsWith('.js')).map(name=>'browser/'+name)].sort();
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}
-writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:'0.2.0',minimumTizen:'4.0',target:'chrome56',hlsVersion:'1.6.15',sourceSha256:hash.digest('hex')},null,2)+'\n');
+writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:'0.3.0',minimumTizen:'4.0',target:'chrome56',hlsVersion:'1.6.15',sourceSha256:hash.digest('hex')},null,2)+'\n');

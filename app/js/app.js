@@ -82,13 +82,10 @@
       });
     }
   }
-  (c("Destacado", 5, 1),
-    c("Película", 7, 2),
-    c("Serie", 7, 3),
-    c("Gratis", 5, 4),
-    c("Infantil", 8, 5),
-    c("UHD", 4, 6),
-    c("Extra", 4, 7));
+  if (!window.XuperStandalone) {
+    c("Destacado", 5, 1); c("Película", 7, 2); c("Serie", 7, 3);
+    c("Gratis", 5, 4); c("Infantil", 8, 5); c("UHD", 4, 6); c("Extra", 4, 7);
+  }
   var p = window.XUPERTV_API || {},
     u = /[?&]service=([^&]+)/.exec(window.location.search || "");
   u && (p.devServiceUrl = decodeURIComponent(u[1]));
@@ -1152,7 +1149,7 @@
   }
   function it() {
     for (
-      var e = document.querySelectorAll(".focusable"), t = [], a = 0;
+      var scope = document.getElementById(ji ? "dialog-playsettings" : Ut ? "dialog-update" : zi ? "player-playsetting-view" : X.episodeBrowserOpen ? "player-episodes" : X.categoryPickerOpen ? "player-categories" : "screen-" + X.screen) || document, e = scope.querySelectorAll(".focusable"), t = [], a = 0;
       a < e.length;
       a++
     )
@@ -1958,6 +1955,8 @@
             (r._tab = n),
             (r._activate = (function (e) {
               return function () {
+                if (window.XuperGuide && e === 0) { window.XuperGuide.open(); return; }
+                if (window.XuperCatalog && e > 0 && e < 8) { window.XuperCatalog.open(["", "featured", "movies", "series", "kids", "anime", "series", "featured"][e]); return; }
                 if ("history" === z[e].action)
                   return ((We = "history"), Ha(), void Ua(1, !0));
                 if ((bt(e, !1), 0 === e)) {
@@ -1975,18 +1974,20 @@
               return function (t) {
                 if ("up" === t)
                   return (
-                    e > 0 && Ue[e - 1] && (rt(Ue[e - 1]), bt(e - 1, !1)),
+                    e > 0 && Ue[e - 1] && (rt(Ue[e - 1]), window.XuperStandalone || bt(e - 1, !1)),
                     !0
                   );
                 if ("down" === t)
                   return (
                     e < Ue.length - 1 &&
                       Ue[e + 1] &&
-                      (rt(Ue[e + 1]), bt(e + 1, !1)),
+                      (rt(Ue[e + 1]), window.XuperStandalone || bt(e + 1, !1)),
                     !0
                   );
                 if ("left" === t) return !0;
                 if ("right" === t) {
+                  if (window.XuperGuide && e === 0) { window.XuperGuide.open(); return !0; }
+                  if (window.XuperCatalog && e > 0 && e < 8) { window.XuperCatalog.open(["", "featured", "movies", "series", "kids", "anime", "series", "featured"][e]); return !0; }
                   if ("history" === z[e].action)
                     return ((We = "history"), Ha(), Ua(1, !0), !0);
                   if ((bt(e, !1), 0 === e)) {
@@ -2072,6 +2073,8 @@
     }
   }
   function bt(e, t) {
+    if (window.XuperCatalog && t && e > 0 && e < 8) { window.XuperCatalog.open(["", "featured", "movies", "series", "kids", "anime", "series", "featured"][e]); return; }
+
     var a = z[e];
     if (a && !a.action) {
       var i = z[X.tab] ? z[X.tab].page : a.page;
@@ -2112,7 +2115,7 @@
         ((Ct = null),
           (function () {
             for (
-              var e = document.querySelectorAll("img[data-poster-src]"),
+              var scope = document.getElementById("screen-" + X.screen) || document, e = scope.querySelectorAll("img[data-poster-src]:not([src])"),
                 t = window.innerWidth || 1920,
                 a = window.innerHeight || 1080,
                 i = 0;
@@ -2135,7 +2138,7 @@
               )
                 r.getAttribute("src") ||
                   ((r.style.display = ""),
-                  (r.src = r.getAttribute("data-poster-src")));
+                  (window.XuperStandalone ? window.XuperStandalone.loadPoster(r, r.getAttribute("data-poster-src")) : (r.src = r.getAttribute("data-poster-src"))));
               else if (r.getAttribute("src")) {
                 r.removeAttribute("src");
                 try {
@@ -2408,7 +2411,7 @@
       !(function e() {
         P(
           "liveChannels",
-          { columnId: a, pageNum: n, pageSize: 20 },
+          { columnId: a, pageNum: n, pageSize: 100 },
           function (o, s) {
             if (i === Dt) {
               var l = s && s.channels ? s.channels : [];
@@ -2475,7 +2478,7 @@
                           });
                     })(),
                   t && t(o, s)),
-                !o && s && s.hasMore && l.length)
+                !o && s && s.hasMore && l.length && !window.XuperGuide)
               )
                 return (n++, void setTimeout(e, 25));
               ((At = !1),
@@ -2493,7 +2496,7 @@
   function Qt(t) {
     if (re)
       if ((a(re), (Fe = []), F.length)) {
-        for (var i = 0; i < F.length; i++)
+        for (var i = Math.max(0, X.channel - 8); i < Math.min(F.length, Math.max(0, X.channel - 8) + 24); i++)
           if ((!t || X.liveFavorites[liveChannelKey(F[i])]) && isVisibleLiveChannel(F[i])) {
             var n = e("div", "live-row focusable");
             n._channel = i;
@@ -2519,9 +2522,9 @@
                   return "left" === t
                     ? (ne ? rt(ne) : Ue[0] && rt(Ue[0]), !0)
                     : "up" === t
-                      ? (e > 0 && Fe[e - 1] && rt(Fe[e - 1]), !0)
+                      ? (e > 0 && focusHomeChannel(e - 1), !0)
                       : "down" === t &&
-                        (e < Fe.length - 1 && Fe[e + 1] && rt(Fe[e + 1]), !0);
+                        (e < F.length - 1 && focusHomeChannel(e + 1), !0);
                 };
               })(i)),
               re.appendChild(n),
@@ -2536,6 +2539,12 @@
             Et ? "No se encontraron canales" : "Cargando canales…",
           ),
         );
+  }
+  function focusHomeChannel(index) {
+    Kt(index);
+    var node = Fe.filter(function (item) { return item._channel === index; })[0];
+    if (!node) { Qt(); node = Fe.filter(function (item) { return item._channel === index; })[0]; }
+    node && rt(node);
   }
   function Jt() {
     if (Fe.length) {
@@ -7059,7 +7068,7 @@
       var a = /^(http:\/\/127\.0\.0\.1:\d+)/.exec(gr);
       a && (e = a[1]);
     }
-    if (e)
+    if (e && !window.XuperStandalone)
       try {
         var i = new XMLHttpRequest();
         (i.open("GET", e + "/media/abort", !0), i.send());
@@ -7881,7 +7890,7 @@
       tt && (clearTimeout(tt), (tt = null)),
       (tt = setTimeout(function () {
         vt();
-      }, 4500)),
+      }, window.XuperStandalone ? 250 : 4500)),
       (et = setInterval(function () {
         ++a > 16
           ? vt()

@@ -1,5 +1,8 @@
-import core from '../companion/lib/magis.js';
+import { createCoreClient } from './core-client.js';
+const core = createCoreClient();
 import { createPlayer } from './player.js';
+import {createGuide} from './guide.js';
+import {createCatalog} from './catalog.js';
 const streams = new Map();
 let lastError = '';
 function remember(stream) {
@@ -9,6 +12,8 @@ function remember(stream) {
   return Object.assign({}, stream, { proxyPath: stream.url, isHls: /mpegurl/i.test(stream.mime || '') || /\.m3u8(?:[?#]|$)/i.test(stream.url) });
 }
 window.XuperPlayer = createPlayer(url => streams.get(url));
+window.XuperGuide=createGuide(core);
+window.XuperCatalog=createCatalog(core);
 function request(method, payload, callback) {
   payload = payload || {};
   let finished = false;
@@ -19,8 +24,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.2.0', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.2.0' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.3.0', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.3.0' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('El relay FFmpeg de LG no está disponible en un widget Tizen. Usa reproducción automática.'));
@@ -42,14 +47,48 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return done(null, { version: '0.2.0', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.3.0', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js 1.6.15':'MSE no disponible'}, capabilities:caps,
-        note:'El soporte declarado no confirma reproducción ni acceso al proveedor.' });
+        worker:worker||{error:error&&error.message}, player:window.XuperPlayer.diagnostics,
+        note:'El soporte declarado no confirma reproducción ni acceso al proveedor.' }); });
     }
     done(new Error('Esta función de LG no está disponible en la versión Tizen.'));
   } catch (error) { done(error); }
   return true;
 }
-window.XuperStandalone = { request, core, version: '0.2.0', diagnostics: () => ({ lastError, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { request, core, version: '0.3.0', diagnostics: () => ({ lastError, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+let diagnosticPanel=null;
+window.XuperStandalone.openDiagnostics=function(playback){
+  if(diagnosticPanel)diagnosticPanel.remove();
+  diagnosticPanel=document.createElement('section');diagnosticPanel.className='xt-diagnostics';
+  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.3.0</h1><p>Una foto de esta pantalla permite identificar la etapa del fallo.</p><pre></pre><button>Cerrar · Return</button>';
+  const panel=diagnosticPanel;
+  const safe=Object.assign({},playback||window.XuperPlayer.diagnostics);
+  panel.querySelector('pre').textContent=JSON.stringify({reproductor:safe},null,2);
+  panel.querySelector('button').onclick=()=>{panel.remove();diagnosticPanel=null;};document.getElementById('app').appendChild(panel);
+  core.diagnostics((error,result)=>{if(diagnosticPanel!==panel)return;panel.querySelector('pre').textContent=JSON.stringify({reproductor:safe,datos:error?{error:error.message}:result},null,2);});
+};
+window.XuperStandalone.handleRemote=function(event){
+  const code=event.keyCode;
+  if(diagnosticPanel){if([10009,461,27,13,406].includes(code)){diagnosticPanel.remove();diagnosticPanel=null;}return ![447,448,449].includes(code);}
+  if(window.XuperGuide.handle(event)||window.XuperCatalog.handle(event))return true;
+  if(code===406){window.XuperStandalone.openDiagnostics();return true;}
+  if((code===427||code===428)&&window.__xuper&&__xuper.state.screen==='player'&&__xuper.state.playerMode==='live'){__xuper.key(code===427?38:40);return true;}
+  return false;
+};
+
+const posterURLs=[];
+window.XuperStandalone.loadPoster=function(image,url){
+  if(image.getAttribute('src') || image.dataset.posterPending)return;
+  image.dataset.posterPending='1';
+  core.poster(url,function(error,result){
+    delete image.dataset.posterPending;
+    if(!image.isConnected)return;
+    if(error || !result || !result.blob){image.src=url;return;}
+    const local=URL.createObjectURL(result.blob);posterURLs.push(local);image.src=local;
+    if(posterURLs.length>80)URL.revokeObjectURL(posterURLs.shift());
+  });
+};
+window.addEventListener('pagehide',()=>{window.XuperGuide.close();window.XuperCatalog.close();core.dispose();posterURLs.forEach(url=>URL.revokeObjectURL(url));});

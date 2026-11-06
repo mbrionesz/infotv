@@ -873,6 +873,8 @@ function itemFromAsset(e, r, t) {
     type: s ? "teleplay" : n,
     alias: text(e.alias),
     country: trim(e.originalCountry || e.country),
+    quality: trim(e.quality),
+    resolution: trim(e.resolution || e.videoResolution),
     releaseDate: trim(e.releaseTime || e.releaseDate),
     tagline: trim(e.viewPoint || e.tagline),
     volumeCount:

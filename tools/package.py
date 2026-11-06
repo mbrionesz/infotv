@@ -25,7 +25,7 @@ def build(output=None):
     config = ET.parse(app / 'config.xml').getroot()
     application = config.find('{http://tizen.org/ns/widgets}application')
     assert application.attrib['required_version'] == '4.0'
-    assert config.attrib['version'] == info['version'] == '0.2.0'
+    assert config.attrib['version'] == info['version'] == json.loads((ROOT / 'package.json').read_text())['version']
     version = info['version']
     widget = out / f'XuperTizen-{version}-alpha-Tizen4plus-UNSIGNED.wgt'
     def add(archive, file, name):
@@ -50,7 +50,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': 'alpha', 'minimumTizen': '4.0',
-        'hardwareValidation': 'pending', 'providerValidation': 'pending-region-and-CORS-rejected-in-probes',
+        'hardwareValidation': 'v0.3-pending-on-QN55QN70FAGXZS', 'providerValidation': 'v0.2-channel-list-loaded-on-TV-playback-timeout-v0.3-pending',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion']
     }, indent=2) + '\n')

@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "minimumTizen": "4.0",
   "target": "chrome56",
   "hlsVersion": "1.6.15",
-  "sourceSha256": "ec580a576ba6c1acb240ec7bec481a4bbad7674549a4bd880abf8ac4f5d7db1b"
+  "sourceSha256": "c085941c28dcc5499e088162b1d577a1a1d6db5e158cb69f31e3bbe03335941d"
 }

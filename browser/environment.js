@@ -1,7 +1,7 @@
 export const fs = {
   readFileSync(file) {
     if (/seeds-fallback\.json$/.test(file)) return '[]';
-    const value = localStorage.getItem('infotv.cache.' + file);
+    const value = typeof localStorage === 'undefined' ? null : localStorage.getItem('infotv.cache.' + file);
     if (value === null) throw new Error('ENOENT'); return value;
   },
   writeFileSync(file, value) { try { localStorage.setItem('infotv.cache.' + file, String(value)); } catch (_) {} }

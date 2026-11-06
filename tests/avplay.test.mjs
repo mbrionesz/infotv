@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createPlayer } from '../browser/player.js';
+import { createPlayer,toAvDisplayRect } from '../browser/player.js';
+test('4K application coordinates normalize to the 1920x1080 AVPlay coordinate system',()=>{
+  assert.deepEqual(toAvDisplayRect({left:0,top:0,width:3840,height:2160},3840,2160),[0,0,1920,1080]);
+  assert.deepEqual(toAvDisplayRect({left:1920,top:540,width:1920,height:1080},3840,2160),[960,270,960,540]);
+});
 
 test('AVPlay adapter forwards controls and restores the video after stopping (mocked Samsung API)', async () => {
   const calls = [];
