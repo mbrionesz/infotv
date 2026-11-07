@@ -30,7 +30,8 @@ def build(output=None):
     assert application.attrib['required_version'] == '4.0'
     assert config.attrib['version'] == info['version'] == json.loads((ROOT / 'package.json').read_text())['version']
     version = info['version']
-    widget = out / f'XuperTizen-{version}-alpha-Tizen4plus-UNSIGNED.wgt'
+    channel = "beta"
+    widget = out / f'XuperTizen-{version}-{channel}-Tizen4plus-UNSIGNED.wgt'
     def add(archive, file, name):
         entry = zipfile.ZipInfo(str(name).replace('\\', '/'), (2026, 1, 1, 0, 0, 0))
         entry.compress_type = zipfile.ZIP_DEFLATED
@@ -44,7 +45,7 @@ def build(output=None):
     with zipfile.ZipFile(kit, 'w') as archive:
         for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github']:
             for file in sorted((ROOT / name).rglob('*')):
-                if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult'}:
+                if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult', 'ux-tour-0.6.6', 'ux-redesign', 'ux-usability'}:
                     add(archive, file, Path('XuperTizen') / file.relative_to(ROOT))
         for name in ['README.md', 'LICENSE-UPSTREAM', 'package.json', 'package-lock.json', 'apps2samsung-source.json', '.gitignore', '.gitattributes']:
             add(archive, ROOT / name, Path('XuperTizen') / name)
@@ -52,8 +53,8 @@ def build(output=None):
     sums = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (widget, kit)}
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
-        'name': 'XuperTizen', 'version': version, 'channel': 'alpha', 'minimumTizen': '4.0',
-        'hardwareValidation': 'v0.4.4-live-720p-worker-active-on-QN55QN70FAGXZS-v0.6.6-pending', 'providerValidation': 'v0.4.4-71s-playback-http200-one-reported-404-v0.6.6-pending',
+        'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
+        'hardwareValidation': '0.7.0-beta-pending-on-Samsung-TV', 'providerValidation': '0.7.0-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion']
     }, indent=2) + '\n')

@@ -8,3 +8,7 @@ author-signature.xml
 signature1.xml
 __pycache__/
 node_modules/
+# Local generated UX review artifacts
+docs/ux-tour-0.6.6/
+docs/ux-redesign/
+docs/ux-usability/

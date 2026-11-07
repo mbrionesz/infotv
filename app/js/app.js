@@ -799,8 +799,7 @@
           for (var l = s.length > 0, d = 0; d < s.length; d++) s[d](e);
           X.detail === e &&
             "detail" === X.screen &&
-            (Ca(e),
-            l || (xe && xe.src && !xe.paused) || Jr(e, X.detailEpisode));
+            (!l && Ca(e));
         })
       );
     var a = g("detail");
@@ -818,8 +817,7 @@
                 (e._detailsLoaded = !0),
                 X.detail === e &&
                   "detail" === X.screen &&
-                  (Ca(e),
-                  (xe && xe.src && !xe.paused) || Jr(e, X.detailEpisode)));
+                  Ca(e));
             }
             t(e);
           },
@@ -860,46 +858,46 @@
     ],
     j = [
       {
-        id: "profile",
-        label: "Mi cuenta",
-        desc: "Tu perfil en este televisor",
-        group: "Tu cuenta",
-      },
-      {
-        id: "history",
-        label: "Mi lista",
-        desc: "Historial y favoritos",
-        group: "Tu cuenta",
-      },
-      {
-        id: "addons",
-        label: "Agregar Addons",
-        desc: "Añadir una URL M3U propia",
-        group: "Contenido",
-      },
-      {
-        id: "share",
-        label: "Compartir APP",
-        desc: "Instálala en otra TV",
-        group: "Aplicación",
-      },
-      {
         id: "playback",
         label: "Reproducción",
         desc: "Menor retraso y perfil en directo",
-        group: "Aplicación",
-      },
-      {
-        id: "parent",
-        label: "Control parental",
-        desc: "Filtro de contenido adulto · sin PIN",
-        group: "Aplicación",
+        group: "Reproducción",
       },
       {
         id: "display",
         label: "Pantalla y compatibilidad",
         desc: "Ajuste para TVs con imagen recortada",
-        group: "Aplicación",
+        group: "Reproducción",
+      },
+      {
+        id: "parent",
+        label: "Control parental",
+        desc: "Filtro de contenido adulto · sin PIN",
+        group: "Contenido",
+      },
+      {
+        id: "addons",
+        label: "Listas de canales",
+        desc: "Añadir una URL M3U propia",
+        group: "Contenido",
+      },
+      {
+        id: "history",
+        label: "Mi lista",
+        desc: "Historial y favoritos",
+        group: "Biblioteca",
+      },
+      {
+        id: "profile",
+        label: "Este televisor",
+        desc: "Tu perfil en este televisor",
+        group: "Biblioteca",
+      },
+      {
+        id: "share",
+        label: "Instalar en otra TV",
+        desc: "Instálala en otra TV",
+        group: "Sistema",
       },
       {
         id: "netdiag",
@@ -909,13 +907,13 @@
       },
       {
         id: "feedback",
-        label: "Ayuda y Feedback",
+        label: "Ayuda",
         desc: "Comunidad y soporte",
         group: "Sistema",
       },
       {
         id: "about",
-        label: "Sobre nosotros",
+        label: "Acerca de XuperTizen",
         desc: "Versión y actualizaciones",
         group: "Sistema",
       },
@@ -1195,7 +1193,7 @@
         }
         (a || (window.XuperStandalone && "home" === X.screen && typeof e._tab === "number") || nt(e),
           (window.XuperStandalone && "home" === X.screen && typeof e._tab === "number") || wt());
-      } else a || nt(e);
+      } else { e.classList.add("is-focused"); a || nt(e); }
   }
   function ot(e) {
     for (var t = e.querySelectorAll(".focusable"), a = 0; a < t.length; a++)
@@ -1296,6 +1294,7 @@
         Bi && (Bi.innerHTML = ""));
     }
     wt();
+    if (e === "home") window.dispatchEvent(new Event("xuper:home"));
   }
   var dt = 0;
   function ct() {
@@ -1325,6 +1324,7 @@
                                 (ui(), fi());
                                 var e = X.playerReturn;
                                 if (e && "detail" === e.screen) {
+                                  zr();
                                   var a = t("screen-player"),
                                     i = t("screen-detail");
                                   (a &&
@@ -1352,6 +1352,7 @@
                                     }
                                 } else {
                                   zr();
+                                  if (window.XuperGuide && XuperGuide.resume()) { lt("home"); return; }
                                   var s = t("screen-player");
                                   (s &&
                                     (s.classList.remove("is-mini"),
@@ -1407,6 +1408,7 @@
             var n = t("screen-player");
             n &&
               (n.classList.remove("is-mini"), n.classList.remove("is-active"));
+            if (window.XuperCatalog && XuperCatalog.resume()) { lt("home"); return; }
             var r = X.detailReturn;
             r && "search" === r.screen
               ? (lt("search"), rt(r.focus))
@@ -1981,7 +1983,7 @@
                 if (window.XuperGuide && e === 0) { window.XuperGuide.open(); return; }
                 if (window.XuperCatalog && e > 0 && e < 8) { window.XuperCatalog.open(["", "featured", "movies", "series", "kids", "anime", "series", "featured"][e]); return; }
                 if ("history" === z[e].action)
-                  return ((We = "history"), Ha(), void Ua(1, !0));
+                  return ((We = "history"), Ha(), void Ua("history", !0));
                 if ((bt(e, !1), 0 === e)) {
                   var t = Fe.filter(function (e) {
                     return e._channel === X.channel;
@@ -2012,7 +2014,7 @@
                   if (window.XuperGuide && e === 0) { window.XuperGuide.open(); return !0; }
                   if (window.XuperCatalog && e > 0 && e < 8) { window.XuperCatalog.open(["", "featured", "movies", "series", "kids", "anime", "series", "featured"][e]); return !0; }
                   if ("history" === z[e].action)
-                    return ((We = "history"), Ha(), Ua(1, !0), !0);
+                    return ((We = "history"), Ha(), Ua("history", !0), !0);
                   if ((bt(e, !1), 0 === e)) {
                     var a = Fe.filter(function (e) {
                       return e._channel === X.channel;
@@ -3237,6 +3239,8 @@
   function ba(e) {
     if (!e || !e.id) return;
     zr();
+    t("screen-detail").scrollTop = 0;
+    t("screen-detail").classList.add("scrollable");
     X.playerItem = null;
     X.playerEpisode = null;
     X.playerMode = "vod";
@@ -3267,16 +3271,13 @@
     var i = t("screen-player");
     i && (i.classList.add("is-mini"), i.classList.add("is-active"));
     var n = le ? le.querySelector(".focusable") : null;
-    (n && rt(n),
-      e._detailsLoaded
-        ? Jr(e, X.detailEpisode)
-        : (jr("Preparando la reproducción…"),
-          U(e, function (e) {
-            e &&
-              "detail" === X.screen &&
-              X.detail === e &&
-              (dn(e), Jr(e, X.detailEpisode));
-          })));
+    if (n) rt(n);
+    if (!e._detailsLoaded) U(e, function (item) {
+      if (item && X.screen === "detail" && X.detail === item) {
+        dn(item); Ca(item);
+        var primary = le.querySelector(".focusable"); if (primary) rt(primary);
+      }
+    });
   }
   function Ca(n) {
     ((oe = t("detail-left")),
@@ -3286,6 +3287,11 @@
       a(oe),
       a(le),
       a(de));
+    var oldPoster = t("screen-detail").querySelector(".detail-artwork");
+    if (oldPoster) oldPoster.remove();
+    var artwork = e("img", "detail-artwork"); artwork.alt = "";
+    if (n.poster && window.XuperStandalone) XuperStandalone.loadPoster(artwork, n.poster);
+    t("screen-detail").appendChild(artwork);
     var r,
       o = e("div", "detail-titlewrap");
     if (
@@ -3339,11 +3345,16 @@
     var w = e("div", "detail-synopsis");
     (w.appendChild(e("span", "label", "Sinopsis : ")),
       w.appendChild(e("div", "text", n.synopsis)));
-    var S = e("div", "detail-more", "Más");
+    var S = e("div", "detail-more focusable", "Leer sinopsis");
+    S._activate = function () {
+      var screen = t("screen-detail"), expanded = !screen.classList.contains("is-synopsis-open");
+      screen.classList.toggle("is-synopsis-open", expanded);
+      S.textContent = expanded ? "Cerrar sinopsis" : "Leer sinopsis";
+    };
     (w.appendChild(S),
       oe.appendChild(w),
       a(se),
-      se.classList.add("focusable"),
+      se.classList.remove("focusable"),
       (se._activate = function () {
         Kr(n, X.detailEpisode);
       }),
@@ -3353,7 +3364,7 @@
     var T = [
       {
         icon: "icon_detail_fullscreen.png",
-        label: "Ver en pantalla completa",
+        label: "Reproducir",
         kind: "fullscreen",
       },
       {
@@ -3500,7 +3511,7 @@
                                   (e._episodes = a.episodes),
                                   (X.detailEpisode = a.episodes[0] || null)),
                                   Ca(a),
-                                  X.detailEpisode && Jr(a, X.detailEpisode));
+                                  Jn(a));
                                 var n = de
                                   ? de.querySelector(".detail-season")
                                   : null;
@@ -3560,7 +3571,8 @@
                 void 0 !== a.number && null !== a.number
                   ? String(a.number)
                   : String(v + 1);
-              (r.appendChild(e("span", "ep-num", o)),
+              (r.appendChild(e("span", "ep-num", "Episodio " + o)),
+                r.appendChild(e("span", "ep-title", (a.title || a.name) && (a.title || a.name) !== "Episodio " + o ? (a.title || a.name) : "Reproducir episodio")),
                 (r._ep = a),
                 (r._activate = function () {
                   $n(t, a);
@@ -3584,11 +3596,15 @@
               break;
             }
         }
-        for (var C = (3 * y) % Math.max(1, l.length - 6), w = 0; w < 8; w++) {
-          var S = l[(C + w) % l.length];
+        var related = l.filter(function (item) { return item.id !== t.id; }).slice(0, 8);
+        if (!related.length) m.style.display = "none";
+        for (var w = 0; w < related.length; w++) {
+          var S = related[w];
           if (S) {
             var T = e("div", "cell");
-            (T.appendChild(xt(S, 0, 0, 210, 308, { gold: !0 })),
+            var relatedPoster = xt(S, 0, 0, 210, 308, { gold: !0 });
+            (function (poster, cell) { var previous = poster._onFocus; poster._onFocus = function () { if (previous) previous.call(poster); nt(cell); }; })(relatedPoster, T);
+            (T.appendChild(relatedPoster),
               T.appendChild(e("div", "d-name", S.title)),
               g.appendChild(T));
           }
@@ -4016,11 +4032,11 @@
     })()),
     (ze.playback = (function () {
       if(window.XuperStandalone){
-        var panel=samsungSettingsCard("Reproducción en directo","El perfil estable es el predeterminado. El modo 720p experimental busca dos segmentos de retraso, unos 10 s si cada segmento dura 5 s. Dos bloqueos de búfer restauran el perfil estable durante esa apertura. El retraso del proveedor no se puede eliminar desde el televisor.");
+        var panel=samsungSettingsCard("Reproducción","Elige estabilidad o menor retraso para TV en vivo. Si el modo experimental produce cortes, la app vuelve al perfil estable para ese canal.");
         var lowDelay=e("button","xt-setting-action focusable");
-        function latencyLabel(){var on=false;try{on=localStorage.getItem("xt.lowDelay720")==="on";}catch(_){}lowDelay.textContent="720p experimental · objetivo ~10 s · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
+        function latencyLabel(){var on=false;try{on=localStorage.getItem("xt.lowDelay720")==="on";}catch(_){}lowDelay.textContent="Menor retraso en 720p · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
         lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="on"?"off":"on");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
-        panel.appendChild(e("p","xt-setting-footnote","La app reserva 3 s para arrancar y conserva 6 s tras una espera. Los idiomas requieren pistas disponibles en la señal; no traducen ni crean audio. Formato y estilo se aplican al reproductor principal."));
+        panel.appendChild(e("p","xt-setting-footnote","Audio e idioma de subtítulos son preferencias para el próximo título y requieren pistas disponibles. Tamaño y estilo afectan a los subtítulos externos; los integrados dependen del reproductor. Estas opciones no añaden pistas ni traducen contenido."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
         var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");subtitles.setAttribute("aria-pressed",String(X.playback.subtitle));nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
@@ -4296,7 +4312,7 @@
             "Filtra contenido identificado como adulto en sus datos. No es un bloqueo con PIN y no detecta señales sin clasificación.",
           ),
         ),
-        t.appendChild(e("div", "pl-label", "Contenido +18")));
+        t.appendChild(e("div", "pl-label", "Mostrar contenido +18")));
       var a = e(
           "div",
           "sp-switch focusable " + (X.adultEnabled ? "on" : "off"),
@@ -4305,8 +4321,8 @@
           "div",
           "pl-note",
           X.adultEnabled
-            ? "Activo: se mostrarán categorías y canales +18."
-            : "Desactivado: se ocultarán categorías y canales +18.",
+            ? "Visible: se muestran categorías y canales +18."
+            : "Oculto: las categorías y los canales +18 no aparecen.",
         );
       return (
         (a._activate = function () {
@@ -4316,8 +4332,8 @@
             (a.className =
               "sp-switch focusable " + (X.adultEnabled ? "on" : "off")),
             (i.textContent = X.adultEnabled
-              ? "Activo: se mostrarán categorías y canales +18."
-              : "Desactivado: se ocultarán categorías y canales +18."),
+              ? "Visible: se muestran categorías y canales +18."
+              : "Oculto: las categorías y los canales +18 no aparecen."),
             Qt(!1),
             hr(X.channel),
             Yt(X.adultEnabled ? "Contenido +18 habilitado" : "Contenido +18 oculto"),
@@ -4466,7 +4482,7 @@
       ze.hasOwnProperty(p) && be.appendChild(ze[p]);
   }
   function Ha() {
-    (ye || Va(), lt("settings"), Ua(0, !1), rt(je[0]));
+    (ye || Va(), lt("settings"), Ua("playback", !1), rt(ye.querySelector(".settings-item.is-selected")));
   }
   function Ua(e, a) {
     if ("string" == typeof e)
@@ -4559,7 +4575,7 @@
       Ua("history", !0);
     }),
       (r._onMove = function (e) {
-        return "left" === e ? (rt(je[0]), !0) : "right" === e && (rt(o), !0);
+        return "left" === e ? (rt(ye.querySelector(".settings-item.is-selected") || je[0]), !0) : "right" === e && (rt(o), !0);
       }));
     var o = e("div", "account-action-btn focusable", "Agregar listas");
     ((o._activate = function () {
@@ -4614,7 +4630,8 @@
           t.label,
         );
         ((i._activate = function () {
-          ((We = t.id), Ua("history", !0));
+          ((We = t.id), Ua("history", !1));
+          rt(ze.history.querySelector(".history-tab.is-selected"));
         }),
           a.appendChild(i));
       })(i[n]);
@@ -7986,6 +8003,7 @@
         selectTab: function (e) {
           (vt(), bt(e, !0));
         },
+        resumeContent: cn,
         openDetail: function (e) {
           ba(l[e] || l[0]);
         },

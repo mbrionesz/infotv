@@ -13,6 +13,7 @@ try{
  const results=[];mkdirSync('dist',{recursive:true});
  for(const file of ['fast.mp4','tail.mp4','raw.ts','fallback.mp4','fhd.mp4']){
   await browser.evaluate('window.fixtureFile='+JSON.stringify(file)+';__xuper.vod.push({id:"fixture-'+file+'",title:"VOD de prueba",_portal:true,genres:[]});__xuper.openDetail(__xuper.vod.length-1)');
+  await browser.waitFor('__xuper.state.screen==="detail"&&__xuper.state.detail._detailsLoaded');assert.equal(await browser.evaluate('XuperPlayer.diagnostics.engine'),'','The detail page must not request playback before OK');await browser.evaluate('__xuper.focus(document.querySelector(".detail-btn"));__xuper.key(13)');
   try{await browser.waitFor('document.getElementById("player-video").currentTime>0.5&&XuperPlayer.diagnostics.stage==="playing"',200);}catch(error){console.log('FAIL',file,await browser.evaluate('({diag:XuperPlayer.diagnostics,src:document.getElementById("player-video").src,mediaError:document.getElementById("player-video").error&&document.getElementById("player-video").error.message})'));throw error;}
   const info=await browser.evaluate('({engine:XuperPlayer.diagnostics.engine,startupMs:XuperPlayer.diagnostics.startupMs,width:document.getElementById("player-video").videoWidth,bytes:XuperPlayer.diagnostics.vodBytes,audioBytes:document.getElementById("player-video").webkitAudioDecodedByteCount})');assert.equal(info.width,file==='fhd.mp4'?1920:640);assert.ok(info.audioBytes>0);results.push({file,...info});if(file==='fallback.mp4')assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnAttempt'),2);console.log('Playing',file,info);
   const qualityBefore=await browser.evaluate('document.getElementById("player-video").getVideoPlaybackQuality().totalVideoFrames');await new Promise(resolve=>setTimeout(resolve,2500));assert.ok(await browser.evaluate('document.getElementById("player-video").getVideoPlaybackQuality().totalVideoFrames')-qualityBefore>40,'Decoded video must keep advancing');
@@ -23,7 +24,7 @@ try{
   await browser.screenshot('dist/vod-'+file+'.png');await browser.evaluate('__xuper.show("home")');assert.equal(await browser.evaluate('XuperPlayer.diagnostics.engine'),'');
  }
  await browser.evaluate('fixtureFile="fast.mp4";__xuper.vod.push({id:"fixture-series-case",title:"Serie VOD autorizada",type:"teleplay",_portal:true,genres:[]});__xuper.openDetail(__xuper.vod.length-1)');
- await browser.waitFor('document.getElementById("player-video").currentTime>0.5&&document.querySelectorAll(".detail-episode").length===2',200);
+ await browser.waitFor('document.querySelectorAll(".detail-episode").length===2',200);
  await browser.evaluate('__xuper.focus(document.querySelectorAll(".detail-episode")[1]);__xuper.key(13)');
  await browser.waitFor('__xuper.state.screen==="player"&&vodRequests.includes("ep-b")&&document.getElementById("player-video").currentTime>0.5',200);
  assert.equal(await browser.evaluate('__xuper.state.playerEpisode.id'),'ep-b');await browser.evaluate('__xuper.show("home")');
