@@ -883,8 +883,8 @@
       },
       {
         id: "playback",
-        label: "Configuración global",
-        desc: "Subtítulos y preferencias",
+        label: "Reproducción",
+        desc: "Menor retraso y perfil en directo",
         group: "Aplicación",
       },
       {
@@ -3909,6 +3909,7 @@
     (ze.history = ja()),
     (ze.addons = Wa()),
     (ze.share = (function () {
+      if(window.XuperStandalone)return samsungSettingsCard("Instalar en otra Samsung","Descarga XuperTizen en formato WGT desde github.com/mbrionesz/infotv/releases. Firma e instala con Apps2Samsung. El computador solo se necesita durante la instalación.");
       var t = e("div", "settings-panel share-panel");
       (t.appendChild(e("div", "share-head", "Compartir XuperTV")),
         t.appendChild(
@@ -3975,6 +3976,21 @@
       );
     })()),
     (ze.playback = (function () {
+      if(window.XuperStandalone){
+        var panel=samsungSettingsCard("Reproducción en directo","720p: menor distancia al directo. FHD mantiene el perfil estable. Dos bloqueos de búfer restauran el perfil estable durante esa apertura. El retraso del proveedor no se puede eliminar desde el televisor.");
+        var lowDelay=e("button","xt-setting-action focusable");
+        function latencyLabel(){var on=true;try{on=localStorage.getItem("xt.lowDelay720")!=="off";}catch(_){}lowDelay.textContent="Menor retraso en 720p · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
+        lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="off"?"on":"off");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
+        panel.appendChild(e("p","xt-setting-footnote","La app conserva 3 s para arrancar y 6 s tras una espera. Audio y calidad dependen de la señal y del soporte del televisor."));
+        panel.className+=" xt-playback-card";X.playback.streamMode="normal";
+        var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
+        Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
+        Ba(panel,890,"Audio preferido",["Español","Portugués","Inglés"],"audio",X.playback.audio);
+        Ba(panel,1000,"Idioma de subtítulos",["Español","Portugués","Inglés"],"subLang",X.playback.subLang);
+        Ba(panel,1110,"Tamaño de subtítulos",["Normal","Grande","Pequeño"],"size",X.playback.size);
+        Ba(panel,1220,"Estilo de subtítulos",["Blanco","Amarillo","Fondo oscuro"],"style",X.playback.style);
+        return panel;
+      }
       var t = Fa("Configuración global de reproducción");
       (t.appendChild(e("div", "sp-hr")),
         t.appendChild(
@@ -4085,10 +4101,10 @@
     })()),
     (ze.netdiag = (function () {
       if(window.XuperStandalone){
-        var nativePanel=Fa("Diagnóstico Samsung");
-        nativePanel.appendChild(i(e("div","dg-note","Consulta el reproductor, los tiempos del mando y el transporte activo. Si los sockets Samsung están disponibles, el portal y HLS conectan usando DNS seguro. El fallback del sistema se indica en el informe."),52,128,1350,180));
+        var nativePanel=samsungSettingsCard("Conoce tu conexión","Estado de la señal, reserva de vídeo y tiempos HTTP desde tu televisor.");
+        nativePanel.appendChild(e("div","xt-setting-body","Revisa el transporte activo, el mando y los servidores del canal. Puedes medir conexión HTTP y consultar DNS seguro. Una respuesta del servidor no garantiza que la señal esté disponible."));
         var nativeButton=e("div","dg-btn focusable xt-open-diagnostics","Abrir diagnóstico");
-        i(nativeButton,52,340,430,66);nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
+        nativeButton.className+=" xt-setting-action";nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
         return nativePanel;
       }
       var t = Fa("Diagnóstico de red");
@@ -4316,6 +4332,7 @@
       return (t.appendChild(i), t);
     })()),
     (ze.feedback = (function () {
+      if(window.XuperStandalone)return samsungSettingsCard("Ayuda y diagnóstico","Si una señal falla, abre Diagnóstico y comparte el estado de reproducción. Los tiempos HTTP indican conexión con el servidor; no certifican disponibilidad del canal. Código y novedades: github.com/mbrionesz/infotv.");
       var t = e("div", "settings-panel");
       (t.appendChild(e("div", "fb-title", "Ayuda y Feedback")),
         t.appendChild(e("div", "fb-hr")),
@@ -4339,6 +4356,7 @@
       return ((i._activate = function () {}), t.appendChild(i), t);
     })()),
     (ze.about = (function () {
+      if(window.XuperStandalone)return samsungSettingsCard("XuperTizen by Matias","By MatiasB · Una aplicación para Samsung Tizen. Versión "+window.XuperStandalone.version+". Interfaz adaptable a Full HD y 4K, reproducción HLS.js y diagnóstico desde el televisor. Licencias y avisos de terceros incluidos en el paquete.");
       var t = e("div", "settings-panel");
       (t.appendChild(e("div", "sp-title plain", "Sobre nosotros")),
         t.appendChild(i(e("div", "sp-hr soft"), 0, 165, 1498, 1)),
@@ -4352,7 +4370,7 @@
       var a = e(
         "div",
         "sp-about-port",
-        "Port para LG webOS realizado por CristiancoDEV",
+        "XuperTizen by Matias · By MatiasB",
       );
       ((a.style.top = "380px"), t.appendChild(a));
       var n = e("div", "sp-about-mail"),
@@ -4444,6 +4462,7 @@
       ze.hasOwnProperty(c) && ze[c].classList.toggle("is-active", c === n);
     a && rt(ot(ze[n]) || je[e]);
   }
+  function samsungSettingsCard(title,body){var panel=e("div","settings-panel xt-settings-card");panel.appendChild(e("div","xt-setting-kicker","SAMSUNG · TIZEN"));panel.appendChild(e("h1","xt-setting-title",title));panel.appendChild(e("p","xt-setting-body",body));return panel;}
   function Fa(t) {
     var a = e("div", "settings-panel");
     return (a.appendChild(e("div", "sp-title", t)), a);
@@ -7180,7 +7199,7 @@
         if (4 === t && "live" === X.playerMode && o && !a) {
           var i = Zr;
           return (
-            jr("Reintentando señal con compatibilidad webOS…"),
+            jr("Reintentando señal…"),
             void setTimeout(function () {
               "live" === X.playerMode && Zr === i && Gr(e, { nativeHls: !0 });
             }, 0)

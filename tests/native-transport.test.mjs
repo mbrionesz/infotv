@@ -53,3 +53,7 @@ test('native HTTP tries the second DNS address when the first cannot connect',as
   assert.deepEqual(mock.calls.filter(call=>call.method==='http').map(call=>call.options.ip),['203.0.113.7','203.0.113.8']);assert.equal(transport.snapshot().hosts[0].attempts.length,2);assert.equal(transport.snapshot().nativeDisabled,false);
  }finally{transport.dispose();}
 });
+test('a failed manual HEAD diagnostic does not disable native playback for that origin',async()=>{
+ const mock=workers();const factory=()=>{const worker=mock.factory(),send=worker.postMessage;worker.postMessage=message=>{if(message.method==='http'&&message.options.method==='HEAD')queueMicrotask(()=>worker.onmessage({data:{id:message.id,error:'fixture timeout',nativeCode:28}}));else send(message);};return worker;};
+ const transport=createNativeTransport({workerFactory:factory});try{await assert.rejects(transport.request({url:'https://media.example/',method:'HEAD',diagnostic:true}));assert.deepEqual(transport.snapshot().originFallbacks,[]);assert.equal((await transport.request({url:'https://media.example/live.m3u8'})).status,200);}finally{transport.dispose();}
+});

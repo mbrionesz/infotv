@@ -17,6 +17,7 @@
     var wordmark = element('div', 'modern-wordmark');
     wordmark.innerHTML = '<span class="modern-symbol">XT</span><div class="modern-name">Xuper<span>Tizen</span></div>';
     home.appendChild(wordmark);
+    var settings=document.getElementById("screen-settings");var settingsTitle=element("div","xt-settings-heading","Centro de ajustes");settings.appendChild(settingsTitle);
     var observer = new MutationObserver(decorate);
     observer.observe(document.getElementById('home-pages'), { childList:true, subtree:true });
     function decorate() {
@@ -33,14 +34,14 @@
       var main = home.querySelector('.live-main');
       if (!main || main.querySelector('.modern-live-copy')) return;
       var copy = element('div', 'modern-live-copy');
-      copy.innerHTML = '<div class="hero-kicker">DESCUBRE TU PRÓXIMO CANAL</div><h2>Una pantalla.<br>Mil posibilidades.</h2><p>Explora tus canales y encuentra<br>algo que quieras ver.</p><div class="hero-action"><span>OK</span> Abrir reproductor ' + icons.arrow + '</div>';
+      copy.innerHTML = '<div class="hero-kicker">XUPERTIZEN · EN VIVO</div><h2>Elige una señal.<br>Entra al directo.</h2><p>Tus canales, favoritos y categorías<br>en una sola pantalla.</p><div class="hero-action"><span>OK</span> Abrir reproductor ' + icons.arrow + '</div>';
       main.appendChild(copy);
       var page = main.parentElement;
       var heading = element('div', 'modern-channel-heading');
       heading.innerHTML = 'Tus canales <span>EXPLORA EN DIRECTO</span>';
       page.appendChild(heading);
       var quick = element('section', 'modern-quick');
-      quick.appendChild(element('h2', 'modern-section-title', 'Más cerca de lo que te gusta'));
+      quick.appendChild(element('h2', 'modern-section-title', 'Accesos directos'));
       var grid = element('div', 'modern-quick-grid');
       var definitions = [
         [icons.search, 'Encuentra tu canal', 'Busca por nombre, sin perderte.', function () {
@@ -50,7 +51,7 @@
           if (search && search._activate) search._activate();
         }],
         [icons.movies, 'Una buena película', 'Explora tu próxima historia.', function () { __xuper.selectTab(2); }],
-        [icons.settings, 'A tu manera', 'Personaliza tu experiencia.', function () { __xuper.openSettings(); }]
+        [icons.settings, 'Centro de ajustes', 'Reproducción, pantalla y conexión.', function () { __xuper.openSettings(); }]
       ];
       definitions.forEach(function (definition, index) {
         var card = element('button', 'modern-quick-card focusable');

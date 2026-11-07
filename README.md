@@ -1,4 +1,4 @@
-# XuperTizen 0.5.9 alpha
+# XuperTizen 0.6.0 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.5.9-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.6.0-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.5.9-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.9-alpha.1).
+Esta actualización usa la etiqueta `v0.6.0-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.6.0-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -178,3 +178,9 @@ y URI HLS, que pueden incluir segmentos, claves y sublistas) y `uriRepairs`.
 No son 16 servidores confirmados: los registros disponibles siguen mostrando
 cuatro alternativas y un destino de segmentos adicional.
 [Notas](docs/RELEASE-0.5.9-alpha.1.md).
+
+La 0.6.0 estrena inicio y ajustes Samsung adaptables a UHD, medición HTTP HEAD de
+CDN a petición y un perfil de menor retraso para directo 720p que puede desactivarse.
+La medición no es ping ICMP ni valida la licencia del canal.
+[Investigación de secuencias](docs/INVESTIGACION-SECUENCIAS-HLS.md) ·
+[Notas](docs/RELEASE-0.6.0-alpha.1.md).

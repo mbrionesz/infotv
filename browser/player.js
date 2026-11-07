@@ -1,3 +1,4 @@
+import {createLiveLatency} from './live-latency.js';
 import {createFrameMeter} from './media-info.js';
 import {playlistShape,playlistReason,safeParserMessage} from './playlist-shape.js';
 import {createLiveBuffer} from './live-buffer.js';
@@ -43,6 +44,8 @@ export function createPlayer(getStream) {
   function open(element, source, options) {
     stop(); video = element; url = source;
     const run = serial;let playbackSource=source;
+    let lowDelay=true;try{lowDelay=localStorage.getItem('xt.lowDelay720')!=='off';}catch(_){}
+    const latencyPolicy=createLiveLatency(lowDelay);diagnostics.liveLatency=latencyPolicy.state;
     const stream = getStream(source) || {};
     const candidates=streamCandidates(source,stream),routes=streamRoutes(candidates);let routeIndex=0,attempt=0;
     let headers = candidates[0].headers;
@@ -68,7 +71,7 @@ export function createPlayer(getStream) {
       });
     }
     resumePlayback=()=>{gestureRequired=false;autoAttempts=0;diagnostics.autoplayBlocked=false;tryPlay();};
-    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
+    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;if(hls)latencyPolicy.update(hls,video,options.live);resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
     function record(detail,status=0,fatal=false){
       diagnostics.events.push({atMs:Math.round(performance.now()-openedAt),detail:String(detail).slice(0,70),status,fatal});
       if(diagnostics.events.length>12)diagnostics.events.shift();
@@ -192,6 +195,7 @@ export function createPlayer(getStream) {
           });
         }
       });
+      hls.on(Hls.Events.BUFFER_APPENDED,()=>{if(serial===run&&generation===attempt&&hls){latencyPolicy.update(hls,video,options.live);diagnostics.liveLatency.seconds=Number.isFinite(hls.latency)?Math.round(hls.latency*100)/100:null;}});
       hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run&&generation===attempt) hls.loadSource(playbackSource); });
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (serial !== run||generation!==attempt) return;
@@ -200,6 +204,7 @@ export function createPlayer(getStream) {
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if(serial!==run||generation!==attempt)return;
         if(/(?:level|manifest).*(?:Parsing|Empty)Error/i.test(data.details||'')){const text=data.response&&data.response.data;const reason=String(data.reason||data.error&&data.error.message||'');diagnostics.playlistError=Object.assign({kind:playlistReason(reason),message:safeParserMessage(reason)},playlistFacts.get(data.context&&data.context.url||data.url)||{characters:null,hasHeader:null,segments:null});}
+        if(started&&data.details==='bufferStalledError'){latencyPolicy.stall();latencyPolicy.update(hls,video,options.live);}
         diagnostics.detail=String(data.details||'').slice(0,70);record(data.details,data.response&&data.response.code||0,!!data.fatal);
         if(data.event==='demuxerWorker')diagnostics.worker=false;
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;

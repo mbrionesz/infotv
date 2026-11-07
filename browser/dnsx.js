@@ -84,7 +84,7 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
     }catch(error){failure=error;record.attempts.push({ip:ips[i],code:Number.isInteger(error.nativeCode)?error.nativeCode:null,metrics:error.metrics||null});}
    }
    record.pending=false;
-   if(!result){failure=failure||new Error('Tiempo de red agotado');record.error='Conexión HTTP/TLS fallida';record.nativeCode=Number.isInteger(failure.nativeCode)?failure.nativeCode:null;record.fallback='xhr-system-dns';suspend(failure,record,method,target.origin);return null;}
+   if(!result){failure=failure||new Error('Tiempo de red agotado');if(options.diagnostic)throw failure;record.error='Conexión HTTP/TLS fallida';record.nativeCode=Number.isInteger(failure.nativeCode)?failure.nativeCode:null;record.fallback='xhr-system-dns';suspend(failure,record,method,target.origin);return null;}
    Object.assign(record,{httpStatus:result.status,tlsVerified:target.protocol==='https:',metrics:result.metrics||null});
    const location=(result.headers.match(/^location:\s*(.+)$/im)||[])[1];
    if([301,302,303,307,308].includes(result.status)&&location){
