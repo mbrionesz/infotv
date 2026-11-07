@@ -1,4 +1,4 @@
-# XuperTizen 0.5.7 alpha
+# XuperTizen 0.5.8 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -40,7 +40,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 - Protocolo del catálogo y sesión adaptado de Node a JavaScript del widget:
   transporte XHR, 3DES/MD5 del protocolo, caché local y generación aleatoria segura.
   Sin descarga de sesiones prestadas ni dependencia de `localhost`.
-- **HLS.js 1.6.19** empaquetado dentro del WGT: HLS con cabeceras de autorización
+- **HLS.js 1.7.4** empaquetado dentro del WGT: HLS con cabeceras de autorización
   en listas, segmentos y claves; ABR automático, buffer acotado y limpieza
   al cambiar de señal. Requiere MSE y permiso CORS del origen cuando corresponda.
 - **AVPlay** detectado en el dispositivo para fuentes que su API puede abrir.
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.5.7-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.5.8-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.5.7-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.7-alpha.1).
+Esta actualización usa la etiqueta `v0.5.8-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.8-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -162,3 +162,10 @@ La 0.5.7 reinicia completamente HLS una vez por ruta ante un desajuste fatal de
 secuencia en vivo. Si reaparece en esa ruta, pasa al respaldo. Conserva las
 credenciales y Pausa, y registra reinicios, cambios y tiempo de recuperación.
 [Notas](docs/RELEASE-0.5.7-alpha.1.md).
+
+La 0.5.8 actualiza HLS.js y su worker a **1.7.4**, conservando las recuperaciones
+y los límites de la 0.5.7. No garantiza corregir listas incompatibles del proveedor.
+El portal devolvió cuatro CDN en las muestras del usuario; el adaptador recoge
+todos los que recibe y el reproductor admite hasta cuatro candidatos originales.
+Ese límite no demuestra que el proveedor solo disponga de cuatro servidores.
+[Notas](docs/RELEASE-0.5.8-alpha.1.md).
