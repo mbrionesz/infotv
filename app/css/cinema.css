@@ -98,3 +98,10 @@ html,body{font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;background:#0
 .dashboard-glyph svg{width:35px;height:35px}
 .notify-divider{display:none}
 .account-action-btn.is-focused{box-shadow:none!important;border-color:#fff!important;outline:3px solid #fff!important}
+/* TV reading distance: local system fonts, quieter metadata and clear focus. */
+#app{font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif}
+.dashboard-action,.dashboard-poster,.xt-panel button,.xt-panel select,.xt-setting-action{font-family:inherit}
+.dashboard-action small{font-size:19px}.dashboard-poster strong{font-size:20px}
+.xt-catalog-card strong{font-size:23px}.xt-catalog-card small{font-size:18px;color:#b8b8c1}
+.xt-catalog-status{font-size:20px;color:#b8b8c1}.xt-panel footer{font-size:18px;color:#b8b8c1}
+.xt-catalog-retry{margin-right:16px}.detail-title{font-weight:600;letter-spacing:-1px}.detail-btn{font-size:24px}

@@ -2,8 +2,8 @@ export function createLiveLatency(enabled=true,{now=()=>performance.now()}={}){
  let stalls=0,disabled=false,lastSeek=-Infinity,seekTimes=[];
  const state={mode:'stable',targetSegments:3,stalls:0,reason:'',alignmentSeeks:0,alignment:'waiting-metadata'};
  return {state,update(hls,video,live,allowSeek=true){
-  const eligible=enabled&&live&&video.videoHeight===720&&video.videoWidth<=1280&&!disabled;
-  state.targetSegments=eligible?1:3;state.experimental=!!eligible;state.mode=eligible?'720p-low-delay':'stable';hls.config.liveSyncDurationCount=state.targetSegments;
+  const eligible=enabled&&(allowSeek||state.experimental)&&live&&video.videoHeight===720&&video.videoWidth<=1280&&!disabled;
+  state.targetSegments=eligible?2:3;state.experimental=!!eligible;state.mode=eligible?'720p-low-delay':'stable';hls.config.liveSyncDurationCount=state.targetSegments;
   const details=hls.latestLevelDetails;
   const edge=details&&details.live&&Number.isFinite(details.edge)?details.edge+Math.max(0,details.age||0):null;
   state.seconds=edge===null?null:Math.round(Math.max(0,edge-video.currentTime)*100)/100;

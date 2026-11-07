@@ -64,11 +64,14 @@ try {
       var originalCall=core.call;
       core.call=function(method,payload,cb){
         if(method==='catalogPage'||method==='catalogQuery'||method==='catalogSearch'){
-          var rows=Array.from({length:36},function(_,i){return {id:'test-'+i,title:'Título de prueba '+i,year:'2024',country:'Chile',genres:['Drama']}});
+          var rows=Array.from({length:36},function(_,i){return {id:(payload.root==='series'?'series-test-':'test-')+i,title:'Título de prueba '+i,year:'2024',country:'Chile',poster:i<6?'assets/catalog/sintel.jpg':''}});
           cb(null,{items:rows,total:21000,loaded:21000,facets:{genres:['Drama'],years:['2024'],countries:['Chile'],resolutions:[]},hasMore:true});return;
         }
         return originalCall(method,payload,cb);
       };
+      core.detail=function(id,cb){var series=id.indexOf('series-test-')===0;cb(null,{item:{id:id,title:series?'Serie local de prueba':'Película local de prueba',type:series?'teleplay':'movie',genres:[]},episodes:series?[{id:'episode-1',number:1,title:'Capítulo de prueba',seriesNumber:1},{id:'episode-2',number:2,title:'Segundo capítulo',seriesNumber:2}]:[],seasons:[]})};
+      core.mediaInfo=function(id,seriesId,cb){cb(null,{audio:'es',subtitles:[]})};
+      core.resolve=function(id,seriesId,options,cb){window.vodResolved=window.vodResolved||[];vodResolved.push(id);cb(null,{url:${JSON.stringify(streamUrl)},mime:'application/vnd.apple.mpegurl',headers:{'Content-Auth':'local-test','Content-License':'local-license'}})};
       core.home=function(root,page,cb){cb(null,{items:[]})};
       core.getLiveCategories=function(cb){cb(null,[{id:'test',columnId:'test',name:'Pruebas locales'}])};
       core.getLiveChannels=function(col,page,size,cb){cb(null,[{channelCode:'local',name:'Canal de prueba local',index:1},{channelCode:'local2',name:'Segundo canal de prueba',index:2}],false)};
@@ -79,7 +82,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.6.4');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.6.5');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -116,6 +119,63 @@ try {
   await browser.evaluate(`new Promise(function(resolve,reject){var request=indexedDB.open('xuper-tizen-v3',1);request.onsuccess=function(){var db=request.result;var tx=db.transaction('metadata','readwrite');tx.objectStore('metadata').put({key:'liveCategories:{}',value:{categories:[{id:'cached-test',name:'Guardada sin conexión'}]},saved:Date.now()-3600000,expires:Date.now()-1000});tx.oncomplete=function(){db.close();resolve()};tx.onerror=reject};request.onerror=reject})`);
   const stale=await browser.evaluate('new Promise(function(resolve){var start=performance.now();XuperStandalone.core.call("liveCategories",{},function(error,data){resolve({error:error&&error.message,stale:data&&data.stale,name:data&&data.categories[0].name,ms:performance.now()-start})})})');
   assert.equal(stale.error,null);assert.equal(stale.stale,true);assert.equal(stale.name,'Guardada sin conexión');assert.ok(stale.ms<1000);
+  await browser.waitFor('document.querySelectorAll(".dashboard-poster").length===6');
+  for(let poster=0;poster<6;poster++){
+    await browser.evaluate('__xuper.focus(document.querySelectorAll(".dashboard-poster")['+poster+']);__xuper.key(13)');
+    await browser.waitFor('__xuper.state.screen==="detail"&&document.getElementById("player-video").currentTime>0.2',150);
+    assert.equal(await browser.evaluate('__xuper.state.detail.id'),'test-'+poster);
+    await new Promise(resolve=>setTimeout(resolve,300));
+    await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');
+    assert.equal(await browser.evaluate('__xuper.state.screen'),'home');
+  }
+  console.log('PASS: all six home posters open and decode their movie fixture.');
+  const vodResults=[];
+  for(const kind of ['movies','series']){
+    await browser.evaluate('XuperCatalog.open('+JSON.stringify(kind)+')');
+    await browser.waitFor('document.querySelectorAll(".xt-catalog-card").length===36');
+    await browser.evaluate('for(var i=0;i<4;i++)XuperCatalog.handle({keyCode:40})');
+    for(let row=0;row<6;row++){
+      for(let column=0;column<6;column++){
+        const visible=await browser.evaluate('(function(){var card=document.querySelector(".xt-catalog-card.selected"),grid=document.querySelector(".xt-catalog-grid"),a=card.getBoundingClientRect(),b=grid.getBoundingClientRect();return a.top>=b.top-2&&a.bottom<=b.bottom+2})()');assert.equal(visible,true);
+        if(column<5)await browser.evaluate('XuperCatalog.handle({keyCode:'+(row%2===0?39:37)+'})');
+      }
+      if(row<5)await browser.evaluate('XuperCatalog.handle({keyCode:40})');
+    }
+    await browser.evaluate('XuperCatalog.close();XuperCatalog.open('+JSON.stringify(kind)+');for(var i=0;i<4;i++)XuperCatalog.handle({keyCode:40});XuperCatalog.handle({keyCode:13})');
+    await browser.waitFor('__xuper.state.screen==="detail"&&document.querySelector("#player-video").currentTime>0.2',150);
+    assert.equal(await browser.evaluate('__xuper.state.playerMode'),'vod');
+    assert.equal(await browser.evaluate('Array.from(document.querySelectorAll(".detail-btn")).some(function(el){return el._kind==="subscribe"})'),false);
+    if(kind==='series')assert.ok(await browser.evaluate('document.querySelectorAll(".detail-episode").length>0'));
+    const result=await browser.evaluate('({kind:__xuper.state.detail.type,startupMs:XuperPlayer.diagnostics.startupMs,mediaTime:document.querySelector("#player-video").currentTime})');vodResults.push(result);
+    if(kind==='series'){
+      await browser.evaluate('__xuper.focus(document.querySelectorAll(".detail-episode")[1]);__xuper.key(13)');
+      await browser.waitFor('__xuper.state.screen==="player"&&vodResolved.indexOf("episode-2")>=0&&document.getElementById("player-video").currentTime>0.2',150);
+      assert.equal(await browser.evaluate('__xuper.state.playerEpisode.id'),'episode-2');
+      for(let back=0;back<3&&await browser.evaluate('__xuper.state.screen')!=='detail';back++){
+        await new Promise(resolve=>setTimeout(resolve,300));await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');
+      }
+      assert.equal(await browser.evaluate('__xuper.state.screen'),'detail');
+    }
+
+    await browser.evaluate('__xuper.focus(document.querySelector(".detail-btn"));__xuper.key(13)');
+    assert.equal(await browser.evaluate('__xuper.state.screen'),'player');
+    for(const screen of ['detail','home']){
+      for(let back=0;back<3&&await browser.evaluate('__xuper.state.screen')!==screen;back++){
+        await new Promise(resolve=>setTimeout(resolve,300));
+        await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');
+      }
+      assert.equal(await browser.evaluate('__xuper.state.screen'),screen);
+    }
+  }
+  await browser.evaluate('__xuper.focus(document.querySelector(".dashboard-poster"));__xuper.key(13)');
+  await browser.waitFor('__xuper.state.screen==="detail"&&document.getElementById("player-video").currentTime>0.2',150);
+  assert.equal(await browser.evaluate('__xuper.state.playerEpisode'),null,'A movie must not inherit the last series episode');
+  await new Promise(resolve=>setTimeout(resolve,300));await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');
+  console.log('PASS VOD: actual detail, episode selection, HLS decode and fullscreen/back for movie and series fixtures: '+JSON.stringify(vodResults));
+  for(const mime of ['video/mp4','video/mp2t']){
+    const rejected=await browser.evaluate('(async function(){var old=XuperStandalone.core.resolve;XuperStandalone.core.resolve=function(id,series,options,cb){cb(null,{url:location.origin+"/authorized."+('+JSON.stringify(mime)+'==="video/mp4"?"mp4":"ts"),mime:'+JSON.stringify(mime)+',headers:{"Content-Auth":"test"}})};try{return await new Promise(function(resolve,reject){XuperStandalone.request("resolve",{contentId:"authorized-fixture"},function(error,stream){if(error)return reject(error);XuperPlayer.open(document.getElementById("player-video"),stream.url,{live:false,mime:stream.mime,onError:function(message){resolve({message:message,route:XuperPlayer.diagnostics.unsupportedRoute})}})})})}finally{XuperStandalone.core.resolve=old}})()');
+    assert.equal(rejected.route,'authorized-progressive');assert.ok(rejected.message.includes('no es un fallo de compatibilidad HLS'));
+  }
   await browser.evaluate('XuperGuide.open()');
   await browser.waitFor('document.querySelectorAll(".xt-guide-channels button:not([hidden])").length===2');
   const sameRows=await browser.evaluate('(()=>{var nodes=Array.from(document.querySelectorAll(".xt-guide-channels button"));XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:38});XuperGuide.handle({keyCode:37});return nodes.every((node,i)=>node===document.querySelectorAll(".xt-guide-channels button")[i])})()');
@@ -152,8 +212,8 @@ try {
   assert.ok(seen.every(request=>request.auth==='local-test' && request.license==='local-license'));
   assert.equal(appRequests.some(request=>request.includes('/rpc/')),false);
   await browser.screenshot('dist/standalone-hls-test.png');
-  await browser.waitFor('XuperPlayer.diagnostics.liveLatency.mode==="720p-low-delay"');
-  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.liveLatency.targetSegments'),1);
+  await browser.waitFor('XuperPlayer.diagnostics.liveLatency.mode==="stable"');
+  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.liveLatency.targetSegments'),3);
   await browser.evaluate('document.getElementById("player-video").pause()');
   assert.equal(await browser.evaluate('document.getElementById("player-video").paused'),true);
   await browser.evaluate('document.getElementById("player-video").play()');
@@ -195,7 +255,7 @@ try {
   assert.equal(await browser.evaluate('document.querySelector("#settings-right .is-active").textContent.includes("LG")'),false);
   await browser.screenshot('dist/settings-4k-v060.png');
   await browser.evaluate('__xuper.settingsPanel("playback");document.querySelector(".xt-setting-action")._activate()');
-  assert.equal(await browser.evaluate('localStorage.getItem("xt.lowDelay720")'),"off");
+  assert.equal(await browser.evaluate('localStorage.getItem("xt.lowDelay720")'),"on");
   assert.equal(await browser.evaluate('document.querySelectorAll(".xt-playback-card .pb-row").length'),5);
   await browser.evaluate('__xuper.focus(document.querySelector(".xt-playback-card .xt-setting-action"));__xuper.key(40)');
   assert.equal(await browser.evaluate('__xuper.state.focus.textContent.indexOf("Subtítulos")===0'),true);

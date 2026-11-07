@@ -721,6 +721,7 @@
       else N();
   }
   function H(e, t) {
+    var wasPortal = !!e._portal;
     var a = e && e._seriesGroup ? e.id : null,
       i = e && e._seriesGroup ? e._seriesTitle : null,
       n = T(t, e.id);
@@ -730,6 +731,7 @@
         "" !== n[r] &&
         "Sin sinopsis disponible." !== n[r] &&
         (e[r] = n[r]);
+    wasPortal && (e._portal = !0);
     null !== a &&
       ((e.id = a),
       (e.title = i),
@@ -3228,6 +3230,14 @@
     );
   }
   function ba(e) {
+    if (!e || !e.id) return;
+    zr();
+    X.playerItem = null;
+    X.playerEpisode = null;
+    X.playerMode = "vod";
+    e.genres = Array.isArray(e.genres) ? e.genres : [];
+    e.episodes = Array.isArray(e.episodes) ? e.episodes : [];
+    e.seasons = Array.isArray(e.seasons) ? e.seasons : [];
     if (
       ((X.detail = e),
       (X.detailReturn = { screen: X.screen, focus: X.focus }),
@@ -3288,7 +3298,7 @@
       var d = [];
       (n.year && "—" !== n.year && d.push(n.year),
         n.duration && "—" !== n.duration && d.push(n.duration),
-        d.push("HD"),
+        n.resolution && /(?:2160|1080|720|4k|uhd|fhd|hd)/i.test(String(n.resolution)) && d.push(String(n.resolution)),
         (r = d.join("  ·  ")));
     }
     if ((oe.appendChild(e("div", "detail-meta", r)), x(n))) {
@@ -3308,7 +3318,7 @@
     }
     var f = e("div", "detail-genres");
     f.appendChild(e("span", "label", "Género : "));
-    for (var h = 0; h < n.genres.length; h++) {
+    for (var h = 0; h < (n.genres || []).length; h++) {
       var m = e("div", "chip", n.genres[h]);
       f.appendChild(m);
     }
@@ -3318,7 +3328,7 @@
     var y = e("span", "val", n.director);
     (g.appendChild(y), oe.appendChild(g));
     var b = e("div", "detail-row");
-    b.appendChild(document.createTextNode("Actors : "));
+    b.appendChild(document.createTextNode("Reparto : "));
     var C = e("span", "val", n.actors);
     (b.appendChild(C), oe.appendChild(b));
     var w = e("div", "detail-synopsis");
@@ -3338,7 +3348,7 @@
     var T = [
       {
         icon: "icon_detail_fullscreen.png",
-        label: "Pantalla completa",
+        label: "Ver en pantalla completa",
         kind: "fullscreen",
       },
       {
@@ -3348,7 +3358,7 @@
       },
       { icon: "icon_detail_favorite.png", label: "Favorito", kind: "favorite" },
     ];
-    x(n) &&
+    x(n) && !window.XuperStandalone &&
       T.push({
         icon: "icon_detail_subscribe.png",
         label: "Notificaciones",
@@ -4001,11 +4011,11 @@
     })()),
     (ze.playback = (function () {
       if(window.XuperStandalone){
-        var panel=samsungSettingsCard("Reproducción en directo","720p experimental: objetivo de un segmento, unos 5 s detrás del borde HLS si los segmentos duran 5 s. FHD mantiene el perfil estable. Dos bloqueos de búfer restauran el perfil estable durante esa apertura. El retraso del proveedor no se puede eliminar desde el televisor.");
+        var panel=samsungSettingsCard("Reproducción en directo","El perfil estable es el predeterminado. El modo 720p experimental busca dos segmentos de retraso, unos 10 s si cada segmento dura 5 s. Dos bloqueos de búfer restauran el perfil estable durante esa apertura. El retraso del proveedor no se puede eliminar desde el televisor.");
         var lowDelay=e("button","xt-setting-action focusable");
-        function latencyLabel(){var on=true;try{on=localStorage.getItem("xt.lowDelay720")!=="off";}catch(_){}lowDelay.textContent="720p experimental · objetivo ~5 s · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
-        lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="off"?"on":"off");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
-        panel.appendChild(e("p","xt-setting-footnote","La app busca 1 s para arrancar y conserva 6 s tras una espera. Los idiomas requieren pistas disponibles en la señal; no traducen ni crean audio. Formato y estilo se aplican al reproductor principal."));
+        function latencyLabel(){var on=false;try{on=localStorage.getItem("xt.lowDelay720")==="on";}catch(_){}lowDelay.textContent="720p experimental · objetivo ~10 s · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
+        lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="on"?"off":"on");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
+        panel.appendChild(e("p","xt-setting-footnote","La app reserva 3 s para arrancar y conserva 6 s tras una espera. Los idiomas requieren pistas disponibles en la señal; no traducen ni crean audio. Formato y estilo se aplican al reproductor principal."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
         var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");subtitles.setAttribute("aria-pressed",String(X.playback.subtitle));nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
@@ -5987,6 +5997,7 @@
   }
   function $n(e, t) {
     if (e && t) {
+      if (X.screen === "detail") { X.detailEpisode = t; Jn(e); Kr(e, t); return; }
       ((X.playerItem = e),
         (X.playerEpisode = t),
         (X.detailEpisode = t),

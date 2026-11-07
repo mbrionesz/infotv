@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {catalogFocus} from '../browser/catalog-navigation.js';
+const card=()=>({classList:{contains:()=>true}}),other=()=>({classList:{contains:()=>false}});
+test('catalog navigation preserves grid rows and reaches footer through an incomplete last row',()=>{const nodes=[other(),other(),...Array.from({length:14},card),other(),other()];assert.equal(catalogFocus(nodes,7,39),7);assert.equal(catalogFocus(nodes,8,37),8);assert.equal(catalogFocus(nodes,2,38),1);assert.equal(catalogFocus(nodes,7,40),13);assert.equal(catalogFocus(nodes,13,40),15);assert.equal(catalogFocus(nodes,15,40),16);assert.equal(catalogFocus([],0,40),0);});

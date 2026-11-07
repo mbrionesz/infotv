@@ -1,6 +1,6 @@
 // Gate playback, not downloads. Preserve explicit pause and cancel on channel changes.
 export function createLiveBuffer(video,{now=()=>performance.now(),onState=()=>{},onRejected=()=>{}}={}){
- const play=video.play,pause=video.pause;let desired=false,userPaused=false,played=false,waiting=true,blocked=false,pending=false,disposed=false,target=1,since=now(),waiters=[],lastRelease={releaseCount:0},abortRetries=0,handling='buffer-gate';
+ const play=video.play,pause=video.pause;let desired=false,userPaused=false,played=false,waiting=true,blocked=false,pending=false,disposed=false,target=3,since=now(),waiters=[],lastRelease={releaseCount:0},abortRetries=0,handling='buffer-gate';
  function seconds(){try{for(let i=0;i<video.buffered.length;i++){const start=video.buffered.start(i),end=video.buffered.end(i),time=video.currentTime;if(time>=start-0.1&&time<=end)return Math.max(0,end-time);if(!played&&time<start)return end-start;}}catch(_){}return 0;}
  function hasForwardGap(){try{if(seconds()>0)return false;for(let i=0;i<video.buffered.length;i++)if(video.buffered.start(i)>video.currentTime+0.1)return true;}catch(_){}return false;}
  function state(extra={}){onState(Object.assign({waiting,handling,abortRetries,targetSeconds:target,bufferSeconds:Math.round(seconds()*100)/100,userPaused},lastRelease,extra));}
@@ -17,7 +17,7 @@ export function createLiveBuffer(video,{now=()=>performance.now(),onState=()=>{}
  }
  function request(){
   if(disposed)return Promise.reject(new DOMException('Closed','AbortError'));
-  if(userPaused){since=now();target=played?6:1;waiting=true;}
+  if(userPaused){since=now();target=played?6:3;waiting=true;}
   desired=true;userPaused=false;blocked=false;
   const result=new Promise((resolve,reject)=>waiters.push({resolve,reject}));check();return result;
  }

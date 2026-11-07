@@ -44,14 +44,14 @@ export function createPlayer(getStream) {
   function open(element, source, options) {
     stop(); video = element; url = source;
     const run = serial;let playbackSource=source;
-    let lowDelay=true;try{lowDelay=localStorage.getItem('xt.lowDelay720')!=='off';}catch(_){}
+    let lowDelay=false;try{lowDelay=localStorage.getItem('xt.lowDelay720')==='on';}catch(_){}
     const latencyPolicy=createLiveLatency(lowDelay);diagnostics.liveLatency=latencyPolicy.state;
     const stream = getStream(source) || {};
     const candidates=streamCandidates(source,stream),routes=streamRoutes(candidates);let routeIndex=0,attempt=0;
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
+    diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -319,7 +319,7 @@ export function createPlayer(getStream) {
     // AVPlay only receives headers its documented API can actually represent.
     if (custom.length) {
       if (isHls) useHls();
-      else fail('Este vídeo requiere cabeceras de autorización que el reproductor nativo no admite. La primera versión soporta esas cabeceras en HLS.');
+      else {diagnostics.unsupportedRoute='authorized-progressive';diagnostics.container=/mp2t|\.ts(?:[?#]|$)/i.test(stream.mime||options.mime||source)?'MPEG-TS':'MP4/otro';fail('El proveedor entregó '+diagnostics.container+' con autorización HTTP. Esta ruta aún no está soportada en la app autónoma; no es un fallo de compatibilidad HLS.');}
     } else if (isHls&&window.XuperNativeTransport&&window.XuperNativeTransport.snapshot().available) useHls();
     else if (window.webapis && webapis.avplay) avplay();
     else if (isHls && Hls.isSupported()) useHls();

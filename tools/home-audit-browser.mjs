@@ -18,6 +18,17 @@ try{
  await browser.evaluate('__xuper.show("home");__xuper.focus(".live-focus");__xuper.key(39);__xuper.key(40)');
  assert.equal(await browser.evaluate('__xuper.state.focus===document.querySelectorAll(".dashboard-action")[4]'),true);
  assert.ok(await browser.evaluate('__xuper.state.focus.offsetParent!==null'));
- await browser.evaluate('__xuper.show("home");__xuper.focus(document.querySelector(".tab-item"))');for(let step=0;step<6;step++)await browser.evaluate('__xuper.key(40)');assert.equal(await browser.evaluate('__xuper.state.focus.textContent.trim()'),'Mi lista');await browser.evaluate('__xuper.key(39)');assert.equal(await browser.evaluate('__xuper.state.screen'),'settings');
+ await browser.evaluate('__xuper.show("home");__xuper.focus(document.querySelector(".tab-item"))');for(let step=0;step<6;step++)await browser.evaluate('__xuper.key(40)');assert.equal(await browser.evaluate('__xuper.state.focus.textContent.trim()'),'Mi lista');await browser.evaluate('__xuper.key(39)');assert.equal(await browser.evaluate('__xuper.state.screen'),'home');assert.equal(await browser.evaluate('__xuper.state.focus===document.querySelector(".dashboard-action")'),true);await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".tab-item")).filter(function(el){return el.offsetParent!==null}).pop());__xuper.key(13)');assert.equal(await browser.evaluate('__xuper.state.screen'),'settings');
+ await browser.evaluate('__xuper.show("home");__xuper.focus(document.querySelectorAll(".tab-item")[1]);__xuper.key(39)');
+ assert.equal(await browser.evaluate('XuperCatalog.active'),false);assert.equal(await browser.evaluate('XuperGuide.active'),false);
+ assert.equal(await browser.evaluate('__xuper.state.focus===document.querySelector(".dashboard-action")'),true);
+ await browser.evaluate('__xuper.focus(document.querySelectorAll(".tab-item")[1]);__xuper.key(13)');
+ assert.equal(await browser.evaluate('document.querySelector("#xt-catalog h1").textContent'),'Destacados');await browser.evaluate('XuperCatalog.close()');
+ await browser.evaluate('__xuper.show("home");window.auditCall=XuperStandalone.core.call;XuperStandalone.core.call=function(method,payload,cb){if(method.indexOf("catalog")===0)return cb(new Error("fallo de prueba"));return auditCall(method,payload,cb)};XuperCatalog.open("movies")');
+ assert.equal(await browser.evaluate('document.querySelector(".xt-catalog-retry").hidden'),false);
+ assert.equal(await browser.evaluate('document.querySelector(".xt-catalog-retry").classList.contains("selected")'),true);
+ await browser.evaluate('XuperStandalone.core.call=auditCall;XuperCatalog.handle({keyCode:13})');
+ await browser.waitFor('document.querySelectorAll(".xt-catalog-card").length>0');
+ await browser.evaluate('XuperCatalog.close()');
  assert.deepEqual(browser.errors,[]);console.log('PASS: all six dashboard destinations, D-Pad grid and empty-preview removal.');
 }finally{if(browser)await browser.close();server.closeAllConnections();server.close();}
