@@ -204,6 +204,12 @@ export function createPlayer(getStream) {
       });
       hls.on(Hls.Events.BUFFER_APPENDED,()=>{if(serial===run&&generation===attempt&&hls){latencyPolicy.update(hls,video,options.live,performance.now()>=alignmentReadyAt);if(bufferGate)bufferGate.check();}});
       hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run&&generation===attempt) hls.loadSource(playbackSource); });
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
+        if(serial!==run||generation!==attempt||!hls||!options.preferredAudio)return;
+        const languages={es:['es','spa','esp'],pt:['pt','por'],en:['en','eng']}[options.preferredAudio]||[];
+        const index=(data.audioTracks||[]).findIndex(track=>languages.includes(String(track.lang||'').toLowerCase().split('-')[0]));
+        if(index>=0)hls.audioTrack=index;
+      });
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (serial !== run||generation!==attempt) return;
         diagnostics.stage='segments';diagnostics.httpStatus=200;tryPlay();

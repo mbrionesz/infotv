@@ -1,3 +1,4 @@
+import {allowContent} from './content-filter.js';
 import {requestSignal} from './request-signal.js';
 import {probeCdns} from './cdn-probe.js';
 import {formatMediaInfo} from './media-info.js';
@@ -75,7 +76,7 @@ function request(method, payload, callback) {
   } catch (error) { done(error); }
   return true;
 }
-window.XuperStandalone = { formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.6.3', diagnostics: () => ({ lastError, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.6.3', diagnostics: () => ({ lastError, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 let diagnosticPanel=null,diagnosticSignal=null;
 function closeDiagnostics(){if(diagnosticSignal)diagnosticSignal.abort();diagnosticSignal=null;if(diagnosticPanel)diagnosticPanel.remove();diagnosticPanel=null;}
 window.XuperStandalone.probeCdns=async function(options={}){

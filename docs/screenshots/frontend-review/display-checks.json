@@ -1,0 +1,51 @@
+{
+  "demoContent": true,
+  "checks": [
+    {
+      "viewport": {
+        "w": 1920,
+        "h": 1080,
+        "scale": 1,
+        "pixelRatio": 1,
+        "profile": "1080p",
+        "uiScaleMode": "auto",
+        "panelW": 1920,
+        "panelH": 1080
+      },
+      "bounds": {
+        "right": 1920,
+        "bottom": 1080
+      }
+    },
+    {
+      "viewport": {
+        "w": 3840,
+        "h": 2160,
+        "scale": 2,
+        "pixelRatio": 1,
+        "profile": "4k",
+        "uiScaleMode": "auto",
+        "panelW": 3840,
+        "panelH": 2160
+      },
+      "bounds": {
+        "right": 3840,
+        "bottom": 2160
+      }
+    },
+    {
+      "viewport": {
+        "w": 1920,
+        "h": 1080,
+        "scale": 1,
+        "pixelRatio": 2,
+        "profile": "1080p",
+        "uiScaleMode": "auto",
+        "panelW": 3840,
+        "panelH": 2160
+      },
+      "right": 1920,
+      "width": 1920
+    }
+  ]
+}

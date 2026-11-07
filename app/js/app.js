@@ -890,7 +890,7 @@
       {
         id: "parent",
         label: "Control parental",
-        desc: "Bloqueo de contenido adulto",
+        desc: "Filtro de contenido adulto · sin PIN",
         group: "Aplicación",
       },
       {
@@ -1159,10 +1159,11 @@
   function nt(e) {
     for (var t = n(e, ".scrollable"); t;) {
       var a = e.getBoundingClientRect(),
-        i = t.getBoundingClientRect();
+        i = t.getBoundingClientRect(),
+        scale = t.clientHeight ? i.height / t.clientHeight : 1;
       (a.top < i.top
-        ? (t.scrollTop -= i.top - a.top + 12)
-        : a.bottom > i.bottom && (t.scrollTop += a.bottom - i.bottom + 12),
+        ? (t.scrollTop -= (i.top - a.top) / scale + 12)
+        : a.bottom > i.bottom && (t.scrollTop += (a.bottom - i.bottom) / scale + 12),
         t.scrollWidth > t.clientWidth + 1 &&
           (a.left < i.left
             ? (t.scrollLeft -= i.left - a.left + 12)
@@ -1200,6 +1201,19 @@
     return null;
   }
   function st(e) {
+    if (X.screen === "settings" && X.focus && n(X.focus, "#settings-right")) {
+      var panel = be.querySelector(".settings-panel.is-active"), current = X.focus.getBoundingClientRect(), best = null, score = Infinity;
+      var controls = panel ? panel.querySelectorAll(".focusable") : [];
+      for (var si = 0; si < controls.length; si++) {
+        var control = controls[si]; if (control === X.focus || !at(control)) continue;
+        var rect = control.getBoundingClientRect(), dx = rect.left + rect.width/2 - current.left - current.width/2, dy = rect.top + rect.height/2 - current.top - current.height/2;
+        if ((e === "up" && dy >= -4) || (e === "down" && dy <= 4) || (e === "left" && (dx >= -4 || Math.abs(dy)>4)) || (e === "right" && (dx <= 4 || Math.abs(dy)>4))) continue;
+        var value = (e === "up" || e === "down") ? Math.abs(dy)*10+Math.abs(dx) : Math.abs(dx);
+        if (value < score) { score=value;best=control; }
+      }
+      if (best) rt(best); else if (e === "left") rt(ye.querySelector(".is-selected") || je[0]);
+      return;
+    }
     if (X.focus) {
       if (!X.focus._onMove || !X.focus._onMove(e)) {
         for (
@@ -2102,7 +2116,7 @@
           var s = Fe.filter(function (e) {
             return e._channel === X.channel;
           })[0];
-          s ? rt(s) : Fe.length ? rt(Fe[0]) : ne && rt(ne);
+          window.XuperStandalone ? (ne && rt(ne)) : s ? rt(s) : Fe.length ? rt(Fe[0]) : ne && rt(ne);
         } else {
           var l = ot(He[a.page]);
           l && rt(l);
@@ -3874,6 +3888,8 @@
   function Va() {
     ((ye = t("settings-menu")),
       (be = t("settings-right")),
+      ye.classList.add("scrollable"),
+      be.classList.add("scrollable"),
       a(ye),
       a(be),
       (je = []));
@@ -3891,13 +3907,20 @@
         o.desc && c.appendChild(e("div", "settings-desc", o.desc)),
         l.appendChild(c),
         (l._index = r),
+        (l._onFocus = function () { Ua(this._index, !1); }),
         (l._activate = (function (e) {
           return function () {
             Ua(e, !0);
           };
         })(r)),
         (l._onMove = function (e) {
+          if ("up" === e || "down" === e) {
+            var next = this._index + ("up" === e ? -1 : 1);
+            if (je[next]) rt(je[next]);
+            return !0;
+          }
           if ("right" === e) {
+            Ua(this._index, !1);
             var t = ot(be.querySelector(".settings-panel.is-active"));
             return (t && rt(t), !0);
           }
@@ -3982,9 +4005,9 @@
         var lowDelay=e("button","xt-setting-action focusable");
         function latencyLabel(){var on=true;try{on=localStorage.getItem("xt.lowDelay720")!=="off";}catch(_){}lowDelay.textContent="720p experimental · objetivo ~5 s · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
         lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="off"?"on":"off");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
-        panel.appendChild(e("p","xt-setting-footnote","La app busca 1 s para arrancar y conserva 6 s tras una espera. Audio y calidad dependen de la señal y del soporte del televisor."));
+        panel.appendChild(e("p","xt-setting-footnote","La app busca 1 s para arrancar y conserva 6 s tras una espera. Los idiomas requieren pistas disponibles en la señal; no traducen ni crean audio. Formato y estilo se aplican al reproductor principal."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
-        var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
+        var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");subtitles.setAttribute("aria-pressed",String(X.playback.subtitle));nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
         Ba(panel,890,"Audio preferido",["Español","Portugués","Inglés"],"audio",X.playback.audio);
         Ba(panel,1000,"Idioma de subtítulos",["Español","Portugués","Inglés"],"subLang",X.playback.subLang);
@@ -4255,7 +4278,7 @@
           e(
             "div",
             "pl-tip",
-            "Elige si deseas mostrar contenido y canales clasificados para mayores de edad en este televisor.",
+            "Filtra contenido identificado como adulto en sus datos. No es un bloqueo con PIN y no detecta señales sin clasificación.",
           ),
         ),
         t.appendChild(e("div", "pl-label", "Contenido +18")));
@@ -4460,7 +4483,8 @@
     for (var d = 0; d < je.length; d++)
       je[d].classList.toggle("is-selected", d === e);
     for (var c in ze)
-      ze.hasOwnProperty(c) && ze[c].classList.toggle("is-active", c === n);
+      if (ze.hasOwnProperty(c)) { ze[c].setAttribute("data-setting", c); ze[c].classList.toggle("is-active", c === n); }
+    be.scrollTop = 0;
     a && rt(ot(ze[n]) || je[e]);
   }
   function samsungSettingsCard(title,body){var panel=e("div","settings-panel xt-settings-card");panel.appendChild(e("div","xt-setting-kicker","SAMSUNG · TIZEN"));panel.appendChild(e("h1","xt-setting-title",title));panel.appendChild(e("p","xt-setting-body",body));return panel;}
@@ -4515,21 +4539,21 @@
       ),
       t.appendChild(i));
     var n = e("div", "account-actions-row"),
-      r = e("div", "account-action-btn focusable", "📋 Ver mi lista");
+      r = e("div", "account-action-btn focusable", "Ver mi lista");
     ((r._activate = function () {
       Ua("history", !0);
     }),
       (r._onMove = function (e) {
         return "left" === e ? (rt(je[0]), !0) : "right" === e && (rt(o), !0);
       }));
-    var o = e("div", "account-action-btn focusable", "➕ Agregar Addons");
+    var o = e("div", "account-action-btn focusable", "Agregar listas");
     ((o._activate = function () {
       sa();
     }),
       (o._onMove = function (e) {
         return "left" === e ? (rt(r), !0) : "right" === e && (rt(s), !0);
       }));
-    var s = e("div", "account-action-btn focusable", "📲 Compartir APP");
+    var s = e("div", "account-action-btn focusable", "Cómo instalar");
     ((s._activate = function () {
       Ua("share", !0);
     }),
@@ -4549,7 +4573,7 @@
         e(
           "div",
           "account-card-text",
-          "Este perfil no envía tus datos a ningún servidor externo. El historial, tus favoritos y los addons instalados se guardan de forma segura en la memoria de este TV.",
+          "Tu historial, favoritos y preferencias se guardan localmente en este televisor. La reproducción y las búsquedas consultan los servidores de contenido.",
         ),
       ),
       t.appendChild(l),
@@ -4561,8 +4585,8 @@
       var t = e("div", "settings-panel history-panel"),
         a = e("div", "history-tabs"),
         i = [
-          { id: "history", label: "Historia" },
-          { id: "favs", label: "Mi favoritos" },
+          { id: "history", label: "Historial" },
+          { id: "favs", label: "Favoritos" },
         ],
         n = 0;
       n < i.length;
@@ -4633,7 +4657,7 @@
         e(
           "div",
           "sp-global-note",
-          "Extiende tu catálogo con miles de canales en vivo: Anime 24/7, Telenovelas, Cine continuo, Pluto TV y señales de TV abierta de Latinoamérica y España.",
+          "Administra tus propias listas M3U / M3U8. No se instalan listas externas automáticamente.",
         ),
       ));
     var a = e("div", "account-card");
@@ -4646,14 +4670,14 @@
         e(
           "div",
           "account-card-text",
-          "Instala listas temáticas con un solo clic o añade tus propios enlaces M3U / M3U8 para disfrutar de televisión en vivo sin límites.",
+          "Añade una URL M3U / M3U8 que tengas autorización para usar. Su disponibilidad depende del servidor de esa lista.",
         ),
       ),
       t.appendChild(a));
     var n = e(
       "button",
       "account-action-btn focusable",
-      "➕ Abrir Administrador de Addons",
+      "Administrar mis listas",
     );
     ((n.style.position = "absolute"),
       (n.style.left = "0"),
@@ -7378,6 +7402,7 @@
         xe.classList.add("is-active");
         Te && (Te.style.display = "none");
         window.XuperPlayer.open(xe, e, { mime: s, live: "live" === X.playerMode,
+          preferredAudio: ["es", "pt", "en"][Number(X.playback.audio)||0] || "es",
           onInfo: function (data) { var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
@@ -7782,17 +7807,9 @@
               0;
           (e && t) || ((e = 1920), (t = 1080));
           var a = Math.floor((screen && screen.width) || 0),
-            i = Math.floor((screen && screen.height) || 0),
-            n = e / t,
-            r = a && i ? a / i : 0;
-          return (
-            a >= 2560 &&
-              a >= 1.25 * e &&
-              i >= 1.25 * t &&
-              Math.abs(n - r) < 0.03 &&
-              ((e = a), (t = i)),
-            { w: e, h: t, panel: a > 0 && i > 0 ? { w: a, h: i } : null }
-          );
+            i = Math.floor((screen && screen.height) || 0);
+          // screen reports the panel; layout must fit the CSS viewport offered by Tizen.
+          return { w: e, h: t, panel: a > 0 && i > 0 ? { w: a, h: i } : null };
         })(),
         i = a.w,
         n = a.h,
@@ -7810,6 +7827,8 @@
           w: i,
           h: n,
           scale: r,
+          pixelRatio: window.devicePixelRatio || 1,
+          profile: i >= 3000 && n >= 1700 ? "4k" : i >= 1800 && n >= 1000 ? "1080p" : "scaled",
           uiScaleMode: Q && Q.uiScaleMode ? Q.uiScaleMode : "auto",
           panelW: a.panel ? a.panel.w : 0,
           panelH: a.panel ? a.panel.h : 0,

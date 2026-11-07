@@ -89,9 +89,9 @@ try {
   await browser.screenshot('dist/home-4k-v060.png');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
   await browser.waitFor('document.getElementById("app").getBoundingClientRect().width<2000');
-  await browser.evaluate('__xuper.focus(".live-focus");__xuper.key(40);__xuper.key(40)');
-  assert.equal(await browser.evaluate('__xuper.state.focus === document.querySelector(".modern-quick-card")'),true);
-  await browser.evaluate('__xuper.key(39);__xuper.key(13)');
+  await browser.evaluate('__xuper.focus(".live-focus");__xuper.key(40)');
+  assert.equal(await browser.evaluate('__xuper.state.focus === document.querySelectorAll(".dashboard-action")[3]'),true);
+  await browser.evaluate('__xuper.key(38);__xuper.key(39);__xuper.key(13)');
   await browser.waitFor('!!document.getElementById("xt-catalog") && document.querySelectorAll(".xt-catalog-card").length===36');
   await browser.screenshot('dist/browser-movies.png');
   await browser.evaluate('XuperCatalog.close()');

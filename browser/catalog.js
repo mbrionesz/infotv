@@ -1,3 +1,4 @@
+import {allowContent} from './content-filter.js';
 import {openKeyboard} from './keyboard.js';
 export function createCatalog(core){
   let panel=null,active=false,root='movies',remotePage=1,offset=0,items=[],total=0,loaded=0,hasMore=true,loading=false,run=0,keyboard=null,filterTimer=null;
@@ -8,7 +9,7 @@ export function createCatalog(core){
     core.call(searchMode?'catalogSearch':fetchPage?'catalogPage':'catalogQuery',{root,pageNum:remotePage,offset,limit:36,filters:Object.assign({},filters)},(error,result)=>{
       if(!active||run!==token)return;loading=false;
       if(error){status(error.message||String(error));return;}
-      items=result.items||[];total=result.total||0;loaded=result.loaded||0;if(fetchPage)hasMore=!!result.hasMore;
+      items=(result.items||[]).filter(allowContent);total=result.total||0;loaded=result.loaded||0;if(fetchPage)hasMore=!!result.hasMore;
       render(result.facets||{});status(total+' resultados · '+loaded+(result.remoteSearch?' títulos encontrados por el proveedor':' títulos cargados del proveedor')+(hasMore&&!searchMode?' · puedes cargar más':''));
     });
   }
@@ -20,8 +21,8 @@ export function createCatalog(core){
     if(next!==selectedNode){if(selectedNode)selectedNode.classList.remove('selected');if(next)next.classList.add('selected');selectedNode=next;}
     if(next&&next.classList.contains('xt-catalog-card')){
       const row=Number(next.dataset.row);if(row!==previousRow){
-        previousRow=row;const grid=panel.querySelector('.xt-catalog-grid'),top=8+row*308,bottom=top+290;
-        if(top<grid.scrollTop)grid.scrollTop=top;else if(bottom>grid.scrollTop+650)grid.scrollTop=bottom-650;
+        previousRow=row;const grid=panel.querySelector('.xt-catalog-grid'),top=next.offsetTop,bottom=top+next.offsetHeight;
+        if(top<grid.scrollTop)grid.scrollTop=top;else if(bottom>grid.scrollTop+grid.clientHeight)grid.scrollTop=bottom-grid.clientHeight;
       }
     }
   }

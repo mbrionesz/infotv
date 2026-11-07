@@ -1,99 +1,28 @@
-(function () {
-  'use strict';
-  function element(tag, className, text) {
-    var node = document.createElement(tag); node.className = className;
-    if (text) node.textContent = text;
-    return node;
+(function(){
+ 'use strict';
+ function node(tag,cls,text){var el=document.createElement(tag);el.className=cls;if(text)el.textContent=text;return el;}
+ window.addEventListener('load',function(){
+  var home=document.getElementById('screen-home');
+  var word=node('div','modern-wordmark');word.innerHTML='<span class="modern-symbol"></span><div class="modern-name">Xuper<span>Tizen</span></div>';home.appendChild(word);
+  document.getElementById('screen-settings').appendChild(node('h1','xt-settings-heading','Ajustes'));
+  function catalog(kind){if(window.XuperCatalog)XuperCatalog.open(kind);}
+  function guide(){if(window.XuperGuide)XuperGuide.open();}
+  var actions=[['TV en vivo','Canales y guía',guide],['Películas','Explorar catálogo',function(){catalog('movies');}],['Series','Temporadas y episodios',function(){catalog('series');}],['Buscar','Películas y series',function(){catalog('movies');XuperCatalog.search();}],['Mi lista','Películas y series guardadas',function(){__xuper.settingsPanel('history');}],['Ajustes','Tu televisor, a tu manera',function(){__xuper.openSettings();}]];
+  function decorate(){
+   var page=home.querySelector('.home-page'),target=page&&page.querySelector('.live-focus');if(!target||page.dataset.dashboard)return;
+   page.dataset.dashboard='true';
+   var intro=node('header','dashboard-heading');intro.appendChild(node('span','dashboard-eyebrow','XUPERTIZEN'));intro.appendChild(node('h1','','Tu entretenimiento.'));page.appendChild(intro);
+   var grid=node('section','dashboard-actions');grid.setAttribute('aria-label','Accesos principales');var controls=[];
+   actions.forEach(function(action,index){var card=index===0?target:node('button','focusable');card.className='dashboard-action focusable'+(index===0?' live-focus':'');card.textContent='';var glyph=node('span','dashboard-glyph');glyph.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="'+['M8 5l11 7-11 7z','M3 4h18v16H3zM3 9h18M8 4l3 5m3-5 3 5','M4 3h16v18H4zM4 8h16M8 3v18','M16 16l5 5M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14','M12 21S2 15 2 8a5 5 0 0 1 10-1A5 5 0 0 1 22 8c0 7-10 13-10 13z','M4 5h16M4 12h16M4 19h16M8 2v6M16 9v6M10 16v6'][index]+'"/></svg>';card.appendChild(glyph);card.appendChild(node('strong','',action[0]));card.appendChild(node('small','',action[1]));card._activate=action[2];card.onclick=action[2];card.setAttribute('aria-label',action[0]);card._onMove=function(direction){var next=index;if(direction==='right'&&index%3<2)next++;else if(direction==='left'&&index%3>0)next--;else if(direction==='up'&&index>=3)next-=3;else if(direction==='down'&&index<3)next+=3;else if(direction==='down'&&posters.length){__xuper.focus(posters[Math.min(index,posters.length-1)]);return true;}else if(direction==='left'){__xuper.focus(home.querySelector('.tab-item.is-selected'));return true;}if(next!==index)__xuper.focus(controls[next]);return true;};controls.push(card);grid.appendChild(card);});page.appendChild(grid);
+   var shelf=node('section','dashboard-shelf');shelf.appendChild(node('h2','','Explora películas'));var row=node('div','dashboard-posters');shelf.appendChild(row);page.appendChild(shelf);var posters=[];
+   function renderShelf(items){var focusedIndex=posters.indexOf(window.__xuper&&__xuper.state.focus);row.textContent='';posters.length=0;var empty=shelf.querySelector('.dashboard-empty');if(empty)empty.remove();items=items.filter(function(item){return item.poster&&(!window.XuperStandalone||!XuperStandalone.allowContent||XuperStandalone.allowContent(item));}).slice(0,6);
+   items.forEach(function(item,index){var card=node('button','dashboard-poster focusable');var image=node('img','');image.alt='';image.decoding='async';if(window.XuperStandalone)XuperStandalone.loadPoster(image,item.poster);var label=node('strong','',item.title||'Ver detalle');card.appendChild(image);card.appendChild(label);card._activate=function(){var itemIndex=__xuper.vod.findIndex(function(value){return value.id===item.id;});if(itemIndex<0){itemIndex=__xuper.vod.push(item)-1;}__xuper.openDetail(itemIndex);};card.onclick=card._activate;card._onMove=function(direction){if(direction==='up'){__xuper.focus(controls[3+Math.min(2,Math.floor(index/2))]);return true;}if(direction==='left'&&index>0){__xuper.focus(posters[index-1]);return true;}if(direction==='right'&&index<posters.length-1){__xuper.focus(posters[index+1]);return true;}if(direction==='left'){__xuper.focus(home.querySelector('.tab-item.is-selected'));return true;}return true;};posters.push(card);row.appendChild(card);});if(!items.length)shelf.appendChild(node('p','dashboard-empty','Abre Películas para explorar el catálogo.'));if(focusedIndex>=0)__xuper.focus(posters[Math.min(focusedIndex,posters.length-1)]||controls[0]);}
+   renderShelf(window.__xuper?__xuper.vod:[]);
+   if(window.XuperStandalone)XuperStandalone.core.call('catalogPage',{root:'movies',pageNum:1,offset:0,limit:6},function(error,result){if(page.parentNode&&!error&&result&&result.items)renderShelf(result.items);});
+   var tabs=home.querySelectorAll('.tab-item');var labels=['Inicio','Destacados','Películas','Series','Kids','Anime','Novelas','Explorar','Mi lista'];var roots=['','featured','movies','series','kids','anime','novelas'];tabs.forEach(function(tab,index){var title=tab.querySelector('.tab-title');if(title)title.textContent=labels[index]||title.textContent;if(index===6||index===7){tab.style.display='none';return;}if(index>0){tab._activate=function(){if(index===8)__xuper.settingsPanel('history');else if(index===7){catalog('movies');XuperCatalog.search();}else catalog(roots[index]);};tab.onclick=tab._activate;}tab._onMove=function(direction){var visible=Array.from(home.querySelectorAll('.tab-item')).filter(function(el){return el.offsetParent!==null;});var position=visible.indexOf(tab);if(direction==='up'&&position>0)__xuper.focus(visible[position-1]);else if(direction==='down'&&position<visible.length-1)__xuper.focus(visible[position+1]);else if(direction==='right'){if(index===0)__xuper.focus(target);else tab._activate();}return true;};});
+   home.querySelectorAll('.notify-item').forEach(function(control){control.style.display='none';});
+   if(window.__xuper&&__xuper.state.screen==='home'&&__xuper.state.focus&&__xuper.state.focus.offsetParent===null)__xuper.focus(target);
   }
-  window.addEventListener('load', function () {
-    var icons = {
-      arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19 19 5M5 5h14v14"/></svg>',
-      search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>',
-      movies:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4l3 5m3-5 3 5"/></svg>',
-      settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m9 3-1 3-3 1-2 3 2 2v3l3 1 1 3h5l1-3 3-1v-3l2-2-2-3-3-1-1-3z"/><circle cx="11.5" cy="11" r="3"/></svg>',
-      channels:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1"/></svg>'
-    };
-    var home = document.getElementById('screen-home');
-    var wordmark = element('div', 'modern-wordmark');
-    wordmark.innerHTML = '<span class="modern-symbol">XT</span><div class="modern-name">Xuper<span>Tizen</span></div>';
-    home.appendChild(wordmark);
-    var settings=document.getElementById("screen-settings");var settingsTitle=element("div","xt-settings-heading","Centro de ajustes");settings.appendChild(settingsTitle);
-    var observer = new MutationObserver(decorate);
-    observer.observe(document.getElementById('home-pages'), { childList:true, subtree:true });
-    function decorate() {
-      home.querySelectorAll('.bento:not([data-modern-ready])').forEach(function (card) {
-        card.setAttribute('data-modern-ready', 'true');
-        var item = card._item;
-        if (!item) return;
-        var fallback = element('div', 'modern-card-fallback', (item.title || '').slice(0, 1));
-        card.insertBefore(fallback, card.firstChild);
-        if (!card.querySelector('.bento-title')) card.appendChild(element('div', 'bento-title', item.title));
-        if (!card.querySelector('.bento-shade')) card.appendChild(element('div', 'bento-shade'));
-        card.setAttribute('aria-label', item.title || 'Ver detalle');
-      });
-      var main = home.querySelector('.live-main');
-      if (!main || main.querySelector('.modern-live-copy')) return;
-      var copy = element('div', 'modern-live-copy');
-      copy.innerHTML = '<div class="hero-kicker">XUPERTIZEN · EN VIVO</div><h2>Elige una señal.<br>Entra al directo.</h2><p>Tus canales, favoritos y categorías<br>en una sola pantalla.</p><div class="hero-action"><span>OK</span> Abrir reproductor ' + icons.arrow + '</div>';
-      main.appendChild(copy);
-      var page = main.parentElement;
-      var heading = element('div', 'modern-channel-heading');
-      heading.innerHTML = 'Tus canales <span>EXPLORA EN DIRECTO</span>';
-      page.appendChild(heading);
-      var quick = element('section', 'modern-quick');
-      quick.appendChild(element('h2', 'modern-section-title', 'Accesos directos'));
-      var grid = element('div', 'modern-quick-grid');
-      var definitions = [
-        [icons.search, 'Encuentra tu canal', 'Busca por nombre, sin perderte.', function () {
-          if(window.XuperGuide){window.XuperGuide.open();return;}
-          __xuper.show('player'); __xuper.key(37);
-          var search = document.querySelector('.pc-search');
-          if (search && search._activate) search._activate();
-        }],
-        [icons.movies, 'Una buena película', 'Explora tu próxima historia.', function () { __xuper.selectTab(2); }],
-        [icons.settings, 'Centro de ajustes', 'Reproducción, pantalla y conexión.', function () { __xuper.openSettings(); }]
-      ];
-      definitions.forEach(function (definition, index) {
-        var card = element('button', 'modern-quick-card focusable');
-        card.innerHTML = '<span class="quick-icon">' + definition[0] + '</span><span><strong>' + definition[1] + '</strong><small>' + definition[2] + '</small></span><span class="quick-arrow">' + icons.arrow + '</span>';
-        card._activate = definition[3];
-        card._onMove = function (direction) {
-          if (direction === 'left' && index > 0) { __xuper.focus(grid.children[index-1]); return true; }
-          if (direction === 'right' && index < 2) { __xuper.focus(grid.children[index+1]); return true; }
-          if (direction === 'up') { __xuper.focus('.live-focus'); return true; }
-          return false;
-        };
-        grid.appendChild(card);
-      });
-      quick.appendChild(grid); page.appendChild(quick);
-      if(window.XuperGuide){
-        var liveTarget=page.querySelector('.live-focus');if(liveTarget)liveTarget._activate=function(){window.XuperGuide.open();};
-      }
-      var menuLabels = ['TV en vivo', 'Destacados', 'Películas', 'Series', 'Kids', 'Anime', 'Novelas', 'Explorar', 'Historial'];
-      home.querySelectorAll('.tab-item .tab-title').forEach(function (title, index) {
-        title.textContent = menuLabels[index] || title.textContent;
-      });
-      var focus = page.querySelector('.live-focus');
-      if (focus) {
-        var originalMove = focus._onMove;
-        focus._onMove = function (direction) {
-          if (direction === 'down' && __xuper.state.channel >= __xuper.channels.length - 1) {
-            __xuper.focus(grid.children[0]); return true;
-          }
-          return originalMove ? originalMove(direction) : false;
-        };
-      }
-      [['search', icons.search, 'Buscar películas y series'], ['filter', icons.channels, 'Buscar canales'], ['personal', icons.settings, 'Ajustes']].forEach(function (item) {
-        var control = home.querySelector('.notify-item.' + item[0]);
-        if (!control) return;
-        var glyph = control.querySelector('.n-normal');
-        glyph.style.backgroundImage = 'none'; glyph.innerHTML = item[1];
-        control.setAttribute('aria-label', item[2]);
-        if (item[0] === 'filter') control._activate = definitions[0][3];
-        if(item[0]==='search'&&window.XuperCatalog)control._activate=function(){window.XuperCatalog.open('movies');window.XuperCatalog.search();};
-      });
-    }
-    decorate();
-
-  });
+  var observer=new MutationObserver(decorate);observer.observe(document.getElementById('home-pages'),{childList:true,subtree:true});decorate();
+ });
 })();

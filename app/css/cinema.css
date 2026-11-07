@@ -1,0 +1,100 @@
+/* Cinema proposal: solid surfaces, fixed geometry and no animated focus zoom.
+   Shared by every home category, catalog, guide, search, detail and settings panel. */
+:root{--ink:#080809;--panel:#18181b;--line:#333337;--muted:#a4a4ad;--accent:#f5f5f7}
+html,body{font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;background:#080809}
+#screen-home,#screen-settings,#screen-search,#screen-detail,.xt-panel{background:#080809;color:#f5f5f7}
+#screen-home::before{background:linear-gradient(135deg,#232326,transparent 70%);height:540px}
+.modern-symbol{background:#17171a url('../images/icon.png') center/cover no-repeat;color:transparent;border-radius:12px}
+.modern-name span{color:#aaaab2}.modern-name{font-weight:600}
+.home-tabs,.home-tabs.is-collapsed{background:transparent;border-color:transparent;border-radius:0}
+.tab-item,.home-tabs.is-collapsed .tab-item{border-radius:14px}
+.tab-item .tab-title,.home-tabs.is-collapsed .tab-item .tab-title{font-size:22px;color:#aaaab2}
+.tab-item .tab-icon,.tab-item.is-selected .tab-icon{color:#aaaab2}
+.tab-item.is-selected{background:#242427}.tab-item.is-selected .tab-title{color:#fff}
+.tab-item .tab-pill,.home-tabs.is-collapsed .tab-item .tab-pill{background:#f5f5f7;border-radius:14px}
+.tab-item.is-focused .tab-title,.tab-item.is-focused .tab-icon{color:#161618}
+.home-page:first-child::before{content:'VER AHORA';color:#a4a4ad;font-size:14px;letter-spacing:2px}
+.live-main{border-color:#333337;background:#141416;border-radius:24px}
+.live-main .live-frame{background:linear-gradient(120deg,#161619,#37373d)}
+.live-main .live-frame::before{display:none}.live-main .live-frame::after{background:linear-gradient(90deg,rgba(0,0,0,.65),transparent)}
+.modern-live-copy h2{font-size:76px;line-height:1.04;letter-spacing:-3px;font-weight:600}
+.modern-live-copy p{color:#c7c7ce;font-size:23px}.modern-live-copy .hero-action{background:#f5f5f7;color:#161618;border-radius:12px}
+.live-focus.is-focused::after{border-color:#f5f5f7;border-radius:24px}
+.live-list{background:#141416;border-color:#2c2c30;border-radius:24px}
+.live-row{background:#202023;border-color:transparent;border-radius:14px}.live-row.is-current{background:#303035;border-color:#606068}
+.live-row.is-focused{background:#f5f5f7;color:#111;outline:2px solid #fff;border-color:#fff}.live-row.is-focused .row-name{color:#111}
+.modern-channel-heading span,.modern-section-title{color:#aaaab2}
+.modern-quick-card{background:#1c1c1f;border-color:#303034;border-radius:18px}.modern-quick-card .quick-icon{background:#303035;color:#f5f5f7;border-radius:12px}
+.modern-quick-card.is-focused{background:#35353b;border-color:#f5f5f7;outline:3px solid #f5f5f7}.modern-quick-card small{color:#aaaab2}
+.notify-item,.notify-item.is-small{background:#242427;border-color:#38383d;border-radius:24px}.notify-item.is-focused{background:#44444b;outline-color:#fff}
+/* Shared menus, including content sections reached through the home rail. */
+.settings-menu,.search-keyboard{background:#141416;border-color:#303034;border-radius:22px}
+.settings-right{background:#18181b;border-color:#303034;border-radius:22px}
+.settings-item{border-radius:13px}.settings-item.is-selected{background:#303035;color:#fff}
+.settings-item.is-focused,.settings-item.is-selected.is-focused{background:#f5f5f7;color:#111}
+.settings-desc,.settings-group,.xt-setting-kicker,.xt-setting-footnote{color:#aaaab2}
+.settings-item.is-focused .settings-desc{color:#4c4c54}.xt-setting-body{color:#c2c2ca}
+.xt-setting-action,.pb-opt,.detail-btn,.detail-episode,.subs-preview,.dialog-playsettings-box,.dialog-addons-box{background-color:#2b2b30;border-color:#4a4a52;color:#f5f5f7;border-radius:14px}
+.xt-setting-action.is-focused,.pb-opt.is-focused,.detail-btn.is-focused,.detail-episode.is-focused{background:#f5f5f7;color:#111;outline:3px solid #fff;box-shadow:none}
+.xt-panel{padding:40px 48px}.xt-panel h1{font-size:54px;font-weight:600;letter-spacing:-2px}.xt-panel header{border-color:#303034;height:125px}
+.xt-eyebrow{color:#aaaab2;letter-spacing:2px}.xt-panel button,.xt-panel select{background:#242427;border-color:#3a3a40;color:#e0e0e5;border-radius:14px}
+.xt-panel button.selected,.xt-panel select.selected{background:#f5f5f7;color:#111;border-color:#fff;outline:3px solid #fff}
+.xt-catalog-filters select{border-radius:24px;padding-left:22px}.xt-catalog-status{color:#aaaab2}
+.xt-catalog-card{height:455px;border-color:transparent!important;background:transparent!important;padding:8px!important;border-radius:18px!important}
+.xt-catalog-card img{height:355px;object-fit:cover;border-radius:14px;background:#242427}
+.xt-catalog-card strong{font-size:21px;color:#f5f5f7;margin-top:14px}.xt-catalog-card small{color:#aaaab2;font-size:16px}
+.xt-catalog-card.selected{background:#26262b!important;outline:3px solid #fff!important}.xt-catalog-card.selected strong{color:#fff}
+.xt-panel footer{border-color:#303034;color:#aaaab2}.xt-guide-columns>section{background:#141416;border-color:#303034;border-radius:20px}
+#xt-guide[data-column="0"] .xt-guide-columns>section:nth-child(1),#xt-guide[data-column="1"] .xt-guide-columns>section:nth-child(2),#xt-guide[data-column="2"] .xt-guide-preview{border-color:#aaaab2}
+.xt-guide-channels button.playing{border-left-color:#fff}.xt-guide-count,.xt-guide-info,.xt-guide-technical,.xt-guide-status{color:#aaaab2}
+.xt-keyboard,.xt-diagnostics{background:#18181b;border-color:#505058;color:#f5f5f7}
+.xt-keyboard-value,.xt-diagnostics pre{background:#0d0d0f;border-color:#303034;color:#f5f5f7}
+.xt-keyboard-row button,.xt-diagnostics button,.xt-diag-summary>div{background:#2a2a2f;border-color:#484850;color:#eee}
+.xt-keyboard-row button.selected,.xt-diagnostics button.is-focused,.xt-diagnostics button:focus{background:#f5f5f7;color:#111;outline:3px solid #fff}
+.xt-diagnostics p,.xt-diag-summary small,.xt-cdn-results small{color:#aaaab2}.xt-cdn-row{border-color:#333337}
+.pc-search,.pc-favorites,.pc-search-clear,.pc-cat-pill{background:#242427;border-color:#38383d;color:#d0d0d6}
+.pc-cat-pill.is-selected,.pc-cat-pill.is-focused,.pc-search.is-focused,.pc-favorites.is-focused,.pc-search-clear.is-focused{background:#f5f5f7;color:#111;border-color:#fff}
+.pc-search-box{background:#18181b;border-color:#505058}.pc-search-input{background:#0d0d0f;color:#fff}
+/* No filters, remote fonts, backdrop blur, ongoing animations or new image requests. */
+.settings-item.is-focused .settings-label,.settings-item.is-focused .settings-icon{color:#111}
+.pb-opt{background:#2b2b30!important;color:#eee;border:1px solid #484850}
+.pb-opt.is-selected{background:#47474f!important;color:#fff;border-color:#888892}
+.pb-opt.is-focused{background:#f5f5f7!important;color:#111;border-color:#fff}
+/* Both columns scroll independently; focus visibility is managed in layout pixels. */
+.settings-menu{overflow-y:auto;overflow-x:hidden}
+.settings-right{overflow-y:auto;overflow-x:hidden}
+.settings-panel{position:relative;left:auto;top:auto;width:100%;min-height:100%;height:1080px}
+.settings-panel.xt-settings-card{height:auto;min-height:892px;padding-bottom:64px}
+.settings-panel.xt-playback-card{height:1370px}
+.pb-opt.is-checked{background:#47474f!important;color:#fff;border-color:#aaa}
+.pb-opt.is-focused{background:#f5f5f7!important;color:#111}
+.settings-item.is-focused .settings-label,.settings-item.is-focused .settings-icon{color:#111}
+/* Playback content flows naturally instead of using legacy absolute row offsets. */
+.settings-panel.xt-playback-card{height:auto;min-height:892px}
+.xt-playback-card .pb-row{position:relative;left:auto;top:auto!important;width:100%;margin-top:28px}
+.xt-playback-card .pb-label{width:200px;min-width:200px;flex:0 0 200px}
+.xt-playback-card .pb-opt{width:auto;min-width:0;flex:1 1 0}
+.xt-playback-card .xt-setting-footnote{margin-top:24px;font-size:20px;line-height:1.45}
+/* Home dashboard: useful destinations replace the unused preview surface. */
+.home-page:first-child::before,.home-page:first-child .live-main,.home-page:first-child .live-list,.home-page:first-child .live-arrow-up,.home-page:first-child .live-arrow-down{display:none!important}
+.dashboard-heading{position:absolute;left:28px;top:0}.dashboard-eyebrow{font-size:14px;letter-spacing:3px;color:#aaaab2}.dashboard-heading h1{font-size:53px;font-weight:600;letter-spacing:-2px;margin-top:12px}
+.dashboard-actions{position:absolute;left:28px;right:30px;top:130px;display:flex;flex-wrap:wrap}
+.dashboard-action,.dashboard-action.live-focus{position:relative!important;left:auto!important;top:auto!important;width:calc(33.333% - 16px)!important;height:140px!important;margin:0 16px 16px 0;padding:24px 26px 24px 100px;border:1px solid #38383e;border-radius:19px;background:#202023;color:#f5f5f7;text-align:left;font-family:inherit;overflow:hidden}
+.dashboard-action strong{display:block;font-size:27px;font-weight:600}.dashboard-action small{display:block;font-size:17px;color:#aaaab2;margin-top:10px}.dashboard-glyph{position:absolute;left:28px;top:43px;font-size:33px;color:#eee}
+.dashboard-action.is-focused{background:#f5f5f7;color:#111;outline:3px solid #fff}.dashboard-action.is-focused small,.dashboard-action.is-focused .dashboard-glyph{color:#424249}.dashboard-action.live-focus::after{display:none!important}
+.dashboard-shelf{position:absolute;left:28px;right:46px;top:470px}.dashboard-shelf h2{font-size:27px;font-weight:600;margin-bottom:20px}.dashboard-posters{display:flex}.dashboard-poster{width:calc(16.666% - 18px);margin-right:18px;background:transparent;border:0;padding:5px;border-radius:14px;color:#eee;text-align:left;font-family:inherit}.dashboard-poster img{width:100%;height:245px;object-fit:cover;border-radius:12px;background:#242427}.dashboard-poster strong{display:block;font-size:18px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:10px 4px}.dashboard-poster.is-focused{background:#333338;outline:3px solid #fff}.dashboard-empty{font-size:22px;color:#aaaab2}
+/* Shared settings surfaces, including panels retained from the original app. */
+.account-panel,.history-panel{background:#18181b}.account-card{background:#242427;border:1px solid #3b3b42;border-radius:18px}.account-card-title,.account-number,.sp-title,.pl-title{color:#f5f5f7}.account-card-text,.account-type,.sp-global-note,.pl-tip,.pl-note{color:#b4b4bd}
+.account-action-btn,.history-tab,.fb-help,.dg-btn{background:#2b2b30;color:#eee;border:1px solid #46464e;border-radius:13px}.account-action-btn.is-focused,.history-tab.is-focused,.fb-help.is-focused{background:#f5f5f7;color:#111;outline:3px solid #fff}
+.sp-switch{border-radius:28px}.sp-switch.on{background:#ececf1}.sp-switch.off{background:#484850}
+/* Replace legacy absolute layouts with readable settings cards. */
+.settings-panel[data-setting="profile"],.settings-panel[data-setting="addons"],.settings-panel[data-setting="parent"],.settings-panel[data-setting="display"],.settings-panel[data-setting="history"]{height:auto;min-height:892px;padding:52px 58px 64px}
+.settings-panel[data-setting="profile"]>*,.settings-panel[data-setting="addons"]>*,.settings-panel[data-setting="parent"]>*,.settings-panel[data-setting="display"]>*{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;height:auto!important;margin:0 0 26px}
+.settings-panel .account-avatar{display:none}.settings-panel .account-number{font-size:36px;line-height:1.2}.settings-panel .account-card{padding:28px 32px}.settings-panel .account-actions-row{display:flex;flex-wrap:wrap}.settings-panel .account-action-btn{font-size:21px;margin-bottom:12px;transition:none}
+.settings-panel .sp-title,.settings-panel .pl-title{font-size:43px;line-height:1.2;font-weight:600;letter-spacing:-1px}.settings-panel .sp-hr{display:none}.settings-panel .sp-global-note,.settings-panel .pl-tip,.settings-panel .pl-note{font-size:23px;line-height:1.55;max-width:1150px}.settings-panel .pl-label{font-size:26px;line-height:1.4}
+.settings-panel[data-setting="parent"] .sp-switch{width:106px;height:54px!important;background-image:none;border:1px solid #666;cursor:pointer}.settings-panel[data-setting="parent"] .sp-switch::after{content:'';position:absolute;width:40px;height:40px;top:6px;left:8px;background:#aaa;border-radius:50%}.settings-panel[data-setting="parent"] .sp-switch.on::after{left:56px;background:#18181b}.sp-switch.is-focused{outline:3px solid #fff;box-shadow:none}
+.settings-panel[data-setting="display"] .pb-row{display:flex;width:100%;margin-top:32px}.settings-panel[data-setting="display"] .pb-label{font-size:25px;line-height:1.3}.settings-panel[data-setting="display"] .pb-opt{flex:1;min-width:0;font-size:24px}
+.history-tabs,.history-total,.history-grid,.history-empty{position:relative;left:auto;right:auto;top:auto;bottom:auto;margin-bottom:28px}.history-rule{display:none}.history-tabs{display:flex;height:auto}.history-tab{font-size:25px;padding:15px 28px;margin-right:14px;border-radius:24px}.history-tab.is-selected{background:#44444b;color:#fff;border-color:#888}.history-tab.is-focused{background:#f5f5f7;color:#111}.history-grid{height:auto;overflow:visible}.history-card{width:225px;margin-right:24px}.history-poster{width:225px;border-radius:12px}.history-card.is-focused{transform:none;background:#333338;border-radius:12px}.history-empty{font-size:25px;color:#aaa}
+.dashboard-glyph svg{width:35px;height:35px}
+.notify-divider{display:none}
+.account-action-btn.is-focused{box-shadow:none!important;border-color:#fff!important;outline:3px solid #fff!important}
