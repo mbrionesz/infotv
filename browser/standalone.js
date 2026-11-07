@@ -32,8 +32,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.6.0', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.6.0' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.6.1', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.6.1' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -61,7 +61,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.6.0', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.6.1', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -72,7 +72,7 @@ function request(method, payload, callback) {
   } catch (error) { done(error); }
   return true;
 }
-window.XuperStandalone = { formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.6.0', diagnostics: () => ({ lastError, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.6.1', diagnostics: () => ({ lastError, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 let diagnosticPanel=null;
 window.XuperStandalone.probeCdns=async function(){
  const p=window.XuperPlayer.diagnostics,g=window.XuperGuide.diagnostics();
@@ -84,7 +84,7 @@ window.XuperStandalone.probeCdns=async function(){
 window.XuperStandalone.openDiagnostics=function(playback){
   if(diagnosticPanel)diagnosticPanel.remove();
   diagnosticPanel=document.createElement('section');diagnosticPanel.className='xt-diagnostics';
-  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.6.0</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
+  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.6.1</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
   const panel=diagnosticPanel;
   const environment={version:window.XuperStandalone.version,viewport:[innerWidth,innerHeight],panel:[screen.width,screen.height],scale:document.getElementById('app').getBoundingClientRect().width/1920};
   const safe=Object.assign({},playback||window.XuperPlayer.diagnostics);

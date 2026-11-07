@@ -3977,9 +3977,9 @@
     })()),
     (ze.playback = (function () {
       if(window.XuperStandalone){
-        var panel=samsungSettingsCard("Reproducción en directo","720p: menor distancia al directo. FHD mantiene el perfil estable. Dos bloqueos de búfer restauran el perfil estable durante esa apertura. El retraso del proveedor no se puede eliminar desde el televisor.");
+        var panel=samsungSettingsCard("Reproducción en directo","720p experimental: objetivo de un segmento, unos 5 s detrás del borde HLS si los segmentos duran 5 s. FHD mantiene el perfil estable. Dos bloqueos de búfer restauran el perfil estable durante esa apertura. El retraso del proveedor no se puede eliminar desde el televisor.");
         var lowDelay=e("button","xt-setting-action focusable");
-        function latencyLabel(){var on=true;try{on=localStorage.getItem("xt.lowDelay720")!=="off";}catch(_){}lowDelay.textContent="Menor retraso en 720p · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
+        function latencyLabel(){var on=true;try{on=localStorage.getItem("xt.lowDelay720")!=="off";}catch(_){}lowDelay.textContent="720p experimental · objetivo ~5 s · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
         lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="off"?"on":"off");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
         panel.appendChild(e("p","xt-setting-footnote","La app conserva 3 s para arrancar y 6 s tras una espera. Audio y calidad dependen de la señal y del soporte del televisor."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";

@@ -3,7 +3,7 @@ export function createLiveLatency(enabled=true){
  const state={mode:'stable',targetSegments:3,stalls:0,reason:''};
  return {state,update(hls,video,live){
   const eligible=enabled&&live&&video.videoHeight===720&&video.videoWidth<=1280&&!disabled;
-  state.targetSegments=eligible?2:3;state.mode=eligible?'720p-low-delay':'stable';hls.config.liveSyncDurationCount=state.targetSegments;
+  state.targetSegments=eligible?1:3;state.experimental=!!eligible;state.mode=eligible?'720p-low-delay':'stable';hls.config.liveSyncDurationCount=state.targetSegments;
   if(!eligible||positioned||video.paused||video.readyState<2)return;
   const target=hls.liveSyncPosition;
   if(!Number.isFinite(target))return;

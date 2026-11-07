@@ -79,7 +79,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.6.0');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.6.1');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -153,7 +153,7 @@ try {
   assert.equal(appRequests.some(request=>request.includes('/rpc/')),false);
   await browser.screenshot('dist/standalone-hls-test.png');
   await browser.waitFor('XuperPlayer.diagnostics.liveLatency.mode==="720p-low-delay"');
-  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.liveLatency.targetSegments'),2);
+  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.liveLatency.targetSegments'),1);
   await browser.evaluate('document.getElementById("player-video").pause()');
   assert.equal(await browser.evaluate('document.getElementById("player-video").paused'),true);
   await browser.evaluate('document.getElementById("player-video").play()');
