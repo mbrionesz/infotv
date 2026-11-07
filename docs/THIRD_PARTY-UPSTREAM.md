@@ -41,3 +41,12 @@ tipos de material que **no** se relicencia aquí.
 El repositorio no incluye contenido audiovisual ni credenciales. La app
 consulta el portal en tiempo de ejecución con una sesión anónima de
 dispositivo; la disponibilidad del servicio depende de su proveedor.
+
+## Progressive VOD components
+
+- MP4Box.js 0.5.4, GPAC / Telecom ParisTech contributors: BSD-3-Clause, included as mp4box-LICENSE.txt. Pinned to an implementation compatible with the Chrome 56 target.
+- mpegts.js 1.8.0, xqq and contributors: Apache-2.0, included as mpegts.js-LICENSE.txt.
+- es6-promise: MIT, included as es6-promise-LICENSE.txt.
+- webworkify-webpack: MIT, upstream README (license declaration) included as webworkify-webpack-LICENSE.txt. This dependency is bundled by mpegts.js; worker mode is disabled for the custom authenticated loader in this implementation.
+
+These modules remultiplex containers; they do not transcode audio/video.

@@ -82,7 +82,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.6.5');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.6.6');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -172,10 +172,7 @@ try {
   assert.equal(await browser.evaluate('__xuper.state.playerEpisode'),null,'A movie must not inherit the last series episode');
   await new Promise(resolve=>setTimeout(resolve,300));await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');
   console.log('PASS VOD: actual detail, episode selection, HLS decode and fullscreen/back for movie and series fixtures: '+JSON.stringify(vodResults));
-  for(const mime of ['video/mp4','video/mp2t']){
-    const rejected=await browser.evaluate('(async function(){var old=XuperStandalone.core.resolve;XuperStandalone.core.resolve=function(id,series,options,cb){cb(null,{url:location.origin+"/authorized."+('+JSON.stringify(mime)+'==="video/mp4"?"mp4":"ts"),mime:'+JSON.stringify(mime)+',headers:{"Content-Auth":"test"}})};try{return await new Promise(function(resolve,reject){XuperStandalone.request("resolve",{contentId:"authorized-fixture"},function(error,stream){if(error)return reject(error);XuperPlayer.open(document.getElementById("player-video"),stream.url,{live:false,mime:stream.mime,onError:function(message){resolve({message:message,route:XuperPlayer.diagnostics.unsupportedRoute})}})})})}finally{XuperStandalone.core.resolve=old}})()');
-    assert.equal(rejected.route,'authorized-progressive');assert.ok(rejected.message.includes('no es un fallo de compatibilidad HLS'));
-  }
+  assert.equal(appRequests.includes('/vendor/vod.js'),false,'The progressive VOD libraries must not load for HLS');
   await browser.evaluate('XuperGuide.open()');
   await browser.waitFor('document.querySelectorAll(".xt-guide-channels button:not([hidden])").length===2');
   const sameRows=await browser.evaluate('(()=>{var nodes=Array.from(document.querySelectorAll(".xt-guide-channels button"));XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:40});XuperGuide.handle({keyCode:38});XuperGuide.handle({keyCode:37});return nodes.every((node,i)=>node===document.querySelectorAll(".xt-guide-channels button")[i])})()');

@@ -6,6 +6,10 @@
      1920px design canvas; app.js scales that canvas to the actual display. -->
 <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>XuperTizen by Matias</title>
+<style>
+#boot-splash{position:fixed;left:0;top:0;width:100%;height:100%;z-index:99999;background:radial-gradient(ellipse at 50% 38%,#0c1930,#020617 64%);color:#f2f7ff;font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#boot-splash img{width:10vw;height:10vw;border-radius:1.7vw;margin-bottom:1.7vw}#boot-splash strong{font-size:5.4vw;line-height:1.12;font-weight:700;letter-spacing:-.2vw}#boot-splash strong span{font-weight:300;color:#b5ddff}#boot-splash small{font-size:1.5vw;letter-spacing:.2vw;margin-top:1vw}#boot-splash p{font-size:1vw;color:#7990b0;margin-top:2.5vw}
+</style>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/ui-refresh.css">
 <link rel="stylesheet" href="css/clean.css">
@@ -96,6 +100,7 @@ if (!Array.prototype.findIndex) {
 <link rel="stylesheet" href="css/discovery.css">
 </head>
 <body>
+<div id="boot-splash" role="status"><img src="images/icon-large.png" alt=""><strong>Xuper<span>Tizen</span></strong><small>by Matias</small><p>Iniciando…</p></div>
 <div id="app">
 
   <!-- ============================================================
@@ -109,7 +114,7 @@ if (!Array.prototype.findIndex) {
       <div class="welcome-credit">by Matias</div>
       <div class="welcome-status" role="status">Iniciando<span aria-hidden="true"> ···</span></div>
     </div>
-    <div class="welcome-version">v0.6.5 · alpha</div>
+    <div class="welcome-version">v0.6.6 · alpha</div>
   </section>
 
   <!-- ============================================================
@@ -407,9 +412,9 @@ if (!Array.prototype.findIndex) {
 <script src="config/api.js"></script>
 <script src="$WEBAPIS/webapis/webapis.js"></script>
 <script src="js/tizen-platform.js"></script>
-<script src="vendor/standalone.js"></script>
-<script src="js/app.js"></script>
-<script src="js/modern.js"></script>
+<script defer src="vendor/standalone.js"></script>
+<script defer src="js/app.js"></script>
+<script defer src="js/modern.js"></script>
 <link rel="stylesheet" href="css/television.css">
 <link rel="stylesheet" href="css/cinema.css">
 </body>

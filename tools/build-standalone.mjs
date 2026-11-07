@@ -48,7 +48,8 @@ await build({ entryPoints: [path.join(root,'browser/core-worker.js')], outfile:p
   banner:{js:'var globalThis = self;'},inject:[path.join(root,'browser/globals.js')],define:{__dirname:'"/embedded"'},plugins:[plugin],legalComments:'eof' });
 await build({entryPoints:[path.join(root,'browser/native-worker.js')],outfile:path.join(root,'app/vendor/native-worker.js'),bundle:true,format:'iife',target:['chrome56'],minify:true});
 await build({entryPoints:[path.join(root,'node_modules/hls.js/dist/hls.worker.js')],outfile:path.join(root,'app/vendor/hls-worker.js'),bundle:false,format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
-for (const [folder, license] of [['hls.js','LICENSE'], ['crypto-js','LICENSE'], ['buffer','LICENSE'], ['base64-js','LICENSE'], ['ieee754','LICENSE']]) {
+await build({entryPoints:[path.join(root,'browser/vod-entry.js')],outfile:path.join(root,'app/vendor/vod.js'),bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
+for (const [folder, license] of [['hls.js','LICENSE'], ['mpegts.js','LICENSE'], ['mp4box','LICENSE'], ['webworkify-webpack','README.md'], ['es6-promise','LICENSE'], ['crypto-js','LICENSE'], ['buffer','LICENSE'], ['base64-js','LICENSE'], ['ieee754','LICENSE']]) {
   copyFileSync(path.join(root, 'node_modules', folder, license), path.join(root, 'app/vendor', folder + '-LICENSE.txt'));
 }
 copyFileSync(path.join(root,'LICENSE-UPSTREAM'),path.join(root,'app/vendor/UPSTREAM-LICENSE.txt'));
@@ -59,4 +60,4 @@ const sources = ['package.json','package-lock.json','tools/build-standalone.mjs'
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}
 const hlsVersion=JSON.parse(readFileSync(path.join(root,'node_modules/hls.js/package.json'),'utf8')).version;
-writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:'0.6.5',minimumTizen:'4.0',target:'chrome56',hlsVersion,hlsWorkerVersion:hlsVersion,hlsWorkerSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/hls-worker.js'))).digest('hex'),sourceSha256:hash.digest('hex')},null,2)+'\n');
+writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:'0.6.6',minimumTizen:'4.0',target:'chrome56',hlsVersion,hlsWorkerVersion:hlsVersion,vodSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/vod.js'))).digest('hex'),hlsWorkerSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/hls-worker.js'))).digest('hex'),sourceSha256:hash.digest('hex')},null,2)+'\n');

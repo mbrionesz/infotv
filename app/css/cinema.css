@@ -105,3 +105,5 @@ html,body{font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;background:#0
 .xt-catalog-card strong{font-size:23px}.xt-catalog-card small{font-size:18px;color:#b8b8c1}
 .xt-catalog-status{font-size:20px;color:#b8b8c1}.xt-panel footer{font-size:18px;color:#b8b8c1}
 .xt-catalog-retry{margin-right:16px}.detail-title{font-weight:600;letter-spacing:-1px}.detail-btn{font-size:24px}
+/* Version remains available to diagnostics, not as startup artwork. */
+#screen-welcome .welcome-version{display:none}

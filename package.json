@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "private": true,
   "type": "module",
   "engines": {
@@ -14,13 +14,17 @@
     "package": "npm run build && python3 tools/package.py",
     "test:live": "node tools/live-playback-browser.mjs",
     "test:latency": "node tools/live-latency-browser.mjs",
-    "test:navigation": "node tools/navigation-regression-browser.mjs"
+    "test:navigation": "node tools/navigation-regression-browser.mjs",
+    "test:vod": "node tools/vod-playback-browser.mjs",
+    "test:startup": "node tools/startup-browser.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",
     "crypto-js": "4.2.0",
     "esbuild": "0.25.12",
     "fake-indexeddb": "6.0.0",
-    "hls.js": "1.7.4"
+    "hls.js": "1.7.4",
+    "mp4box": "0.5.4",
+    "mpegts.js": "1.8.0"
   }
 }

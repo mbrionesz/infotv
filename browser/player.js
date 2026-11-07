@@ -1,3 +1,4 @@
+import {ensureVodRuntime} from './vod-runtime.js';
 import {createLiveLatency} from './live-latency.js';
 import {createFrameMeter} from './media-info.js';
 import {playlistShape,playlistReason,safeParserMessage} from './playlist-shape.js';
@@ -14,6 +15,7 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 }
 
 export function createPlayer(getStream) {
+  let progressive=null;
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
   let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null,frameMeter=null;
@@ -26,6 +28,7 @@ export function createPlayer(getStream) {
     if (video && playingListener) video.removeEventListener('playing', playingListener);
     if(video&&canPlayListener)video.removeEventListener('canplay',canPlayListener);
     canPlayListener=null;playingListener = null;
+    if(progressive){progressive.destroy();progressive=null;}
     if (hls) { hls.destroy(); hls = null; }
     if (av) { try { av.stop(); av.close(); } catch (_) {} av = null; }
     if (avObject) { avObject.remove(); avObject = null; }
@@ -39,7 +42,7 @@ export function createPlayer(getStream) {
       aac: 'audio/mp4; codecs="mp4a.40.2"', ac3: 'audio/mp4; codecs="ac-3"', eac3: 'audio/mp4; codecs="ec-3"', dts: 'audio/mp4; codecs="dtsc"' };
     const result = {};
     Object.keys(codecs).forEach(key => { result[key] = { native: v.canPlayType(codecs[key]) || '', mse: !!(window.MediaSource && MediaSource.isTypeSupported(codecs[key])) }; });
-    return { avplay: !!(window.webapis && webapis.avplay), hlsjs: Hls.isSupported(), codecs: result };
+    return { progressiveVod:!!window.MediaSource,progressiveModuleLoaded:!!window.XuperVod,avplay: !!(window.webapis && webapis.avplay), hlsjs: Hls.isSupported(), codecs: result };
   }
   function open(element, source, options) {
     stop(); video = element; url = source;
@@ -51,7 +54,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
+    diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -314,12 +317,21 @@ export function createPlayer(getStream) {
         nativeTimer=setTimeout(function(){diagnostics.detail='avplay-prepare-timeout';fallback();},8000);arm();
       } catch (_) { fallback(); }
     }
+    function useProgressive(index=0){
+      if(!window.MediaSource)return fail('Este TV no ofrece MediaSource para vídeo autorizado MP4/TS.');
+      if(serial!==run)return;if(progressive){progressive.destroy();progressive=null;}
+      const generation=++attempt;playPending=false;autoAttempts=0;gestureRequired=false;started=ready=false;const candidate=candidates[index];const ts=/mp2t|\.ts(?:[?#]|$)/i.test((stream.mime||options.mime||'')+' '+source);
+      diagnostics.seekMode=ts?'buffered':'indexed';engine=diagnostics.engine=ts?'mpegts.js':'mp4box';diagnostics.stage='loading-file';diagnostics.unsupportedRoute='';diagnostics.container=ts?'MPEG-TS':'MP4';diagnostics.cdnAttempt=index+1;
+      canPlayListener=()=>{if(serial===run&&generation===attempt)tryPlay();};video.addEventListener('canplay',canPlayListener);
+      const settings={onNotice:message=>{if(serial===run&&generation===attempt){record('ts-unindexed-seek');if(options.onNotice)options.onNotice(message);}},duration:stream.duration||0,preferredAudio:options.preferredAudio,onRead:info=>{if(serial===run&&generation===attempt){if(info.retry)diagnostics.vodRetries++;diagnostics.httpStatus=info.status;diagnostics.vodBytes=(diagnostics.vodBytes||0)+info.bytes;if(Number.isFinite(info.total))diagnostics.vodTotalBytes=info.total;}},onReady:info=>{if(serial===run&&generation===attempt){diagnostics.stage='buffering';const v=info.videoTracks&&info.videoTracks[0],a=info.audioTracks&&info.audioTracks[0];diagnostics.codecs={video:{codec:v&&v.codec||info.videoCodec||'',container:'video/mp4'},audio:{codec:a&&a.codec||info.audioCodec||'',container:'audio/mp4'}};}} ,onError:message=>{if(serial!==run||generation!==attempt)return;if(!started&&index+1<candidates.length){if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;useProgressive(index+1);}else fail(message);}};
+      ensureVodRuntime().then(runtime=>{if(serial!==run||generation!==attempt)return;try{progressive=(ts?runtime.openTs:runtime.openMp4)(video,candidate.url,candidate.headers,settings);}catch(error){settings.onError(error.message);}},error=>settings.onError(error.message));
+    }
     function begin(){
       if(serial!==run)return;
     // AVPlay only receives headers its documented API can actually represent.
     if (custom.length) {
       if (isHls) useHls();
-      else {diagnostics.unsupportedRoute='authorized-progressive';diagnostics.container=/mp2t|\.ts(?:[?#]|$)/i.test(stream.mime||options.mime||source)?'MPEG-TS':'MP4/otro';fail('El proveedor entregó '+diagnostics.container+' con autorización HTTP. Esta ruta aún no está soportada en la app autónoma; no es un fallo de compatibilidad HLS.');}
+      else useProgressive();
     } else if (isHls&&window.XuperNativeTransport&&window.XuperNativeTransport.snapshot().available) useHls();
     else if (window.webapis && webapis.avplay) avplay();
     else if (isHls && Hls.isSupported()) useHls();

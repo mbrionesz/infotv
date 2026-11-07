@@ -1426,8 +1426,11 @@
     var t = e.keyCode || e.which,
       a = e.key || "",
       i = !0;
-    if ("welcome" === X.screen)
-      return (vt(), void (e.preventDefault && e.preventDefault()));
+    if ("welcome" === X.screen) {
+      if (!window.__xuperStartup || performance.now()-window.__xuperStartup.startedAt >= window.__xuperStartup.minimumMs) vt();
+      if(e.preventDefault)e.preventDefault();
+      return;
+    }
     if (
       461 === t ||
       27 === t ||
@@ -1690,6 +1693,8 @@
     }
   }
   function vt() {
+    var splash = document.getElementById("boot-splash");
+    if (splash) { if(window.__xuperStartup)window.__xuperStartup.visibleForMs=Math.round(performance.now()-window.__xuperStartup.startedAt); splash.parentNode.removeChild(splash); }
     (tt && (clearTimeout(tt), (tt = null)),
       et && (clearInterval(et), (et = null)));
     var e = t("screen-welcome"),
@@ -7414,6 +7419,7 @@
         Te && (Te.style.display = "none");
         window.XuperPlayer.open(xe, e, { mime: s, live: "live" === X.playerMode,
           preferredAudio: ["es", "pt", "en"][Number(X.playback.audio)||0] || "es",
+          onNotice: function (message) { Yt(message); },
           onInfo: function (data) { var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
@@ -7847,6 +7853,7 @@
     }
   }
   function so() {
+    window.__xuperStartup = {startedAt: performance.now(), minimumMs: window.XuperStandalone ? 1800 : 4500};
     (oo(),
       window.addEventListener("resize", oo, !1),
       window.addEventListener("orientationchange", oo, !1),
@@ -7929,7 +7936,7 @@
       tt && (clearTimeout(tt), (tt = null)),
       (tt = setTimeout(function () {
         vt();
-      }, window.XuperStandalone ? 250 : 4500)),
+      }, window.XuperStandalone ? 1800 : 4500)),
       (et = setInterval(function () {
         ++a > 16
           ? vt()
