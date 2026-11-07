@@ -1,4 +1,4 @@
-# XuperTizen 0.6.3 alpha
+# XuperTizen 0.6.4 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.6.3-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.6.4-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.6.3-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.6.3-alpha.1).
+Esta actualización usa la etiqueta `v0.6.4-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.6.4-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -197,3 +197,5 @@ cancela HTTP nativo al cambiar de canal y añade tiempos de resolución/apertura
 La 0.6.3 corrige carreras al salir o cambiar de canal, callbacks duplicados y
 respuestas de trabajadores cerrados; cancela el diagnóstico de CDN al cerrar.
 [Correcciones y pruebas](docs/RELEASE-0.6.3-alpha.1.md).
+
+La 0.6.4 renueva Inicio y Ajustes, incorpora icono y arranque, corrige foco y desplazamiento en 1080p/4K y conecta el filtro de adultos a guía y catálogo. [Notas](docs/RELEASE-0.6.4-alpha.1.md).
