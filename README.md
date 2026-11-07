@@ -1,4 +1,4 @@
-# XuperTizen 0.5.6 alpha
+# XuperTizen 0.5.7 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.5.6-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.5.7-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.5.6-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.6-alpha.1).
+Esta actualización usa la etiqueta `v0.5.7-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.7-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -157,3 +157,8 @@ La 0.5.6 corrige la clasificación de errores del parser: el motivo se obtiene d
 la primera línea, sin confundir etiquetas dentro de listas adjuntas con la causa.
 El diagnóstico incluye mensaje sanitizado, secuencias y los ocho últimos
 resúmenes de peticiones. [Notas](docs/RELEASE-0.5.6-alpha.1.md).
+
+La 0.5.7 reinicia completamente HLS una vez por ruta ante un desajuste fatal de
+secuencia en vivo. Si reaparece en esa ruta, pasa al respaldo. Conserva las
+credenciales y Pausa, y registra reinicios, cambios y tiempo de recuperación.
+[Notas](docs/RELEASE-0.5.7-alpha.1.md).

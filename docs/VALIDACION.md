@@ -1,3 +1,12 @@
+# Validación actual — 0.5.7
+
+56 pruebas unitarias e integración Chromium. La prueba de secuencia verifica
+reinicio completo en la misma ruta, reproducción recuperada, respaldo ante
+recurrencia, credenciales, pausa explícita y cancelación. [Notas](RELEASE-0.5.7-alpha.1.md).
+Prueba física pendiente; no se garantiza estabilidad de las listas del proveedor.
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.5.6
 
 56 pruebas unitarias e integración Chromium. El diagnóstico clasifica el motivo

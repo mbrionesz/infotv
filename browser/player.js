@@ -30,7 +30,7 @@ export function createPlayer(getStream) {
     if (avObject) { avObject.remove(); avObject = null; }
     if (restored) { restored(); restored = null; }
     if (video) { try { video.pause(); video.removeAttribute('src'); video.load(); } catch (_) {} }
-    engine = ''; diagnostics.engine = '';diagnostics.stage='idle'; paused = true; ready = started = false;
+    engine = ''; diagnostics.engine = '';diagnostics.stage='idle';diagnostics.sequenceRestartPending=false; paused = true; ready = started = false;
   }
   function capabilities() {
     const v = document.createElement('video');
@@ -48,13 +48,14 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
       const failedStage=diagnostics.stage;diagnostics.error = message; stop();diagnostics.stage=failedStage; options.onError(message);
     };
     totalDeadline=setTimeout(()=>fail('La señal no inició tras probar las rutas disponibles: etapa '+diagnostics.stage+'. Abre Diagnóstico.'),30000);
+    const restartedRoutes=new Set();let sequenceRestartAt=null;
     const openedAt=performance.now();let playPending=false,autoAttempts=0,gestureRequired=false,resuming=false;const networkBudget=recoveryBudget(),decoderBudget=recoveryBudget(1);let lastProgressAt=performance.now(),lastTime=0;
     function tryPlay(){
       if(serial!==run||started&&!resuming||bufferGate&&bufferGate.userPaused||playPending||gestureRequired||!video.paused||autoAttempts>=3)return;
@@ -67,7 +68,7 @@ export function createPlayer(getStream) {
       });
     }
     resumePlayback=()=>{gestureRequired=false;autoAttempts=0;diagnostics.autoplayBlocked=false;tryPlay();};
-    const onPlaying = () => { if (serial !== run) return; started = ready = true;resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
+    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); if (options.onStarted) options.onStarted(); };
     function record(detail,status=0,fatal=false){
       diagnostics.events.push({atMs:Math.round(performance.now()-openedAt),detail:String(detail).slice(0,70),status,fatal});
       if(diagnostics.events.length>12)diagnostics.events.shift();
@@ -113,23 +114,44 @@ export function createPlayer(getStream) {
     video.onerror = () => { if (engine === 'html5') fail('Formato de vídeo o audio no compatible con este televisor.'); };
     function arm() {
       clearTimeout(deadline);
-      deadline = setTimeout(() => { if (!started && serial === run) {if(isHls&&engine==='hls.js'&&retrySource())return;fail('La señal no inició: etapa '+diagnostics.stage+(diagnostics.httpStatus?' · HTTP '+diagnostics.httpStatus:'')+'. Abre Diagnóstico con el botón azul.');} }, candidates.length>1?8000:20000);
+      deadline = setTimeout(() => { if (!started && serial === run) {if(bufferGate&&bufferGate.userPaused)return;if(isHls&&engine==='hls.js'&&retrySource())return;fail('La señal no inició: etapa '+diagnostics.stage+(diagnostics.httpStatus?' · HTTP '+diagnostics.httpStatus:'')+'. Abre Diagnóstico con el botón azul.');} }, candidates.length>1?8000:20000);
     }
-    function retrySource(){
+    function resetHlsSession(preservePause=false){
+      attempt++;
+      if(frameMeter){frameMeter.destroy();frameMeter=null;}
+      if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
+      clearTimeout(recoveryTimer);recoveryTimer=null;clearTimeout(deadline);
+      if(hls){hls.destroy();hls=null;}
+      try{video.pause();video.removeAttribute('src');video.load();}catch(_){}
+      started=ready=false;paused=true;autoAttempts=0;playPending=false;gestureRequired=false;resuming=false;
+      lastProgressAt=performance.now();lastTime=0;diagnostics.httpStatus=0;diagnostics.media=null;diagnostics.level=null;
+      const generation=attempt;
+      recoveryTimer=setTimeout(()=>{recoveryTimer=null;if(serial===run&&generation===attempt)useHls(preservePause);},preservePause?0:250);
+    }
+    function recoverSequence(){
+      const preservePause=!!(bufferGate&&bufferGate.userPaused);
+      if(!restartedRoutes.has(playbackSource)){
+        restartedRoutes.add(playbackSource);diagnostics.sequenceRestarts++;diagnostics.sequenceRestartPending=true;
+        sequenceRestartAt=performance.now();record('sequence-session-restart');diagnostics.stage='sequence-restart';
+        resetHlsSession(preservePause);return;
+      }
+      diagnostics.sequenceFailovers++;record('sequence-repeated-next-cdn');
+      if(!retrySource(preservePause))fail('La señal mantiene listas de segmentos inconsistentes tras probar las rutas disponibles.');
+    }
+    function retrySource(preservePause=!!(bufferGate&&bufferGate.userPaused)){
       if(routeIndex+1>=routes.length)return false;
       const next=routes[++routeIndex];playbackSource=next.url;headers=next.headers;
       diagnostics.httpsFallback=next.httpsFallback;diagnostics.cdnAttempt=next.cdnAttempt;
-      attempt++;diagnostics.transport=/^https:/i.test(playbackSource)?'https':'http';
-      if(frameMeter){frameMeter.destroy();frameMeter=null;}
-      if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
-      clearTimeout(recoveryTimer);recoveryTimer=null;if(hls){hls.destroy();hls=null;}
-      clearTimeout(deadline);started=ready=false;autoAttempts=0;playPending=false;gestureRequired=false;diagnostics.httpStatus=0;useHls();return true;
+      diagnostics.transport=/^https:/i.test(playbackSource)?'https':'http';
+      diagnostics.sequenceRestartPending=false;sequenceRestartAt=null;
+      resetHlsSession(preservePause);return true;
     }
-    function useHls() {
+    function useHls(preservePause=false) {
       if (serial !== run) return;
       if (!Hls.isSupported()) return fail('Este televisor no dispone de MediaSource compatible para este canal con autorización.');
       const generation=attempt,playlistFacts=new Map();frameMeter=createFrameMeter(video);
       if(options.live)bufferGate=createLiveBuffer(video,{onState:state=>{diagnostics.bufferGate=state;if(started&&state.waiting&&!state.userPaused)diagnostics.stage='buffering';},onRejected:error=>{if(serial===run&&generation===attempt&&error.name==='NotAllowedError'){gestureRequired=true;diagnostics.autoplayBlocked=true;options.onError('Pulsa OK para iniciar el vídeo.');}}});
+      if(preservePause)video.pause();
       engine = diagnostics.engine = 'hls.js';
       diagnostics.stage='manifest';diagnostics.worker=typeof Worker!=='undefined';
       const Loader=Hls.DefaultConfig.loader;
@@ -178,6 +200,8 @@ export function createPlayer(getStream) {
         diagnostics.detail=String(data.details||'').slice(0,70);record(data.details,data.response&&data.response.code||0,!!data.fatal);
         if(data.event==='demuxerWorker')diagnostics.worker=false;
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;
+        const sequenceKind=playlistReason(data.reason||data.error&&data.error.message||'');
+        if(data.fatal&&options.live&&!refreshing&&(sequenceKind==='media-sequence-mismatch'||sequenceKind==='discontinuity-sequence-mismatch')){recoverSequence();return;}
         if (!data.fatal || serial !== run||refreshing) return;
         if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
           const code=data.response&&data.response.code||0;

@@ -7,7 +7,7 @@ const media=http.createServer((req,res)=>{
  const url=new URL(req.url,'http://localhost');
  seen.push({url:url.pathname,range:req.headers.range,auth:req.headers['content-auth'],license:req.headers['content-license']});
  if(req.headers.range){res.writeHead(416);res.end();return;}
- if(req.headers['content-auth']!=='live-test'||req.headers['content-license']!=='live-license'){res.writeHead(403);res.end();return;}
+ if(!((req.headers['content-auth']==='live-test'&&req.headers['content-license']==='live-license')||(req.headers['content-auth']==='backup-live-test'&&req.headers['content-license']==='backup-live-license'))){res.writeHead(403);res.end();return;}
  if(url.pathname==='/live.m3u8'){
   manifestGets++;if(!startedAt)startedAt=Date.now();const elapsed=Date.now()-startedAt;
   if(elapsed>6000&&playlistFailures===0){playlistFailures++;res.writeHead(404);res.end();return;}
@@ -43,7 +43,7 @@ try{
    api.core.home=function(r,p,cb){cb(null,{items:[]})};
    api.core.getLiveCategories=function(cb){cb(null,[])};
    api.core.getLiveChannels=function(c,p,s,cb){cb(null,[{name:'Live rolling fixture',channelCode:'live-fixture',index:1}],false)};
-   api.core.resolveLive=function(c,cb){window.liveResolves=(window.liveResolves||0)+1;cb(null,{url:${JSON.stringify(stream)},mime:'application/vnd.apple.mpegurl',headers:{'Content-Auth':'live-test','Content-License':'live-license'}})};
+   api.core.resolveLive=function(c,cb){window.liveResolves=(window.liveResolves||0)+1;cb(null,{url:${JSON.stringify(stream)},mime:'application/vnd.apple.mpegurl',headers:{'Content-Auth':'live-test','Content-License':'live-license'},backupUrls:[{url:${JSON.stringify(stream+'?cdn=backup')},headers:{'Content-Auth':'backup-live-test','Content-License':'backup-live-license'}}]})};
   }
  });`});
  await browser.command('Page.navigate',{url:`http://127.0.0.1:${app.address().port}/index.html`});await browser.waitFor('!!window.__xuper&&__xuper.state.screen==="home"');
@@ -64,11 +64,29 @@ try{
  await browser.waitFor('XuperPlayer.diagnostics.playlistError&&XuperPlayer.diagnostics.playlistError.kind==="media-sequence-mismatch"',180);
  const sequenceDiagnostic=await browser.evaluate('XuperPlayer.diagnostics.playlistError');
  assert.ok(sequenceFailures>0);assert.ok(sequenceDiagnostic.message.includes('media sequence mismatch'));assert.equal(sequenceDiagnostic.message.includes('http'),false);assert.ok(sequenceDiagnostic.requestId>0);assert.ok(sequenceDiagnostic.mediaSequence>=0);
+ await browser.waitFor('XuperPlayer.diagnostics.sequenceRestarts===1&&XuperPlayer.diagnostics.stage==="playing"&&!document.getElementById("player-video").paused',180);
+ assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnAttempt'),1);
+ const sequenceRecovery=await browser.evaluate('({restarts:XuperPlayer.diagnostics.sequenceRestarts,ms:XuperPlayer.diagnostics.sequenceRecoveryMs})');
+ const recoveredTime=await browser.evaluate('document.getElementById("player-video").currentTime');
+ await browser.waitFor('document.getElementById("player-video").currentTime>'+String(recoveredTime+0.5));
+ await browser.evaluate('document.getElementById("player-video").pause()');sequenceProbe=true;
+ await browser.waitFor('XuperPlayer.diagnostics.sequenceFailovers===1&&XuperPlayer.diagnostics.cdnAttempt===2&&XuperPlayer.diagnostics.bufferGate&&XuperPlayer.diagnostics.bufferGate.userPaused',180);
+ assert.equal(await browser.evaluate('document.getElementById("player-video").paused'),true);
+ await browser.evaluate('document.getElementById("player-video").play()');
+ await browser.waitFor('XuperPlayer.diagnostics.stage==="playing"&&!document.getElementById("player-video").paused',180);
+ assert.equal(await browser.evaluate('XuperPlayer.diagnostics.sequenceRestarts'),1);
+ for(let i=0;i<50&&!seen.some(row=>row.url.endsWith('.ts')&&row.auth==='backup-live-test'&&row.license==='backup-live-license');i++)await new Promise(resolve=>setTimeout(resolve,100));
+ assert.ok(seen.some(row=>row.url.endsWith('.ts')&&row.auth==='backup-live-test'&&row.license==='backup-live-license'),'Backup must fetch its own authorized media: '+JSON.stringify(seen.slice(-12)));
+ const sequenceFailover=await browser.evaluate('({restarts:XuperPlayer.diagnostics.sequenceRestarts,failovers:XuperPlayer.diagnostics.sequenceFailovers,cdn:XuperPlayer.diagnostics.cdnAttempt})');
+ sequenceProbe=true;
+ await browser.waitFor('XuperPlayer.diagnostics.sequenceRestarts===2&&XuperPlayer.diagnostics.sequenceRestartPending===true',180);
+ await browser.evaluate('XuperPlayer.stop()');const stoppedGets=manifestGets;await new Promise(resolve=>setTimeout(resolve,500));assert.equal(manifestGets,stoppedGets);assert.equal(await browser.evaluate('XuperPlayer.diagnostics.engine'),'');
+
  await browser.evaluate(`__xuper.show('home');window.fixtureBlockPlay=true;var basePlay=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(fixtureBlockPlay)return Promise.reject(new DOMException('Fixture gesture gate','NotAllowedError'));return basePlay.call(this)};XuperGuide.open();XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13});`);
  await browser.waitFor('XuperGuide.diagnostics().autoplayBlocked===true');const resolvedBefore=await browser.evaluate('liveResolves');
  await browser.evaluate('fixtureBlockPlay=false;document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:13,bubbles:true}))');
  await browser.waitFor('document.querySelector("#xt-guide video").currentTime>0.5',150);
  assert.equal(await browser.evaluate('liveResolves'),resolvedBefore);assert.equal(await browser.evaluate('XuperGuide.diagnostics().autoplayBlocked'),false);assert.deepEqual(browser.errors,[]);
- mkdirSync('dist',{recursive:true});writeFileSync('dist/live-continuity.json',JSON.stringify({synthetic:true,samsungHardware:false,manifestGets,playlistFailures,fragmentFailures,outageFailures,workerMessages,parsingFailures,duplicateLists,sequenceFailures,sequenceDiagnostic,initialGate,resumedGate,samples},null,2)+'\n');
+ mkdirSync('dist',{recursive:true});writeFileSync('dist/live-continuity.json',JSON.stringify({synthetic:true,samsungHardware:false,manifestGets,playlistFailures,fragmentFailures,outageFailures,workerMessages,parsingFailures,duplicateLists,sequenceFailures,sequenceDiagnostic,sequenceRecovery,sequenceFailover,initialGate,resumedGate,samples},null,2)+'\n');
  console.log('PASS: 60 seconds of decoded moving-window AES-128 HLS, native-loader adapter, local HLS worker active, live playlist 404 and fragment 503 recovery plus outage after 30 seconds, no invalid Range, no false OK prompt no CDN reset, and genuine gesture retry without re-resolving the channel.');
 }finally{if(browser)await browser.close();for(const server of [app,media]){server.closeAllConnections();server.close();}rmSync(temp,{recursive:true,force:true});}
