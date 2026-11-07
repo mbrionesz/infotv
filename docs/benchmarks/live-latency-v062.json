@@ -1,0 +1,523 @@
+{
+  "synthetic": true,
+  "samsungHardware": false,
+  "segmentSeconds": 5,
+  "samples": [
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "settling-playback",
+        "experimental": true,
+        "seconds": 5.02,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 40.460614,
+        "paused": false,
+        "frames": 384
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 40.964577,
+        "paused": false,
+        "frames": 397
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 41.467102,
+        "paused": false,
+        "frames": 409
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 41.970894,
+        "paused": false,
+        "frames": 421
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 42.476037,
+        "paused": false,
+        "frames": 433
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 42.979009,
+        "paused": false,
+        "frames": 445
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 43.482238,
+        "paused": false,
+        "frames": 457
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 43.984998,
+        "paused": false,
+        "frames": 469
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.1,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 40.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 44.488601,
+        "paused": false,
+        "frames": 481
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 44.992277,
+        "paused": false,
+        "frames": 493
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 45.494722,
+        "paused": false,
+        "frames": 505
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 45.996229,
+        "paused": false,
+        "frames": 517
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 46.501797,
+        "paused": false,
+        "frames": 529
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 47.005083,
+        "paused": false,
+        "frames": 541
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 47.507822,
+        "paused": false,
+        "frames": 553
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 48.010858,
+        "paused": false,
+        "frames": 566
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 48.51334,
+        "paused": false,
+        "frames": 578
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 49.016371,
+        "paused": false,
+        "frames": 590
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "aligned",
+        "experimental": true,
+        "seconds": 5.34,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 45.01,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 49.519312,
+        "paused": false,
+        "frames": 602
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    },
+    {
+      "latency": {
+        "mode": "720p-low-delay",
+        "targetSegments": 1,
+        "stalls": 0,
+        "reason": "",
+        "alignmentSeeks": 2,
+        "alignment": "settling-playback",
+        "experimental": true,
+        "seconds": 5.11,
+        "measurementMethod": "playlist-edge-plus-age",
+        "engineTargetSeconds": 5,
+        "engineSyncPosition": 50.02,
+        "lastSeekFrom": 38.22159,
+        "lastSeekTo": 40.013333333333335,
+        "lastSeekAdvance": 1.79
+      },
+      "media": {
+        "time": 50.008368,
+        "paused": false,
+        "frames": 613
+      },
+      "startupMs": 158,
+      "channelOpenMs": 158
+    }
+  ],
+  "resumed": {
+    "mode": "720p-low-delay",
+    "targetSegments": 1,
+    "stalls": 0,
+    "reason": "",
+    "alignmentSeeks": 3,
+    "alignment": "settling-playback",
+    "experimental": true,
+    "seconds": 5.03,
+    "measurementMethod": "playlist-edge-plus-age",
+    "engineTargetSeconds": 5,
+    "engineSyncPosition": 55.01,
+    "lastSeekFrom": 50.090666,
+    "lastSeekTo": 55.010666666666665,
+    "lastSeekAdvance": 4.92
+  }
+}

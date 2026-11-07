@@ -1,3 +1,4 @@
+import {requestSignal} from './request-signal.js';
 export function hlsRange(context){
  const start=context.rangeStart===undefined?0:context.rangeStart,end=context.rangeEnd;
  return Number.isSafeInteger(start)&&start>=0&&Number.isSafeInteger(end)&&end>start?'bytes='+start+'-'+(end-1):'';
@@ -11,8 +12,8 @@ export function nativeHlsLoad(loader,transport,context,config,callbacks,headers,
  const policy=config.loadPolicy||{};
  const budget=Math.min(fragment?20000:12000,policy.maxLoadTimeMs||config.timeout||15000);
  const retries=Math.min(context.type==='manifest'?1:3,policy.errorRetry&&policy.errorRetry.maxNumRetry!==undefined?policy.errorRetry.maxNumRetry:2);
- let active=true,retryTimer=null,timer=null;
- const cancel=()=>{active=false;clearTimeout(timer);clearTimeout(retryTimer);};loader.cancelNative=cancel;
+ let active=true,retryTimer=null,timer=null;const signal=requestSignal();
+ const cancel=()=>{active=false;clearTimeout(timer);clearTimeout(retryTimer);signal.abort();};loader.cancelNative=cancel;
  timer=setTimeout(()=>{if(active){cancel();stats.aborted=true;callbacks.onTimeout(stats,context,null);}},budget);
  function retry(status){
   if(stats.retry>=retries||status===401||status===403||status===416||status>0&&status!==404&&status!==408&&status!==429&&status<500)return false;
@@ -27,7 +28,7 @@ export function nativeHlsLoad(loader,transport,context,config,callbacks,headers,
  function load(){
   if(!active)return;
   const remaining=Math.max(100,Math.floor(budget-(performance.now()-stats.loading.start)));
-  transport.request({url:context.url,headers:requestHeaders,priority:'playback',timeout:Math.min(12000,remaining)}).then(result=>{
+  transport.request({url:context.url,headers:requestHeaders,priority:'playback',signal,timeout:Math.min(12000,remaining)}).then(result=>{
    if(!active)return;
    if(!result&&fallback){cancel();loader.nativeActive=false;stats.loading.start=0;stats.aborted=false;loader.cancelNative=null;fallback();return;}
    if(!result||result.status<200||result.status>=300){failed(result&&result.status||0);return;}

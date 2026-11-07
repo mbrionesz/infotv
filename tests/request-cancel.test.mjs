@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {requestSignal} from '../browser/request-signal.js';import {createNativeTransport} from '../browser/dnsx.js';
+function mock(){const calls=[],workers=[];return {calls,workers,factory:()=>{const w={dead:false,terminate(){this.dead=true;},postMessage(m){calls.push(m);if(m.method==='http'&&m.options.url.includes('pending'))return;queueMicrotask(()=>w.onmessage({data:{id:m.id,result:m.method==='dns'?{ip:'203.0.113.7',ttl:600,resolver:'8.8.8.8'}:{status:200,headers:'',body:new ArrayBuffer(0)}}}));}};workers.push(w);queueMicrotask(()=>w.onmessage({data:{ready:true}}));return w;}};}
+const tick=()=>new Promise(resolve=>setTimeout(resolve,5));
+test('cancel active HTTP releases its worker and a new channel can load immediately',async()=>{
+ const m=mock(),transport=createNativeTransport({workerFactory:m.factory}),signal=requestSignal();
+ try{await transport.ensure();const old=transport.request({url:'https://cdn.example/pending',signal}).catch(e=>e.name);while(!m.calls.some(c=>c.method==='http'))await tick();signal.abort();assert.equal(await old,'AbortError');assert.equal((await transport.request({url:'https://cdn.example/new'})).status,200);assert.equal(transport.snapshot().requests.canceledActive,1);assert.ok(m.workers.some(w=>w.dead));assert.deepEqual(transport.snapshot().originFallbacks,[]);}finally{transport.dispose();}
+});
+test('cancel queued HTTP removes it without dispatch and does not cancel another request',async()=>{
+ const m=mock(),transport=createNativeTransport({workerFactory:m.factory}),signals=[requestSignal(),requestSignal(),requestSignal()];
+ try{await transport.ensure();const first=transport.request({url:'https://cdn.example/pending1',signal:signals[0]}).catch(e=>e.name);const second=transport.request({url:'https://cdn.example/pending2',signal:signals[1]}).catch(e=>e.name);while(m.calls.filter(c=>c.method==='http').length<2)await tick();const third=transport.request({url:'https://cdn.example/queued',signal:signals[2]}).catch(e=>e.name);await tick();signals[2].abort();assert.equal(await third,'AbortError');assert.equal(m.calls.some(c=>c.options.url&&c.options.url.includes('/queued')),false);assert.equal(transport.snapshot().requests.canceledQueued,1);signals[0].abort();signals[1].abort();await Promise.all([first,second]);}finally{transport.dispose();}
+});
+test('redirects share the original timeout budget rather than resetting it per hop',async()=>{
+ const m=mock();let time=0;const factory=()=>{const w=m.factory(),base=w.postMessage;w.postMessage=c=>{if(c.method==='http'){m.calls.push(c);time+=800;queueMicrotask(()=>w.onmessage({data:{id:c.id,result:{status:302,headers:'location: /next'+time,body:new ArrayBuffer(0)}}}));}else base(c);};return w;};
+ const transport=createNativeTransport({workerFactory:factory,now:()=>time});try{assert.equal(await transport.request({url:'https://cdn.example/start',timeout:1000}),null);assert.equal(m.calls.filter(c=>c.method==='http').length,2);}finally{transport.dispose();}
+});

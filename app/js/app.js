@@ -3981,7 +3981,7 @@
         var lowDelay=e("button","xt-setting-action focusable");
         function latencyLabel(){var on=true;try{on=localStorage.getItem("xt.lowDelay720")!=="off";}catch(_){}lowDelay.textContent="720p experimental · objetivo ~5 s · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
         lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="off"?"on":"off");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
-        panel.appendChild(e("p","xt-setting-footnote","La app conserva 3 s para arrancar y 6 s tras una espera. Audio y calidad dependen de la señal y del soporte del televisor."));
+        panel.appendChild(e("p","xt-setting-footnote","La app busca 1 s para arrancar y conserva 6 s tras una espera. Audio y calidad dependen de la señal y del soporte del televisor."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
         var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
@@ -7626,6 +7626,7 @@
     ) {
       var a = function () {
         var t = ++Zr;
+        if(window.XuperPlayer)window.XuperPlayer.stop();
         (jr("Cargando señal " + (e.name || "") + "…"),
           P(
             "resolveLive",
@@ -7652,7 +7653,7 @@
             },
           ));
       };
-      t ? a() : (eo = setTimeout(a, 180));
+      t ? a() : (eo = setTimeout(a, 120));
     }
   }
   function ao() {
