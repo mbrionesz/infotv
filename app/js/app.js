@@ -1260,6 +1260,7 @@
     }
   }
   function lt(e) {
+    if(e!=="player"&&X.screen==="player"){Zr++;if(eo){clearTimeout(eo);eo=null;}}
     for (var a = document.querySelectorAll(".screen"), i = 0; i < a.length; i++)
       a[i].classList.remove("is-active");
     var n = t("screen-" + e);
@@ -7619,13 +7620,15 @@
   var Zr = 0,
     eo = null;
   function to(e, t) {
+    var selection=++Zr;
     if (
       (eo && (clearTimeout(eo), (eo = null)),
       e || (e = F[X.channel]),
       e && (e.channelCode || e.streamUrl))
     ) {
       var a = function () {
-        var t = ++Zr;
+        var t = selection;
+        if(t!==Zr||X.screen!=="player"||X.playerMode!=="live")return;
         if(window.XuperPlayer)window.XuperPlayer.stop();
         (jr("Cargando señal " + (e.name || "") + "…"),
           P(
@@ -7634,7 +7637,7 @@
               ? { streamUrl: e.streamUrl }
               : { channelCode: e.channelCode },
             function (e, a) {
-              if (t === Zr) {
+              if (t === Zr && X.screen === "player" && X.playerMode === "live") {
                 if (e || !a || !1 === a.returnValue)
                   return (
                     (X.streamError =

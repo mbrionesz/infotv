@@ -105,7 +105,7 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
    Object.assign(record,{httpStatus:result.status,tlsVerified:target.protocol==='https:',metrics:result.metrics||null});
    const location=(result.headers.match(/^location:\s*(.+)$/im)||[])[1];
    if([301,302,303,307,308].includes(result.status)&&location){
-    const next=new URL(location.trim(),target);if(!/^https?:$/.test(next.protocol)||target.protocol==='https:'&&next.protocol!=='https:')throw new Error('Redirección insegura');
+    const next=new URL(location.trim(),target);if(!/^https?:$/.test(next.protocol)||next.username||next.password||target.protocol==='https:'&&next.protocol!=='https:')throw new Error('Redirección insegura');
     if(next.origin!==target.origin)headers={};if(result.status===303||(result.status===301||result.status===302)&&method==='POST'){method='GET';body=null;}target=next;continue;
    }
    return Object.assign(result,{url:target.href,mode:address.mode});

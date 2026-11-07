@@ -57,3 +57,7 @@ test('a failed manual HEAD diagnostic does not disable native playback for that 
  const mock=workers();const factory=()=>{const worker=mock.factory(),send=worker.postMessage;worker.postMessage=message=>{if(message.method==='http'&&message.options.method==='HEAD')queueMicrotask(()=>worker.onmessage({data:{id:message.id,error:'fixture timeout',nativeCode:28}}));else send(message);};return worker;};
  const transport=createNativeTransport({workerFactory:factory});try{await assert.rejects(transport.request({url:'https://media.example/',method:'HEAD',diagnostic:true}));assert.deepEqual(transport.snapshot().originFallbacks,[]);assert.equal((await transport.request({url:'https://media.example/live.m3u8'})).status,200);}finally{transport.dispose();}
 });
+test('redirects cannot introduce URL credentials that initial requests forbid',async()=>{
+ const mock=workers();let httpCalls=0;const factory=()=>{const worker=mock.factory(),send=worker.postMessage;worker.postMessage=message=>{if(message.method==='http'){httpCalls++;queueMicrotask(()=>worker.onmessage({data:{id:message.id,result:{status:302,headers:'Location: https://user:secret@other.example/live.m3u8',body:new ArrayBuffer(0)}}}));}else send(message);};return worker;};
+ const transport=createNativeTransport({workerFactory:factory});try{await assert.rejects(transport.request({url:'https://cdn.example/live.m3u8'}),/Redirección insegura/);assert.equal(httpCalls,1);}finally{transport.dispose();}
+});

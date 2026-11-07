@@ -7,3 +7,8 @@ test('CDN HEAD probes stay bounded, strip credentials and paths, and treat 404 a
 test('failed HEAD is reported as unmeasurable rather than DNS poisoning or channel failure',async()=>{
  const report=await probeCdns(['https://cdn.example/a'],{snapshot:()=>({available:true}),request:async()=>{throw new Error('TLS');}});assert.equal(report.results[0].state,'No medible');assert.equal(report.results[0].httpStatus,0);
 });
+test('closing diagnostics aborts the current request and prevents further CDN probes',async()=>{
+ const {requestSignal}=await import('../browser/request-signal.js');const signal=requestSignal();let dispatched=0;
+ const transport={snapshot:()=>({available:true}),request:options=>{dispatched++;return new Promise((resolve,reject)=>options.signal.subscribe(()=>reject(options.signal.error)));}};
+ const report=probeCdns(['https://one.example/','https://two.example/'],transport,{signal});signal.abort();const result=await report;assert.equal(dispatched,1);assert.equal(result.cancelled,true);assert.deepEqual(result.results,[]);
+});
