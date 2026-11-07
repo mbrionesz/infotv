@@ -1,4 +1,4 @@
-# XuperTizen 0.5.8 alpha
+# XuperTizen 0.5.9 alpha
 
 Widget autónomo para Samsung Tizen, con **Tizen 4.0 como requisito mínimo** y
 versiones 4–9+ como objetivo de pruebas. Se instala con **Apps2Samsung**. No
@@ -53,7 +53,7 @@ mantenimiento actual; hace falta modernizarlas antes de una entrega estable.
 
 Consulta [instalación](docs/INSTALAR-WINDOWS.md). El artefacto de esta versión es:
 
-`dist/XuperTizen-0.5.8-alpha-Tizen4plus-UNSIGNED.wgt`
+`dist/XuperTizen-0.5.9-alpha-Tizen4plus-UNSIGNED.wgt`
 
 Apps2Samsung admite importar un WGT propio y gestionar firma/instalación según
 su README actual. La actualización se distribuye sin firma; la versión anterior sí fue instalada por el usuario.
@@ -62,8 +62,8 @@ Los certificados se revisarán al final con el usuario.
 Para descubrirlo como repositorio se necesita subir el WGT a una **GitHub
 Release** de `mbrionesz/infotv` y agregar ese repo como fuente en Apps2Samsung.
 Preparar el archivo local no lo publica ni lo incorpora al catálogo comunitario.
-Esta actualización usa la etiqueta `v0.5.8-alpha.1`: consulta
-[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.8-alpha.1).
+Esta actualización usa la etiqueta `v0.5.9-alpha.1`: consulta
+[la release](https://github.com/mbrionesz/infotv/releases/tag/v0.5.9-alpha.1).
 La inclusión en el catálogo comunitario general requiere un trámite aparte.
 
 ## Desarrollar y verificar
@@ -169,3 +169,12 @@ El portal devolvió cuatro CDN en las muestras del usuario; el adaptador recoge
 todos los que recibe y el reproductor admite hasta cuatro candidatos originales.
 Ese límite no demuestra que el proveedor solo disponga de cuatro servidores.
 [Notas](docs/RELEASE-0.5.8-alpha.1.md).
+
+La 0.5.9 corrige espacios literales o `%20` al final del dominio en las URI HLS,
+sin reescribir rutas ni consultas firmadas. Admite hasta 16 candidatos del portal,
+conservando las credenciales de cada uno y el plazo inicial total de 30 s.
+Diagnóstico distingue `cdnHosts` (candidatos), `playlistHosts` (hosts de respuesta
+y URI HLS, que pueden incluir segmentos, claves y sublistas) y `uriRepairs`.
+No son 16 servidores confirmados: los registros disponibles siguen mostrando
+cuatro alternativas y un destino de segmentos adicional.
+[Notas](docs/RELEASE-0.5.9-alpha.1.md).

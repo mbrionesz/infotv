@@ -1,3 +1,4 @@
+import {playlistUris} from './playlist-uris.js';
 // Repair only repeated identical, positive integer TARGETDURATION values.
 export function playlistShape(text){
  const tags=text.match(/^#EXT-X-TARGETDURATION:[^\r\n]*/gm)||[];
@@ -5,8 +6,9 @@ export function playlistShape(text){
  const safe=tags.length>1&&/^\d+$/.test(values[0])&&Number(values[0])>0&&values.every(value=>value===values[0])&&(text.match(/^#EXTM3U/gm)||[]).length===1&&(text.match(/^#EXT-X-MEDIA-SEQUENCE:/gm)||[]).length<=1;
  let data=text;
  if(safe){let seen=false;data=text.replace(/^#EXT-X-TARGETDURATION:[^\r\n]*(?:\r?\n|$)/gm,line=>{if(!seen){seen=true;return line;}removed++;return '';});}
+ const uris=playlistUris(data);data=uris.data;
  const sequence=text.match(/^#EXT-X-MEDIA-SEQUENCE:\s*(\d+)\s*$/m),discontinuity=text.match(/^#EXT-X-DISCONTINUITY-SEQUENCE:\s*(\d+)\s*$/m);
- return {data,facts:{mediaSequence:sequence?Number(sequence[1]):null,discontinuitySequence:discontinuity?Number(discontinuity[1]):null,characters:text.length,hasHeader:/^\s*#EXTM3U/.test(text),segments:(text.match(/#EXTINF:/g)||[]).length,hasTargetDuration:tags.length>0,targetDuration:values.length&&Number.isFinite(Number(values[0]))?Number(values[0]):null,targetDurationTags:tags.length,removedIdenticalTargetTags:removed}};
+ return {data,facts:{...uris.facts,mediaSequence:sequence?Number(sequence[1]):null,discontinuitySequence:discontinuity?Number(discontinuity[1]):null,characters:text.length,hasHeader:/^\s*#EXTM3U/.test(text),segments:(text.match(/#EXTINF:/g)||[]).length,hasTargetDuration:tags.length>0,targetDuration:values.length&&Number.isFinite(Number(values[0]))?Number(values[0]):null,targetDurationTags:tags.length,removedIdenticalTargetTags:removed}};
 }
 export function playlistReason(value){
  const reason=String(value||'').split(/[\r\n]/,1)[0];

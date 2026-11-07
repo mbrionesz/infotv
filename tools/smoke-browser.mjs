@@ -19,11 +19,11 @@ const media = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   seen.push({ path:req.url, auth:req.headers['content-auth'], license:req.headers['content-license'] });
   const publicStream=req.url.startsWith('/public/');
-  const fourth=req.url.startsWith('/fourth/');
+  const fifth=req.url.startsWith('/fifth/');
   const backup=req.url.startsWith('/backup/');
-  if (!publicStream&&(req.headers['content-auth'] !== (fourth?'fourth-auth':backup?'backup-auth':'local-test') || req.headers['content-license'] !== (fourth?'fourth-license':backup?'backup-license':'local-license'))) { res.writeHead(403); res.end(); return; }
+  if (!publicStream&&(req.headers['content-auth'] !== (fifth?'fifth-auth':backup?'backup-auth':'local-test') || req.headers['content-license'] !== (fifth?'fifth-license':backup?'backup-license':'local-license'))) { res.writeHead(403); res.end(); return; }
   if(req.url==='/denied.m3u8'){res.writeHead(403);res.end('Denied');return;}
-  const file = path.resolve(temporary, '.' + req.url.replace(/^\/(?:backup|public|fourth)/,''));
+  const file = path.resolve(temporary, '.' + req.url.replace(/^\/(?:backup|public|fifth)/,''));
   if (!file.startsWith(temporary + path.sep)) { res.writeHead(403); res.end(); return; }
   try {
     res.setHeader('Content-Type', file.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : file.endsWith('.bin') ? 'application/octet-stream' : 'video/mp2t');
@@ -79,7 +79,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.8');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.5.9');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -171,11 +171,11 @@ try {
   const backups=seen.filter(request=>request.path.startsWith('/backup/'));
   assert.ok(backups.some(request=>request.path.endsWith('.ts')));assert.ok(backups.some(request=>request.path.endsWith('/key.bin')));
   assert.ok(backups.every(request=>request.auth==='backup-auth'&&request.license==='backup-license'));
-  await browser.evaluate('__xuper.show("home");XuperStandalone.core.resolveLive=function(code,cb){cb(null,{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/denied.m3u8'))+',mime:"application/vnd.apple.mpegurl",headers:{"Content-Auth":"local-test","Content-License":"local-license"},backupUrls:[{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/absent-two.m3u8'))+',headers:{"Content-Auth":"local-test","Content-License":"local-license"}},{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/absent-three.m3u8'))+',headers:{"Content-Auth":"local-test","Content-License":"local-license"}},{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/fourth/live.m3u8'))+',headers:{"Content-Auth":"fourth-auth","Content-License":"fourth-license"}}]})};__xuper.show("player")');
-  await browser.waitFor('XuperPlayer.diagnostics.cdnAttempt===4&&document.getElementById("player-video").currentTime>0.5',250);
-  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnAvailable'),4);
-  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnReceived'),4);
-  assert.ok(seen.filter(item=>item.path.startsWith('/fourth/')).every(item=>item.auth==='fourth-auth'&&item.license==='fourth-license'));
+  await browser.evaluate('__xuper.show("home");XuperStandalone.core.resolveLive=function(code,cb){cb(null,{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/denied.m3u8'))+',mime:"application/vnd.apple.mpegurl",headers:{"Content-Auth":"local-test","Content-License":"local-license"},backupUrls:[{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/absent-two.m3u8'))+',headers:{"Content-Auth":"local-test","Content-License":"local-license"}},{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/absent-three.m3u8'))+',headers:{"Content-Auth":"local-test","Content-License":"local-license"}},{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/absent-four.m3u8'))+',headers:{"Content-Auth":"local-test","Content-License":"local-license"}},{url:'+JSON.stringify(streamUrl.replace('/live.m3u8','/fifth/live.m3u8'))+',headers:{"Content-Auth":"fifth-auth","Content-License":"fifth-license"}}]})};__xuper.show("player")');
+  await browser.waitFor('XuperPlayer.diagnostics.cdnAttempt===5&&document.getElementById("player-video").currentTime>0.5',250);
+  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnAvailable'),5);
+  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnReceived'),5);
+  assert.ok(seen.filter(item=>item.path.startsWith('/fifth/')).every(item=>item.auth==='fifth-auth'&&item.license==='fifth-license'));
   await browser.evaluate('__xuper.show("home");__xuper.settingsPanel("netdiag");__xuper.focus(".xt-open-diagnostics");__xuper.key(13)');
   await browser.waitFor('!!document.querySelector(".xt-diagnostics .xt-diag-network")');
   assert.equal(await browser.evaluate('document.querySelector("#screen-settings .settings-panel.is-active").textContent.includes("transporte activo")'),true);

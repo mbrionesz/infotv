@@ -1,9 +1,10 @@
 import {httpsAlternative} from './stream-probe.js';
+export const MAX_CDN_CANDIDATES=16;
 export function streamCandidates(source,stream={}){
   const primary={url:source,headers:stream.headers||{}};
   const candidates=[primary],seen=new Set([source]);
   for(const entry of stream.backupUrls||[]){
-    if(candidates.length>=4)break;
+    if(candidates.length>=MAX_CDN_CANDIDATES)break;
     const url=typeof entry==='string'?entry:entry&&entry.url;
     try{
       const parsed=new URL(url);if(!/^https?:$/.test(parsed.protocol)||parsed.username||parsed.password||seen.has(parsed.href))continue;
