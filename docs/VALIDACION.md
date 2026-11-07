@@ -1,3 +1,13 @@
+# Validación actual — 0.5.6
+
+56 pruebas unitarias e integración Chromium. El diagnóstico clasifica el motivo
+por su primera línea e incluye mensaje sanitizado, secuencias y asociación a una
+petición. La simulación adicional verifica un error real de secuencia, no su
+recuperación. [Notas y comando Debug](RELEASE-0.5.6-alpha.1.md). Prueba física
+pendiente; no se afirma corregido el corte de TNT Sports.
+
+Los apartados siguientes se conservan como historial.
+
 # Validación actual — 0.5.5
 
 54 pruebas unitarias; integración Chromium de resolución/FPS/códecs, filas 16 px,

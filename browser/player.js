@@ -1,5 +1,5 @@
 import {createFrameMeter} from './media-info.js';
-import {playlistShape,playlistReason} from './playlist-shape.js';
+import {playlistShape,playlistReason,safeParserMessage} from './playlist-shape.js';
 import {createLiveBuffer} from './live-buffer.js';
 import {mediaHealth,recoveryBudget} from './playback-health.js';
 import {playbackRejection,liveLoadPolicy} from './playback-policy.js';
@@ -48,7 +48,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;
+    diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.worker=false;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -141,9 +141,11 @@ export function createPlayer(getStream) {
         load(context,config,callbacks){
           if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
           const original=callbacks;callbacks=Object.assign({},original,{onSuccess:(response,stats,request,network)=>{
+            if(serial!==run||generation!==attempt)return;
             if(typeof response.data==='string'){
-              const shape=playlistShape(response.data),facts=Object.assign({httpStatus:response.code||network&&network.status||null},shape.facts);response.data=shape.data;
+              const shape=playlistShape(response.data),facts=Object.assign({requestId:++diagnostics.playlistRequests,atMs:Math.round(performance.now()-openedAt),cdnAttempt:diagnostics.cdnAttempt,httpsFallback:diagnostics.httpsFallback,requestType:context.type||'playlist',httpStatus:response.code||network&&network.status||null},shape.facts);response.data=shape.data;
               if(shape.facts.removedIdenticalTargetTags){diagnostics.playlistRepairs=(diagnostics.playlistRepairs||0)+shape.facts.removedIdenticalTargetTags;record('removed-identical-target-duration');}
+              diagnostics.playlistHistory.push(facts);if(diagnostics.playlistHistory.length>8)diagnostics.playlistHistory.shift();
               playlistFacts.set(context.url,facts);if(playlistFacts.size>8)playlistFacts.delete(playlistFacts.keys().next().value);
             }
             original.onSuccess(response,stats,request,network);
@@ -172,7 +174,7 @@ export function createPlayer(getStream) {
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if(serial!==run||generation!==attempt)return;
-        if(/(?:level|manifest).*(?:Parsing|Empty)Error/i.test(data.details||'')){const text=data.response&&data.response.data;const reason=String(data.reason||data.error&&data.error.message||'');diagnostics.playlistError=Object.assign({kind:playlistReason(reason)},playlistFacts.get(data.context&&data.context.url||data.url)||{characters:null,hasHeader:null,segments:null});}
+        if(/(?:level|manifest).*(?:Parsing|Empty)Error/i.test(data.details||'')){const text=data.response&&data.response.data;const reason=String(data.reason||data.error&&data.error.message||'');diagnostics.playlistError=Object.assign({kind:playlistReason(reason),message:safeParserMessage(reason)},playlistFacts.get(data.context&&data.context.url||data.url)||{characters:null,hasHeader:null,segments:null});}
         diagnostics.detail=String(data.details||'').slice(0,70);record(data.details,data.response&&data.response.code||0,!!data.fatal);
         if(data.event==='demuxerWorker')diagnostics.worker=false;
         diagnostics.httpStatus=data.response&&data.response.code||diagnostics.httpStatus;
