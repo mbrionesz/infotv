@@ -15,3 +15,18 @@ export function playlistTimelineIssue(previous,next,atMs){
 export function clockOutsideBuffer(sample){
  return Number.isFinite(sample.bufferEnd)&&sample.bufferEnd>0&&Number.isFinite(sample.time)&&sample.time>sample.bufferEnd+30;
 }
+
+// A bad reload must not discard a healthy decoder and its playable reserve.
+// Give the current origin time to return a coherent list, while preserving the
+// last accepted timeline. Both wall time and remaining buffer bound the grace.
+export function createPlaylistGrace(){
+ let firstAt=null,limitMs=0,attempts=0;
+ return {next({now,bufferSeconds,started,targetDuration=5}){
+  if(firstAt===null){firstAt=now;limitMs=started?Math.min(12000,Math.max(0,(bufferSeconds-2)*1000)):0;}
+  attempts++;
+  const elapsed=now-firstAt,delay=attempts<=2?attempts*250:Math.min(1500,Math.max(500,targetDuration*200));
+  const buffered=started&&bufferSeconds>=3&&elapsed+delay<limitMs;
+  if(attempts>16||attempts>2&&!buffered)return null;
+  return {delayMs:delay,attempts,elapsedMs:Math.round(elapsed),limitMs,buffered:!!buffered,bufferSeconds};
+ }};
+}

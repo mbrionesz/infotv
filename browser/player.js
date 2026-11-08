@@ -1,4 +1,4 @@
-import {playlistTimelineIssue,clockOutsideBuffer} from './playlist-timeline.js';
+import {playlistTimelineIssue,clockOutsideBuffer,createPlaylistGrace} from './playlist-timeline.js';
 import {ensureVodRuntime} from './vod-runtime.js';
 import {createLiveLatency} from './live-latency.js';
 import {createFrameMeter} from './media-info.js';
@@ -55,7 +55,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
+    diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistGrace=null;diagnostics.buffered404Retries=0;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -167,7 +167,7 @@ export function createPlayer(getStream) {
       const Loader=Hls.DefaultConfig.loader;
       const useHttps=diagnostics.httpsFallback;
       class SourceLoader extends Loader{
-        constructor(config){super(config);this.loaderConfig=config;}
+        constructor(config){super(config);this.loaderConfig=config;this.timelineGrace=createPlaylistGrace();}
         browserLoad(context,config,callbacks){
           if(!this.browserLoadUsed){this.browserLoadUsed=true;return super.load(context,config,callbacks);}
           if(this.browserRetry)this.browserRetry.destroy();
@@ -175,8 +175,8 @@ export function createPlayer(getStream) {
           return this.browserRetry.load(context,config,callbacks);
         }
         getResponseHeader(name){if(this.nativeActive){const line=(this.nativeHeaders||'').split(/[\r\n]+/).find(value=>value.toLowerCase().startsWith(name.toLowerCase()+':'));return line?line.slice(line.indexOf(':')+1).trim():null;}return this.browserRetry?this.browserRetry.getResponseHeader(name):super.getResponseHeader(name);}
-        abort(){clearTimeout(this.freshnessTimer);if(this.cancelNative){this.cancelNative();this.stats.aborted=true;}if(this.browserRetry)this.browserRetry.abort();else super.abort();}
-        destroy(){clearTimeout(this.freshnessTimer);if(this.cancelNative)this.cancelNative();if(this.browserRetry){this.browserRetry.destroy();this.browserRetry=null;}super.destroy();}
+        abort(){clearTimeout(this.timelineDeadline);clearTimeout(this.freshnessTimer);if(this.cancelNative){this.cancelNative();this.stats.aborted=true;}if(this.browserRetry)this.browserRetry.abort();else super.abort();}
+        destroy(){clearTimeout(this.timelineDeadline);clearTimeout(this.freshnessTimer);if(this.cancelNative)this.cancelNative();if(this.browserRetry){this.browserRetry.destroy();this.browserRetry=null;}super.destroy();}
         load(context,config,callbacks){
           if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
           const original=callbacks;callbacks=Object.assign({},original,{onSuccess:(response,stats,request,network)=>{
@@ -188,11 +188,14 @@ export function createPlayer(getStream) {
                 diagnostics.playlistRejected++;diagnostics.playlistTimelineError=Object.assign({atMs:Math.round(performance.now()-openedAt),cdnAttempt:diagnostics.cdnAttempt},timelineIssue);record(timelineIssue.kind);
                 // Retry before handing the payload to HLS. Once merged, a bad
                 // sequence can move its live timeline thousands of seconds away.
-                this.timelineRetries=(this.timelineRetries||0)+1;
-                if(this.timelineRetries<=2){this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)this.load(context,config,original);},this.timelineRetries*250);}
+                const grace=this.timelineGrace.next({now:performance.now(),bufferSeconds:mediaHealth(video).bufferSeconds,started,targetDuration:shape.facts.targetDuration});
+                diagnostics.playlistGrace=grace||{exhausted:true};
+                if(grace&&grace.buffered&&!this.timelineDeadline)this.timelineDeadline=setTimeout(()=>{this.timelineDeadline=null;if(serial===run&&generation===attempt){diagnostics.playlistGrace={exhausted:true,reason:'buffer-grace-deadline'};recoverSequence();}},Math.max(1,grace.limitMs-grace.elapsedMs));
+                if(grace){this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)this.load(context,config,original);},grace.delayMs);}
                 else{this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)recoverSequence();},0);}
                 return;
               }
+              clearTimeout(this.timelineDeadline);this.timelineDeadline=null;diagnostics.playlistGrace=null;
               const unchanged=previous&&Number.isFinite(shape.facts.mediaSequence)&&shape.facts.mediaSequence===previous.mediaSequence;
               if(options.live&&diagnostics.liveLatency.experimental&&context.type==='level'&&unchanged&&(this.freshnessRetries||0)<2){
                 this.freshnessRetries=(this.freshnessRetries||0)+1;diagnostics.freshPlaylistRetries++;
@@ -250,6 +253,7 @@ export function createPlayer(getStream) {
         if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
           const code=data.response&&data.response.code||0;
           if(options.live&&/level(?:Parsing|Empty)Error/.test(data.details||'')&&recoverNetwork())return;
+          if(code===404&&started&&options.live&&mediaHealth(video).bufferSeconds>=3&&recoverNetwork()){diagnostics.buffered404Retries++;record('404-retry-buffer-preserved',404);return;}
           if(code===404&&refreshSource())return;
           if(started&&options.live&&![401,403,416].includes(code)&&recoverNetwork())return;
           if(retrySource())return;

@@ -14,7 +14,7 @@ const media=http.createServer((req,res)=>{
   if(!latencyMode&&elapsed>6000&&playlistFailures===0){playlistFailures++;res.writeHead(404);res.end();return;}
   if(!latencyMode&&elapsed>=18000&&parsingFailures===0){parsingFailures++;res.setHeader('Content-Type','application/vnd.apple.mpegurl');res.end('#EXTM3U\n#EXTINF:2.000,\npart10.ts\n');return;}
   if(!latencyMode&&elapsed>=32000&&elapsed<36000){outageFailures++;res.writeHead(503);res.end();return;}
-  const start=Math.min(latencyMode?12:38,Math.floor(elapsed/(segmentSeconds*1000)));let sequence=start;if(sequenceProbe){sequenceFailures++;sequence=start-2;sequenceProbe--;}let text='#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:'+segmentSeconds+'\n#EXT-X-MEDIA-SEQUENCE:'+sequence+'\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x000102030405060708090a0b0c0d0e0f\n';
+  const start=Math.min(latencyMode?12:38,Math.floor(elapsed/(segmentSeconds*1000)));let sequence=start;if(sequenceProbe){sequenceFailures++;sequence=Math.max(0,start-20);sequenceProbe--;}let text='#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:'+segmentSeconds+'\n#EXT-X-MEDIA-SEQUENCE:'+sequence+'\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x000102030405060708090a0b0c0d0e0f\n';
   for(let i=start;i<start+6;i++)text+='#EXTINF:'+segmentSeconds+'.000,\npart'+String(i).padStart(2,'0')+'.ts\n';
   if(!latencyMode&&elapsed>=12000&&elapsed<16000){duplicateLists++;text=text.replace('#EXT-X-TARGETDURATION:2\n','#EXT-X-TARGETDURATION:2\n#EXT-X-TARGETDURATION:2\n');}
   const brokenOrigin='http://127.0.0.1%20:'+media.address().port;
@@ -74,17 +74,19 @@ try{
  assert.ok(samples.at(-1).time-samples[0].time>40);assert.ok(manifestGets>=20);assert.ok(outageFailures>0);assert.ok(parsingFailures>0);assert.ok(duplicateLists>0);assert.ok(samples.some(sample=>sample.playlistRepairs>0));assert.ok(samples.some(sample=>sample.media&&sample.media.measuredFps>10));assert.ok(samples.some(sample=>sample.playlistError&&sample.playlistError.kind==='missing-target-duration'&&sample.playlistError.hasTargetDuration===false&&sample.playlistError.characters>0));assert.ok(samples.some(sample=>sample.networkRecoveries>0));workerMessages=await browser.evaluate('hlsWorkerMessages');assert.ok(workerMessages>10,'HLS must actually transmux in the local worker');assert.equal(samples.at(-1).worker,true);assert.ok(samples.at(-1).media.totalFrames>500);assert.equal(samples.at(-1).media.playbackRate,1);assert.equal(playlistFailures,1);assert.equal(fragmentFailures,1);assert.equal(samples.at(-1).cdn,1);assert.ok(samples.at(-1).retries>=2);
  assert.ok(seen.every(row=>!row.range&&row.auth==='live-test'&&row.license==='live-license'));assert.deepEqual(browser.errors,[]);
  assert.ok(malformedUrisSent>20);assert.ok(await browser.evaluate('XuperPlayer.diagnostics.uriRepairs>20'));assert.deepEqual(await browser.evaluate('XuperPlayer.diagnostics.playlistHosts'),['127.0.0.1']);
- sequenceProbe=3;
+ sequenceProbe=1000;
  await browser.waitFor('XuperPlayer.diagnostics.playlistTimelineError&&XuperPlayer.diagnostics.playlistTimelineError.kind==="media-sequence-regression"',180);
  const sequenceDiagnostic=await browser.evaluate('XuperPlayer.diagnostics.playlistTimelineError');
  assert.ok(sequenceFailures>0);assert.equal(sequenceDiagnostic.kind,'media-sequence-regression');assert.ok(sequenceDiagnostic.received<sequenceDiagnostic.previous);assert.ok(sequenceDiagnostic.atMs>0);
- await browser.waitFor('XuperPlayer.diagnostics.sequenceRestarts===1&&XuperPlayer.diagnostics.stage==="playing"&&!document.getElementById("player-video").paused',180);
+ await browser.waitFor('XuperPlayer.diagnostics.sequenceRestarts===1',180);sequenceProbe=0;
+ await browser.waitFor('XuperPlayer.diagnostics.stage==="playing"&&!document.getElementById("player-video").paused',180);
  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.cdnAttempt'),1);
  const sequenceRecovery=await browser.evaluate('({restarts:XuperPlayer.diagnostics.sequenceRestarts,ms:XuperPlayer.diagnostics.sequenceRecoveryMs})');
  const recoveredTime=await browser.evaluate('document.getElementById("player-video").currentTime');
  await browser.waitFor('document.getElementById("player-video").currentTime>'+String(recoveredTime+0.5));
- await browser.evaluate('document.getElementById("player-video").pause()');sequenceProbe=3;
- await browser.waitFor('XuperPlayer.diagnostics.sequenceFailovers===1&&XuperPlayer.diagnostics.cdnAttempt===2&&XuperPlayer.diagnostics.bufferGate&&XuperPlayer.diagnostics.bufferGate.userPaused',180);
+ await browser.evaluate('document.getElementById("player-video").pause()');sequenceProbe=1000;
+ await browser.waitFor('XuperPlayer.diagnostics.sequenceFailovers===1&&XuperPlayer.diagnostics.cdnAttempt===2',180);sequenceProbe=0;
+ await browser.waitFor('XuperPlayer.diagnostics.bufferGate&&XuperPlayer.diagnostics.bufferGate.userPaused',100);
  assert.equal(await browser.evaluate('document.getElementById("player-video").paused'),true);
  await browser.evaluate('document.getElementById("player-video").play()');
  await browser.waitFor('XuperPlayer.diagnostics.stage==="playing"&&!document.getElementById("player-video").paused',180);
@@ -92,7 +94,7 @@ try{
  for(let i=0;i<50&&!seen.some(row=>row.url.endsWith('.ts')&&row.auth==='backup-live-test'&&row.license==='backup-live-license');i++)await new Promise(resolve=>setTimeout(resolve,100));
  assert.ok(seen.some(row=>row.url.endsWith('.ts')&&row.auth==='backup-live-test'&&row.license==='backup-live-license'),'Backup must fetch its own authorized media: '+JSON.stringify(seen.slice(-12)));
  const sequenceFailover=await browser.evaluate('({restarts:XuperPlayer.diagnostics.sequenceRestarts,failovers:XuperPlayer.diagnostics.sequenceFailovers,cdn:XuperPlayer.diagnostics.cdnAttempt})');
- sequenceProbe=3;
+ sequenceProbe=1000;
  await browser.waitFor('XuperPlayer.diagnostics.sequenceRestarts===2&&XuperPlayer.diagnostics.sequenceRestartPending===true',180);
  await browser.evaluate('XuperPlayer.stop()');const stoppedGets=manifestGets;await new Promise(resolve=>setTimeout(resolve,500));assert.equal(manifestGets,stoppedGets);assert.equal(await browser.evaluate('XuperPlayer.diagnostics.engine'),'');
 
