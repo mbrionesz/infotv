@@ -1,6 +1,6 @@
 import mpegts from 'mpegts.js';
 import {createVodReader} from './vod-range.js';
-export function openTs(video,url,headers,{onError,onRead,duration=0,onReady,onNotice}={}){
+export function openTs(video,url,headers,{onError,onRead,duration=0,onReady,onNotice,preferredAudio,audioIndex,audioLabels,onAudioTracks}={}){
  class Loader{
   constructor(){this.type='authorized-range';this.status=0;this.needStashBuffer=true;this.reader=null;this.run=0;}
   isWorking(){return this.status===1||this.status===2;}
@@ -11,7 +11,7 @@ export function openTs(video,url,headers,{onError,onRead,duration=0,onReady,onNo
   destroy(){this.abort();this.onDataArrival=this.onError=this.onComplete=null;}
  }
  let lastTime=0,restoring=false;function remember(){if(!video.seeking)lastTime=video.currentTime;}function guardSeek(event){const time=video.currentTime;for(let i=0;i<video.buffered.length;i++)if(time>=video.buffered.start(i)&&time<video.buffered.end(i)-0.05)return;if(!video.buffered.length)return;event.stopImmediatePropagation();if(restoring)return;restoring=true;let safe=lastTime;let contained=false;for(let i=0;i<video.buffered.length;i++)if(safe>=video.buffered.start(i)&&safe<video.buffered.end(i)-0.05)contained=true;if(!contained)safe=video.buffered.start(0)+0.1;video.currentTime=safe;restoring=false;if(onNotice)onNotice('Esta señal MPEG-TS permite avanzar solo dentro del tramo ya cargado.');}
- const player=mpegts.createPlayer({type:'mpegts',url,isLive:false,duration:duration?duration*1000:undefined},{enableWorker:false,customLoader:Loader,enableStashBuffer:true,stashInitialSize:128,lazyLoad:true,lazyLoadMaxDuration:25,lazyLoadRecoverDuration:10,autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:30,autoCleanupMinBackwardDuration:15});
+ const player=mpegts.createPlayer({type:'mpegts',url,isLive:false,duration:duration?duration*1000:undefined},{xuperAudioLanguage:preferredAudio||'es',xuperAudioIndex:audioIndex,xuperAudioLabels:audioLabels||'',onXuperAudio:onAudioTracks,enableWorker:false,customLoader:Loader,enableStashBuffer:true,stashInitialSize:128,lazyLoad:true,lazyLoadMaxDuration:25,lazyLoadRecoverDuration:10,autoCleanupSourceBuffer:true,autoCleanupMaxBackwardDuration:30,autoCleanupMinBackwardDuration:15});
  video.addEventListener('seeking',guardSeek,true);video.addEventListener('timeupdate',remember);
  player.on(mpegts.Events.ERROR,(type,detail,info)=>onError('MPEG-TS: '+(info&&info.msg||detail||type)));
  player.on(mpegts.Events.MEDIA_INFO,info=>onReady&&onReady(info));try{player.attachMediaElement(video);player.load();}catch(error){video.removeEventListener('seeking',guardSeek,true);video.removeEventListener('timeupdate',remember);player.destroy();throw error;}

@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.8.10",
+  "version": "0.8.11",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,6 +20,7 @@
     "test:security": "node tools/security-qa-browser.mjs",
     "test:ux": "node tools/ux-usability-browser.mjs",
     "test:native-wasm": "node tools/native-wasm-integration.mjs",
+    "test:audio": "node tools/audio-subtitles-browser.mjs",
     "test:catalog": "node tools/catalog-browser.mjs",
     "test:timeline": "node tools/timeline-regression-browser.mjs"
   },
@@ -27,6 +28,7 @@
     "buffer": "6.0.3",
     "crypto-js": "4.2.0",
     "esbuild": "0.25.12",
+    "events": "3.3.0",
     "fake-indexeddb": "6.0.0",
     "hls.js": "1.7.4",
     "mp4box": "0.5.4",

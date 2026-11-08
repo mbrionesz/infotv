@@ -14,7 +14,7 @@ def build(output=None):
     out.mkdir(parents=True, exist_ok=True)
     app = ROOT / 'app'
     info = json.loads((app / 'vendor/build-info.json').read_text())
-    sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs', 'companion/lib/magis.js']
+    sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs', 'companion/lib/magis.js', 'companion/lib/audio-language.js']
     sources += [str(p.relative_to(ROOT)) for p in (ROOT / 'browser').glob('*.js')]
     digest = hashlib.sha256()
     for name in sorted(sources):
@@ -55,7 +55,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
-        'hardwareValidation': '0.8.10-beta-pending-on-Samsung-TV', 'providerValidation': '0.8.10-beta-pending-with-live-provider',
+        'hardwareValidation': '0.8.11-beta-pending-on-Samsung-TV', 'providerValidation': '0.8.11-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion'],
         'nativeTransport': {name: native_info[name] for name in ['curl', 'openssl', 'zlib', 'sourceSha256']}

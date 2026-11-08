@@ -45,7 +45,8 @@ dispositivo; la disponibilidad del servicio depende de su proveedor.
 ## Progressive VOD components
 
 - MP4Box.js 0.5.4, GPAC / Telecom ParisTech contributors: BSD-3-Clause, included as mp4box-LICENSE.txt. Pinned to an implementation compatible with the Chrome 56 target.
-- mpegts.js 1.8.0, xqq and contributors: Apache-2.0, included as mpegts.js-LICENSE.txt.
+- mpegts.js 1.8.0, xqq and contributors: Apache-2.0, included as mpegts.js-LICENSE.txt. The build applies a local PMT audio-selection adapter to its source and normalizes TypeScript interop imports.
+- events 3.3.0: MIT, included as events-LICENSE.txt; EventEmitter dependency for the source build of mpegts.js.
 - es6-promise: MIT, included as es6-promise-LICENSE.txt.
 - webworkify-webpack: MIT, upstream README (license declaration) included as webworkify-webpack-LICENSE.txt. This dependency is bundled by mpegts.js; worker mode is disabled for the custom authenticated loader in this implementation.
 

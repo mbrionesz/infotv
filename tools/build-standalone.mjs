@@ -48,14 +48,25 @@ await build({ entryPoints: [path.join(root,'browser/core-worker.js')], outfile:p
   banner:{js:'var globalThis = self;'},inject:[path.join(root,'browser/globals.js')],define:{__dirname:'"/embedded"'},plugins:[plugin],legalComments:'eof' });
 await build({entryPoints:[path.join(root,'browser/native-worker.js')],outfile:path.join(root,'app/vendor/native-worker.js'),bundle:true,format:'iife',target:['chrome56'],minify:true});
 await build({entryPoints:[path.join(root,'node_modules/hls.js/dist/hls.worker.js')],outfile:path.join(root,'app/vendor/hls-worker.js'),bundle:false,format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
-await build({entryPoints:[path.join(root,'browser/vod-entry.js')],outfile:path.join(root,'app/vendor/vod.js'),bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
-for (const [folder, license] of [['hls.js','LICENSE'], ['mpegts.js','LICENSE'], ['mp4box','LICENSE'], ['webworkify-webpack','README.md'], ['es6-promise','LICENSE'], ['crypto-js','LICENSE'], ['buffer','LICENSE'], ['base64-js','LICENSE'], ['ieee754','LICENSE']]) {
+const tsLanguagePlugin={name:'ts-language-selection',setup(builder){
+  builder.onResolve({filter:/^mpegts\.js$/},()=>({path:path.join(root,'node_modules/mpegts.js/src/mpegts.js')}));
+  builder.onLoad({filter:/mpegts\.js\/src\/.*\.ts$/},args=>{
+    let source=readFileSync(args.path,'utf8').replace(/import \* as EventEmitter from 'events';/g,"import EventEmitter from 'events';").replace(/import \* as work from 'webworkify-webpack';/g,"import work from 'webworkify-webpack';");
+    if(args.path.endsWith('/demux/ts-demuxer.ts')){
+      const anchor='this.pmt_ = pmt;';if(source.split(anchor).length!==2)throw new Error('Unexpected MPEG-TS PMT parser; review language selection adapter');
+      source='import {selectTsAudioPmt} from '+JSON.stringify(path.join(root,'browser/ts-audio-pmt.js'))+';\n'+source.replace(anchor,'selectTsAudioPmt(pmt, data, this.config_);\n'+anchor);
+    }
+    return {contents:source,loader:'ts',resolveDir:path.dirname(args.path)};
+  });
+}};
+await build({entryPoints:[path.join(root,'browser/vod-entry.js')],outfile:path.join(root,'app/vendor/vod.js'),bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,legalComments:'eof',define:{__VERSION__:JSON.stringify(JSON.parse(readFileSync(path.join(root,'node_modules/mpegts.js/package.json'),'utf8')).version)},plugins:[tsLanguagePlugin]});
+for (const [folder, license] of [['events','LICENSE'], ['hls.js','LICENSE'], ['mpegts.js','LICENSE'], ['mp4box','LICENSE'], ['webworkify-webpack','README.md'], ['es6-promise','LICENSE'], ['crypto-js','LICENSE'], ['buffer','LICENSE'], ['base64-js','LICENSE'], ['ieee754','LICENSE']]) {
   copyFileSync(path.join(root, 'node_modules', folder, license), path.join(root, 'app/vendor', folder + '-LICENSE.txt'));
 }
 copyFileSync(path.join(root,'LICENSE-UPSTREAM'),path.join(root,'app/vendor/UPSTREAM-LICENSE.txt'));
 copyFileSync(path.join(root,'docs/THIRD_PARTY-UPSTREAM.md'),path.join(root,'app/vendor/UPSTREAM-NOTICES.txt'));
 console.log('Standalone bundle: browser runtime, HLS.js, portal protocol; Chrome 56 target (Tizen 4.0).');
-const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js',
+const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js','companion/lib/audio-language.js',
   ...readdirSync(path.join(root,'browser')).filter(name=>name.endsWith('.js')).map(name=>'browser/'+name)].sort();
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}

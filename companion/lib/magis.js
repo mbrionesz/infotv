@@ -1,5 +1,6 @@
 "use strict";
-var crypto = require("crypto"),
+var audioLanguage = require("./audio-language"),
+  crypto = require("crypto"),
   https = require("https"),
   http = require("http"),
   fs = require("fs"),
@@ -1294,6 +1295,7 @@ function trackFrameRate(e) {
 }
 function trackSummary(e) {
   return {
+    audio: trim(e && e.audioInfo),
     codec: trim(e && e.encodeFormat).toUpperCase(),
     format: trim(e && e.videoFormat).toLowerCase(),
     quality: trim(e && e.quality),
@@ -1434,6 +1436,10 @@ function resolve(e, r, t, n) {
         o = r.tracks,
         i = parseInt(t.trackIndex, 10);
       (i >= 0 && i < o.length) || (i = 0);
+      if(t.preferredAudio&&!(i>0)){
+        var choices=[];for(var ci=0;ci<o.length;ci++){var names=trim(o[ci].audioInfo).split(/[,\/]/);for(var ai=0;ai<names.length;ai++)choices.push({language:names[ai],name:names[ai],variant:ci});}
+        var selected=audioLanguage.chooseAudioTrack(choices,t.preferredAudio);if(selected>=0)i=choices[selected].variant;
+      }
       for (var l = o[i], u = [], d = 0; d < o.length; d++)
         u.push(trackSummary(o[d]));
       var c = trim(

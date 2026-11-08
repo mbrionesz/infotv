@@ -1,6 +1,7 @@
 import MP4Box from 'mp4box';
 import {createVodReader} from './vod-range.js';
-export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio}={}){
+import language from '../companion/lib/audio-language.js';
+export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio,audioIndex,audioLabels,onAudioTracks}={}){
  const reader=createVodReader(url,headers,onRead),file=MP4Box.createFile(),media=new MediaSource(),objectURL=URL.createObjectURL(media);
  let closed=false,generation=0,offset=0,total=Infinity,ready=false,eof=false,pumping=false,tracks=[],timer,queuedBytes=0,seekTime=null,aheadLimit=25,backKeep=15;
  const fail=error=>{if(!closed){onError(error.message||String(error));}};
@@ -22,7 +23,7 @@ export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio
  file.onError=message=>fail(new Error('MP4: '+message));
  file.onReady=info=>{
   if(closed)return;ready=true;media.duration=info.duration/info.timescale;const bytesPerSecond=total/media.duration;if(Number.isFinite(bytesPerSecond)&&bytesPerSecond>0){aheadLimit=Math.max(3,Math.min(25,16*1024*1024/bytesPerSecond));backKeep=Math.max(1,Math.min(15,8*1024*1024/bytesPerSecond));}
-  const audio=info.audioTracks||[],language=String(preferredAudio||'es');const preferred=audio.find(t=>(({es:['es','spa','esp'],pt:['pt','por'],en:['en','eng']})[language]||[language]).includes(String(t.language||'').toLowerCase().split('-')[0]))||audio[0];
+  const audio=info.audioTracks||[],hints=String(audioLabels||'').split(/[,\/]/),choices=audio.map((track,i)=>({language:language.languageOf(track.language)?track.language:hints[i]||'',name:[track.name,hints[i],track.language].filter(Boolean).join(' ')}));let selectedIndex=Number.isInteger(audioIndex)&&audioIndex>=0&&audioIndex<audio.length?audioIndex:language.chooseAudioTrack(choices,preferredAudio||'es');if(selectedIndex<0)selectedIndex=0;const preferred=audio[selectedIndex];if(onAudioTracks)onAudioTracks(choices,selectedIndex);
   const selected=[(info.videoTracks||[])[0],preferred].filter(Boolean);
   if(!selected.length)return fail(new Error('MP4 sin pistas reproducibles'));
   try{for(const track of selected){const mime=(track.video?'video':'audio')+'/mp4; codecs="'+track.codec+'"';if(!MediaSource.isTypeSupported(mime))throw new Error('Códec '+track.codec+' no compatible con MediaSource de este TV');const entry={id:track.id,sb:media.addSourceBuffer(mime),queue:[],pending:null,reset:false};entry.sb.addEventListener('updateend',()=>{if(closed)return;if(entry.pending&&entry.pending.samples!==undefined)file.releaseUsedSamples(entry.id,entry.pending.samples);entry.pending=null;drain(entry);});entry.sb.addEventListener('error',()=>fail(new Error('El TV rechazó un bloque MP4')));tracks.push(entry);file.setSegmentOptions(track.id,entry,{nbSamples:track.video?48:96,rapAlignement:true});}

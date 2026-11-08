@@ -11,6 +11,7 @@ import {mediaHealth,recoveryBudget,createStallWatch} from './playback-health.js'
 import {playbackRejection,liveLoadPolicy} from './playback-policy.js';
 import {nativeHlsLoad} from './native-hls-loader.js';
 import Hls from 'hls.js';
+import audioLanguage from '../companion/lib/audio-language.js';
 import {MAX_CDN_CANDIDATES,streamCandidates,streamRoutes} from './stream-candidates.js';
 export function toAvDisplayRect(rect,width=1920,height=1080){
   const x=Math.max(0,Math.min(1919,Math.round(rect.left*1920/width)));
@@ -19,13 +20,14 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 }
 
 export function createPlayer(getStream) {
-  let progressive=null,lifecycle=null;const journal=createPlaybackJournal();
+  let progressive=null,lifecycle=null,selectProgressiveAudio=null;const journal=createPlaybackJournal();
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
   let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null,frameMeter=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
+    selectProgressiveAudio=null;
     if(lifecycle)lifecycle.cancel();
     if(frameMeter){frameMeter.destroy();frameMeter=null;}
     if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
@@ -61,6 +63,7 @@ export function createPlayer(getStream) {
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
     diagnostics.vodBrowserFallbacks=0;diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistGrace=null;diagnostics.buffered404Retries=0;diagnostics.playlistNormalized=0;diagnostics.playlistContinuity=null;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
+    diagnostics.audioTracks=[];diagnostics.selectedAudio=-1;diagnostics.selectedAudioLanguage='';diagnostics.preferredAudio=options.preferredAudio||'es';diagnostics.audioPreferenceMatched=null;
     const fail = message => {
       if (serial !== run) return;
       const failedStage=diagnostics.stage;record('playback-failed',diagnostics.httpStatus,true);diagnostics.error = message; stop();diagnostics.stage=failedStage;if(options.live)bindLifecycle(true);options.onError(message);
@@ -243,10 +246,10 @@ export function createPlayer(getStream) {
       hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run&&generation===attempt) hls.loadSource(playbackSource); });
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
         if(serial!==run||generation!==attempt||!hls||!options.preferredAudio)return;
-        const languages={es:['es','spa','esp'],pt:['pt','por'],en:['en','eng']}[options.preferredAudio]||[];
-        const index=(data.audioTracks||[]).findIndex(track=>languages.includes(String(track.lang||'').toLowerCase().split('-')[0]));
+        const index=audioLanguage.chooseAudioTrack(data.audioTracks||[],options.preferredAudio);diagnostics.audioPreferenceMatched=index>=0;
         if(index>=0)hls.audioTrack=index;
       });
+      hls.on(Hls.Events.AUDIO_TRACK_SWITCHED,(_event,data)=>{if(serial===run&&hls){diagnostics.selectedAudio=data.id;diagnostics.selectedAudioLanguage=audioLanguage.languageOf(hls.audioTracks[data.id]);}});
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         if (serial !== run||generation!==attempt) return;
         diagnostics.stage='segments';diagnostics.httpStatus=200;tryPlay();
@@ -347,28 +350,31 @@ export function createPlayer(getStream) {
           onstreamcompleted: () => { paused = true; emit('ended'); }, onerror: fallback });
         av.prepareAsync(() => {
           if (serial !== run || !av) return;
-          clearTimeout(nativeTimer);ready = true; emit('loadedmetadata'); emit('loadeddata'); av.play(); paused = false; emit('play'); emit('playing');
+          clearTimeout(nativeTimer);ready = true;
+          try{const tracks=av.getTotalTrackInfo().filter(track=>track.type==='AUDIO').map(track=>{let extra={};try{extra=JSON.parse(track.extra_info||'{}');}catch(_){}return {index:track.index,language:extra.language||extra.lang||'',name:extra.language||extra.lang||''};});const index=audioLanguage.chooseAudioTrack(tracks,options.preferredAudio||'es');if(index>=0)av.setSelectTrack('AUDIO',tracks[index].index);diagnostics.audioTracks=tracks.map(audioLanguage.describe);diagnostics.selectedAudio=index;diagnostics.selectedAudioLanguage=index>=0?audioLanguage.languageOf(tracks[index]):'';}catch(_){}
+          emit('loadedmetadata'); emit('loadeddata'); av.play(); paused = false; emit('play'); emit('playing');
         }, fallback);
         nativeTimer=setTimeout(function(){diagnostics.detail='avplay-prepare-timeout';fallback();},8000);arm();
       } catch (_) { fallback(); }
     }
-    function useProgressive(index=0){
+    function useProgressive(index=0,audioIndex=options.audioIndex,resume=null){
       if(!window.MediaSource)return fail('Este TV no ofrece MediaSource para vídeo autorizado MP4/TS.');
       if(serial!==run)return;clearTimeout(deadline);if(progressive){progressive.destroy();progressive=null;}
       const generation=++attempt;playPending=false;autoAttempts=0;gestureRequired=false;started=ready=false;const candidate=candidates[index];const ts=/mp2t|\.ts(?:[?#]|$)/i.test((stream.mime||options.mime||'')+' '+source);
       playbackSource=candidate.url;diagnostics.transport=new URL(candidate.url).protocol==='https:'?'https':'http';
       diagnostics.seekMode=ts?'buffered':'indexed';engine=diagnostics.engine=ts?'mpegts.js':'mp4box';diagnostics.stage='loading-file';diagnostics.unsupportedRoute='';diagnostics.container=ts?'MPEG-TS':'MP4';diagnostics.cdnAttempt=index+1;
-      canPlayListener=()=>{if(serial===run&&generation===attempt)tryPlay();};video.addEventListener('canplay',canPlayListener);
+      canPlayListener=()=>{if(serial!==run||generation!==attempt)return;if(resume&&resume.time>0&&!resume.seekDone){resume.seekDone=true;video.currentTime=resume.time;return;}if(resume&&resume.paused){ready=started=true;diagnostics.stage='paused';clearTimeout(deadline);clearTimeout(totalDeadline);return;}tryPlay();};video.addEventListener('canplay',canPlayListener);
+      selectProgressiveAudio=selected=>{if(!Number.isInteger(selected)||selected<0||selected>=diagnostics.audioTracks.length)return false;if(selected===diagnostics.selectedAudio)return true;const position=video.currentTime,wasPaused=video.paused;if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;diagnostics.selectedAudio=selected;diagnostics.selectedAudioLanguage=diagnostics.audioTracks[selected].language;if(ts&&position>1&&options.onNotice)options.onNotice('Cambio de audio MPEG-TS: esta fuente sin índice vuelve al inicio.');useProgressive(index,selected,{time:ts?0:position,paused:wasPaused});return true;};
       function progressiveError(message){
         if(serial!==run||generation!==attempt)return;
         diagnostics.detail='vod-route-failed';record('vod-route-failed',diagnostics.httpStatus,true);
-        if(!started&&index+1<candidates.length){if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;useProgressive(index+1);}else fail(message);
+        if(!started&&index+1<candidates.length){if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;useProgressive(index+1,audioIndex,resume);}else fail(message);
       }
       // HTMLMediaElement decoder failures are separate from transmuxer errors.
       // Ignoring them leaves MP4/TS waiting until the global startup timeout.
       video.onerror=()=>{if(progressive&&video.error)progressiveError('El TV no pudo decodificar '+diagnostics.container+' (código '+video.error.code+').');};
       deadline=setTimeout(()=>progressiveError('El servidor no inició el vídeo '+diagnostics.container+' a tiempo.'),candidates.length>1?8000:20000);
-      const settings={onNotice:message=>{if(serial===run&&generation===attempt){record('ts-unindexed-seek');if(options.onNotice)options.onNotice(message);}},duration:stream.duration||0,preferredAudio:options.preferredAudio,onRead:info=>{if(serial===run&&generation===attempt){if(info.fallback){diagnostics.vodBrowserFallbacks++;record('vod-browser-fallback');}if(info.retry)diagnostics.vodRetries++;diagnostics.httpStatus=info.status;diagnostics.vodBytes=(diagnostics.vodBytes||0)+info.bytes;if(Number.isFinite(info.total))diagnostics.vodTotalBytes=info.total;}},onReady:info=>{if(serial===run&&generation===attempt){diagnostics.stage='buffering';const v=info.videoTracks&&info.videoTracks[0],a=info.audioTracks&&info.audioTracks[0];diagnostics.codecs={video:{codec:v&&v.codec||info.videoCodec||'',container:'video/mp4'},audio:{codec:a&&a.codec||info.audioCodec||'',container:'audio/mp4'}};}} ,onError:progressiveError};
+      const settings={onNotice:message=>{if(serial===run&&generation===attempt){record('ts-unindexed-seek');if(options.onNotice)options.onNotice(message);}},duration:stream.duration||0,preferredAudio:options.preferredAudio,audioIndex,audioLabels:stream.audio||'',onAudioTracks:(tracks,selected)=>{if(serial!==run||generation!==attempt)return;diagnostics.audioTracks=tracks.map(audioLanguage.describe);diagnostics.selectedAudio=selected;diagnostics.selectedAudioLanguage=audioLanguage.languageOf(tracks[selected]);diagnostics.audioPreferenceMatched=diagnostics.selectedAudioLanguage===audioLanguage.languageOf(options.preferredAudio||'es');},onRead:info=>{if(serial===run&&generation===attempt){if(info.fallback){diagnostics.vodBrowserFallbacks++;record('vod-browser-fallback');}if(info.retry)diagnostics.vodRetries++;diagnostics.httpStatus=info.status;diagnostics.vodBytes=(diagnostics.vodBytes||0)+info.bytes;if(Number.isFinite(info.total))diagnostics.vodTotalBytes=info.total;}},onReady:info=>{if(serial===run&&generation===attempt){diagnostics.stage='buffering';const v=info.videoTracks&&info.videoTracks[0],a=info.audioTracks&&info.audioTracks[0];diagnostics.codecs={video:{codec:v&&v.codec||info.videoCodec||'',container:'video/mp4'},audio:{codec:a&&a.codec||info.audioCodec||'',container:'audio/mp4'}};}} ,onError:progressiveError};
       ensureVodRuntime().then(runtime=>{if(serial!==run||generation!==attempt)return;try{const session=(ts?runtime.openTs:runtime.openMp4)(video,candidate.url,candidate.headers,settings);if(serial===run&&generation===attempt)progressive=session;else session.destroy();}catch(error){settings.onError(error.message);}},error=>settings.onError(error.message));
     }
     function begin(){
@@ -399,13 +405,14 @@ export function createPlayer(getStream) {
   }
 
   function selectAudio(index) {
+    if(selectProgressiveAudio)return selectProgressiveAudio(index);
     if (hls) { if (index < 0 || index >= hls.audioTracks.length) return false; hls.audioTrack = index; return true; }
     if (av && ready) {
-      try { const tracks = av.getTotalTrackInfo().filter(track => track.type === 'AUDIO'); if (!tracks[index]) return false; av.setSelectTrack('AUDIO', tracks[index].index); return true; } catch (_) { return false; }
+      try { const tracks = av.getTotalTrackInfo().filter(track => track.type === 'AUDIO'); if (!tracks[index]) return false; av.setSelectTrack('AUDIO', tracks[index].index);diagnostics.selectedAudio=index;diagnostics.selectedAudioLanguage=diagnostics.audioTracks[index]&&diagnostics.audioTracks[index].language||''; return true; } catch (_) { return false; }
     }
     return false;
   }
   lifecycle=createPlaybackLifecycle();
   if(window.addEventListener)window.addEventListener('pagehide',()=>journal.flush());
-  return { open, stop, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, capabilities, diagnostics };
+  return { open, stop, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, audioTracks:()=>{if(hls)return hls.audioTracks.map((track,index)=>Object.assign(audioLanguage.describe(track,index),{selected:index===hls.audioTrack}));return (diagnostics.audioTracks||[]).map((track,index)=>Object.assign({},track,{index,selected:index===diagnostics.selectedAudio}));}, capabilities, diagnostics };
 }

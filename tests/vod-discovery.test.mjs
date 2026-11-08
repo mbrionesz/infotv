@@ -7,13 +7,14 @@ const require=createRequire(import.meta.url);
 function fixture(responses){
  const calls=[];
  const context=vm.createContext({Buffer,Date,console,module:{exports:{}},require:name=>{
+  if(name==='./audio-language')return require('../companion/lib/audio-language.js');
   if(name==='fs')return {readFileSync(){throw new Error('No fixture cache')},writeFileSync(){}};
   if(name==='http'||name==='https')return {request(){throw new Error('Network forbidden in fixture')}};
   if(name==='./dnsx'||name==='./upstream')return {};
   return require(name);
  },fixtureCall:(path,bean,callback)=>{calls.push(path);const value=responses[path];callback(value instanceof Error?value:null,value instanceof Error?null:value);}});
  vm.runInContext(readFileSync(new URL('../companion/lib/magis.js',import.meta.url),'utf8')+'\ncall=fixtureCall;module.exports.fixtureSlb=getSlb;',context);
- return {calls,read:()=>new Promise((resolve,reject)=>context.module.exports.fixtureSlb((error,result)=>error?reject(error):resolve(result)))};
+ return {calls,core:context.module.exports,run:source=>vm.runInContext(source,context),read:()=>new Promise((resolve,reject)=>context.module.exports.fixtureSlb((error,result)=>error?reject(error):resolve(result)))};
 }
 const usable={cdn_list:[{tag:'vod',main_addr:'https://vod.example',url_list:[{tag:'free',sign_type:'cfl',url:'fixture-auth'}]}]};
 test('VOD discovery tries v14 when v15 responds successfully without usable free routes',async()=>{
@@ -32,6 +33,7 @@ test('VOD discovery never turns paid-only routes into free routes or caches unus
 });
 test('VOD resolution preserves the supplied scheme and credentials separately for each CDN',async()=>{
  const context=vm.createContext({Buffer,Date,console,module:{exports:{}},require:name=>{
+  if(name==='./audio-language')return require('../companion/lib/audio-language.js');
   if(name==='fs')return {readFileSync(){throw new Error('No cache')},writeFileSync(){}};
   if(name==='http'||name==='https')return {request(){throw new Error('Network forbidden')}};
   if(name==='./dnsx'||name==='./upstream')return {};return require(name);
@@ -47,4 +49,9 @@ test('VOD resolution preserves the supplied scheme and credentials separately fo
  assert.equal(stream.url,'http://plain.example:8080/vod/media-1_media.ts');assert.equal(stream.headers['Content-Auth'],'plain-auth');
  assert.equal(stream.backupUrls[0].url,'https://secure.example/vod/media-1_media.ts');assert.equal(stream.backupUrls[0].headers['Content-Auth'],'secure-auth');
  assert.equal(stream.backupUrls[1].url,'https://bare.example/vod/media-1_media.ts');assert.equal(stream.backupUrls[1].headers['Content-Auth'],'bare-auth');
+});
+test('automatic resolution prefers a declared Latin Spanish variant and respects explicit nondefault variants',async()=>{
+ const f=fixture({});f.run(`loadPlay=function(id,series,cb){cb(null,{play:{},episode:{},tracks:[{contentId:'pt',videoFormat:'mp4',audioInfo:'por',licenseList:[{license:'fixture'}]},{contentId:'es',videoFormat:'mp4',audioInfo:'es-ES',licenseList:[{license:'fixture'}]},{contentId:'lat',videoFormat:'mp4',audioInfo:'es-MX',licenseList:[{license:'fixture'}]}]});};getSlb=function(cb){cb(null,{cdn_list:[{tag:'vod',main_addr:'https://vod.example',url_list:[{tag:'free',sign_type:'cfl',url:'fixture'}]}]});};`);
+ const resolve=options=>new Promise((yes,no)=>f.core.resolve('title','',options,(error,result)=>error?no(error):yes(result)));
+ const automatic=await resolve({preferredAudio:'es',trackIndex:0});assert.equal(automatic.trackIndex,2);assert.ok(automatic.url.endsWith('/lat_media.mp4'));assert.equal(automatic.availableTracks[2].audio,'es-MX');const manual=await resolve({preferredAudio:'es',trackIndex:1});assert.equal(manual.trackIndex,1);
 });

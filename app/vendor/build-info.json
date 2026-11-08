@@ -1,10 +1,10 @@
 {
-  "version": "0.8.10",
+  "version": "0.8.11",
   "minimumTizen": "4.0",
   "target": "chrome56",
   "hlsVersion": "1.7.4",
   "hlsWorkerVersion": "1.7.4",
-  "vodSha256": "9809b343e8a8eaed46bcb72cc17629af74e700537a548bfb2a154c598c86f28b",
+  "vodSha256": "f0cc6a7505b11803722edef90c5bd13fc2144ea772e510bed447f17e10ca1197",
   "hlsWorkerSha256": "d2abaf948030a86a4cd9b4a2a66e7c0694f53c7aa3c698f1772d098bdcbc7d89",
-  "sourceSha256": "d60992847b44565b90b31e24a2780297c87b38017e5bee82a114aa1b90fd1fd6"
+  "sourceSha256": "3333eb49710042bb65eafa4da24fc24a4b9ee385a1189a41e51c5947d023ed6b"
 }
