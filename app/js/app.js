@@ -8082,7 +8082,8 @@
   (window.addEventListener("beforeunload", lo),
     window.addEventListener("unload", lo),
     document.addEventListener("visibilitychange", function () {
-      document.hidden && lo();
+      // The Samsung player owns pause/resume; unloading it here loses the session.
+      document.hidden && !window.XuperStandalone && lo();
     }),
     (window.onerror = function (e, t, a, i, n) {
       try {

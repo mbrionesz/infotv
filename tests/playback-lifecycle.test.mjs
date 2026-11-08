@@ -1,0 +1,11 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createPlaybackLifecycle} from '../browser/playback-lifecycle.js';
+function setup(){const doc=new EventTarget(),win=new EventTarget();doc.hidden=false;let paused=false,events=[],suspends=0,resumes=[],online=0;const api=createPlaybackLifecycle({documentTarget:doc,windowTarget:win,now:()=>100});const context={live:true,isCurrent:()=>true,isUserPaused:()=>paused,onEvent:e=>events.push(e),onSuspend:()=>suspends++,onResume:e=>resumes.push(e),onOnline:()=>online++};api.bind(context);return {doc,win,api,context,setPaused:v=>paused=v,read:()=>({events,suspends,resumes,online})};}
+test('background captures playback intent; repeated visibility does not resume a manual pause',()=>{
+ const s=setup();try{s.doc.hidden=true;s.doc.dispatchEvent(new Event('visibilitychange'));s.doc.dispatchEvent(new Event('visibilitychange'));s.doc.hidden=false;s.doc.dispatchEvent(new Event('visibilitychange'));assert.equal(s.read().suspends,1);assert.equal(s.read().resumes[0].play,true);s.setPaused(true);s.doc.hidden=true;s.doc.dispatchEvent(new Event('visibilitychange'));s.doc.hidden=false;s.doc.dispatchEvent(new Event('visibilitychange'));assert.equal(s.read().resumes[1].play,false);s.setPaused(false);s.doc.hidden=true;s.doc.dispatchEvent(new Event('visibilitychange'));s.setPaused(true);s.doc.hidden=false;s.doc.dispatchEvent(new Event('visibilitychange'));assert.equal(s.read().resumes[2].play,false);}finally{s.api.dispose();}
+});
+test('online recovery is coalesced and cancelled when leaving or changing channel',async()=>{
+ const s=setup();try{s.win.dispatchEvent(new Event('online'));s.win.dispatchEvent(new Event('online'));await new Promise(r=>setTimeout(r,400));assert.equal(s.read().online,1);s.win.dispatchEvent(new Event('online'));s.api.cancel();await new Promise(r=>setTimeout(r,400));assert.equal(s.read().online,1);}finally{s.api.dispose();}
+});
+test('manual pause and background suppress online recovery',async()=>{
+ const s=setup();try{s.setPaused(true);s.win.dispatchEvent(new Event('online'));s.setPaused(false);s.doc.hidden=true;s.win.dispatchEvent(new Event('online'));await new Promise(r=>setTimeout(r,400));assert.equal(s.read().online,0);}finally{s.api.dispose();}
+});

@@ -1,3 +1,6 @@
+import {createPlaybackJournal} from './playback-journal.js';
+import {createPlaybackLifecycle} from './playback-lifecycle.js';
+import {createPlaylistContinuity} from './playlist-continuity.js';
 import {playlistTimelineIssue,clockOutsideBuffer,createPlaylistGrace} from './playlist-timeline.js';
 import {ensureVodRuntime} from './vod-runtime.js';
 import {createLiveLatency} from './live-latency.js';
@@ -16,13 +19,14 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 }
 
 export function createPlayer(getStream) {
-  let progressive=null;
+  let progressive=null,lifecycle=null;const journal=createPlaybackJournal();
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
   let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null,frameMeter=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
+    if(lifecycle)lifecycle.cancel();
     if(frameMeter){frameMeter.destroy();frameMeter=null;}
     if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
     clearInterval(healthTimer);clearTimeout(sourceRefreshTimer);sourceRefreshTimer=null;clearTimeout(recoveryTimer);healthTimer=recoveryTimer=null;resumePlayback=null;++serial;clearTimeout(totalDeadline);clearTimeout(nativeTimer);clearTimeout(deadline); clearInterval(cleanupTimer); deadline = cleanupTimer = null;
@@ -55,11 +59,11 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.vodBrowserFallbacks=0;diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistGrace=null;diagnostics.buffered404Retries=0;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
+    diagnostics.vodBrowserFallbacks=0;diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistGrace=null;diagnostics.buffered404Retries=0;diagnostics.playlistNormalized=0;diagnostics.playlistContinuity=null;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
-      const failedStage=diagnostics.stage;diagnostics.error = message; stop();diagnostics.stage=failedStage; options.onError(message);
+      const failedStage=diagnostics.stage;record('playback-failed',diagnostics.httpStatus,true);diagnostics.error = message; stop();diagnostics.stage=failedStage;if(options.live)bindLifecycle(true);options.onError(message);
     };
     totalDeadline=setTimeout(()=>fail('La señal no inició tras probar las rutas disponibles: etapa '+diagnostics.stage+'. Abre Diagnóstico.'),30000);
     const restartedRoutes=new Set();let sequenceRestartAt=null;
@@ -74,11 +78,14 @@ export function createPlayer(getStream) {
         else if(rejection==='interrupted'&&!(bufferGate&&bufferGate.userPaused)&&video.readyState>=2&&autoAttempts<3)setTimeout(tryPlay,0);
       });
     }
-    resumePlayback=()=>{gestureRequired=false;autoAttempts=0;diagnostics.autoplayBlocked=false;tryPlay();};
-    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;alignmentReadyAt=performance.now()+500;if(hls)latencyPolicy.update(hls,video,options.live,false);resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); diagnostics.channelOpenMs=diagnostics.sourceResolveMs===null?null:diagnostics.sourceResolveMs+diagnostics.startupMs;if (options.onStarted) options.onStarted(); };
+    resumePlayback=()=>{gestureRequired=false;autoAttempts=0;diagnostics.autoplayBlocked=false;resuming=started;tryPlay();};
+    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;alignmentReadyAt=performance.now()+500;if(hls)latencyPolicy.update(hls,video,options.live,false);resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';record('playback-started');if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); diagnostics.channelOpenMs=diagnostics.sourceResolveMs===null?null:diagnostics.sourceResolveMs+diagnostics.startupMs;if (options.onStarted) options.onStarted(); };
     function record(detail,status=0,fatal=false){
       diagnostics.events.push({atMs:Math.round(performance.now()-openedAt),detail:String(detail).slice(0,70),status,fatal});
       if(diagnostics.events.length>12)diagnostics.events.shift();
+      let host='';try{host=new URL(playbackSource).hostname;}catch(_){}
+      const app=window.__xuper,item=app?(options.live?app.channels[app.state.channel]:app.state.playerItem):null;
+      journal.push({channel:item&&(item.name||item.title)||stream.name||'',host,engine:diagnostics.engine,kind:detail,status});
     }
     let refreshing=false,refreshAttempted=!!options._sourceRefreshed;
     function refreshSource(){
@@ -159,7 +166,7 @@ export function createPlayer(getStream) {
     function useHls(preservePause=false) {
       if (serial !== run) return;
       if (!Hls.isSupported()) return fail('Este televisor no dispone de MediaSource compatible para este canal con autorización.');
-      const generation=attempt,playlistFacts=new Map();frameMeter=createFrameMeter(video);
+      const generation=attempt,playlistFacts=new Map(),continuityByUrl=new Map();frameMeter=createFrameMeter(video);
       if(options.live)bufferGate=createLiveBuffer(video,{onState:state=>{diagnostics.bufferGate=state;if(started&&state.waiting&&!state.userPaused)diagnostics.stage='buffering';},onRejected:error=>{if(serial===run&&generation===attempt&&error.name==='NotAllowedError'){gestureRequired=true;diagnostics.autoplayBlocked=true;options.onError('Pulsa OK para iniciar el vídeo.');}}});
       if(preservePause)video.pause();
       engine = diagnostics.engine = 'hls.js';
@@ -182,8 +189,11 @@ export function createPlayer(getStream) {
           const original=callbacks;callbacks=Object.assign({},original,{onSuccess:(response,stats,request,network)=>{
             if(serial!==run||generation!==attempt)return;
             if(typeof response.data==='string'){
-              const shape=playlistShape(response.data),previous=playlistFacts.get(context.url);
-              const timelineIssue=options.live&&playlistTimelineIssue(previous,shape.facts,performance.now()-openedAt);
+              const incoming=playlistShape(response.data);let proposal=null,continuity=null;
+              if(options.live){continuity=continuityByUrl.get(context.url);if(!continuity){continuity=createPlaylistContinuity();continuityByUrl.set(context.url,continuity);if(continuityByUrl.size>8)continuityByUrl.delete(continuityByUrl.keys().next().value);}proposal=continuity.inspect(incoming.data,context.url);}
+              const shape=proposal?playlistShape(proposal.data):incoming;for(const key of ['characters','repairedHostSpaces','removedIdenticalTargetTags','targetDurationTags'])shape.facts[key]=incoming.facts[key];const previous=playlistFacts.get(context.url);
+              const timelineIssue=proposal&&proposal.reject?{kind:proposal.reason}:options.live&&playlistTimelineIssue(previous,shape.facts,performance.now()-openedAt);
+              if(proposal)diagnostics.playlistContinuity={serverSequence:proposal.serverSequence,effectiveSequence:proposal.effectiveSequence,shared:proposal.shared,reason:proposal.reason};
               if(timelineIssue){
                 diagnostics.playlistRejected++;diagnostics.playlistTimelineError=Object.assign({atMs:Math.round(performance.now()-openedAt),cdnAttempt:diagnostics.cdnAttempt},timelineIssue);record(timelineIssue.kind);
                 // Retry before handing the payload to HLS. Once merged, a bad
@@ -195,13 +205,14 @@ export function createPlayer(getStream) {
                 else{this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)recoverSequence();},0);}
                 return;
               }
+              if(proposal){continuity.accept(proposal);if(proposal.changed){diagnostics.playlistNormalized++;record('playlist-sequence-normalized');}}
               clearTimeout(this.timelineDeadline);this.timelineDeadline=null;diagnostics.playlistGrace=null;
               const unchanged=previous&&Number.isFinite(shape.facts.mediaSequence)&&shape.facts.mediaSequence===previous.mediaSequence;
               if(options.live&&diagnostics.liveLatency.experimental&&context.type==='level'&&unchanged&&(this.freshnessRetries||0)<2){
                 this.freshnessRetries=(this.freshnessRetries||0)+1;diagnostics.freshPlaylistRetries++;
                 this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)this.load(context,config,original);},250);return;
               }
-              const facts=Object.assign({requestId:++diagnostics.playlistRequests,atMs:Math.round(performance.now()-openedAt),cdnAttempt:diagnostics.cdnAttempt,httpsFallback:diagnostics.httpsFallback,requestType:context.type||'playlist',httpStatus:response.code||network&&network.status||null},shape.facts);response.data=shape.data;
+              const facts=Object.assign({requestId:++diagnostics.playlistRequests,atMs:Math.round(performance.now()-openedAt),cdnAttempt:diagnostics.cdnAttempt,httpsFallback:diagnostics.httpsFallback,requestType:context.type||'playlist',httpStatus:response.code||network&&network.status||null},shape.facts,proposal?{serverMediaSequence:proposal.serverSequence,normalized:proposal.changed,sharedSegments:proposal.shared}:{});response.data=shape.data;
               if(shape.facts.removedIdenticalTargetTags){diagnostics.playlistRepairs=(diagnostics.playlistRepairs||0)+shape.facts.removedIdenticalTargetTags;record('removed-identical-target-duration');}
               if(shape.facts.repairedHostSpaces){diagnostics.uriRepairs+=shape.facts.repairedHostSpaces;record('repaired-playlist-host-space');}
               let responseHost=[];try{responseHost=[new URL(response.url||context.url).hostname];}catch(_){}
@@ -361,6 +372,18 @@ export function createPlayer(getStream) {
     else if (isHls && Hls.isSupported()) useHls();
     else native();
     }
+    function bindLifecycle(failed=false){
+      const expected=serial;let internallySuspended=false;
+      lifecycle.bind({live:!!options.live,failed,isCurrent:()=>serial===expected,isUserPaused:()=>failed?false:gestureRequired||!!(bufferGate?bufferGate.userPaused:started&&video.paused&&!internallySuspended),onEvent:detail=>record(detail),onSuspend:()=>{internallySuspended=true;if(bufferGate)bufferGate.suspend();else try{video.pause();}catch(_){}if(hls)hls.stopLoad();},onResume:({play,elapsedMs})=>{
+        internallySuspended=false;
+        if(!play){if(hls)hls.startLoad(-1);if(bufferGate)bufferGate.resume(false);return;}
+        if(options.live&&hls&&elapsedMs>15000){record('lifecycle-live-session-restart');resetHlsSession();return;}
+        if(hls)hls.startLoad(-1);
+        let promise;try{promise=bufferGate?bufferGate.resume():video.play();}catch(error){promise=Promise.reject(error);}
+        Promise.resolve(promise).catch(error=>{if(serial!==expected||error.name==='AbortError')return;record('lifecycle-play-rejected');if(error.name==='NotAllowedError'){gestureRequired=true;diagnostics.autoplayBlocked=true;options.onError('Pulsa OK para reanudar el vídeo.');}});
+      },onOnline:()=>{if(failed){open(element,source,options);return;}if(hls){if(video.readyState<2){resetHlsSession(!!(bufferGate&&bufferGate.userPaused));}else hls.startLoad(-1);}}});
+    }
+    bindLifecycle();
     const transport=window.XuperNativeTransport;
     if(transport&&!transport.snapshot().available)transport.ensure().then(begin,begin);else begin();
   }
@@ -372,6 +395,7 @@ export function createPlayer(getStream) {
     }
     return false;
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden && video) { try { video.pause(); } catch (_) {} } });
-  return { open, stop, playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, capabilities, diagnostics };
+  lifecycle=createPlaybackLifecycle();
+  if(window.addEventListener)window.addEventListener('pagehide',()=>journal.flush());
+  return { open, stop, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, capabilities, diagnostics };
 }

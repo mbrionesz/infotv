@@ -37,3 +37,8 @@ test('both buffered seeks and later starvation preserve the HLS recovery clock',
  const video=new Video();const gate=createLiveBuffer(video);
  try{video.seconds=5;await video.play();video.dispatchEvent(new Event('seeking'));video.dispatchEvent(new Event('waiting'));assert.equal(video.paused,false);video.seconds=0;video.dispatchEvent(new Event('waiting'));assert.equal(video.paused,false);assert.equal(gate.waiting,false);}finally{gate.destroy();}
 });
+
+test('background suspension does not become a manual pause or resume until foreground',async()=>{
+ const video=new Video(),gate=createLiveBuffer(video);
+ try{video.seconds=8;await video.play();gate.suspend();assert.equal(video.paused,true);assert.equal(gate.userPaused,false);for(let i=0;i<5;i++)gate.check();assert.equal(video.calls,1);await gate.resume();assert.equal(video.paused,false);video.pause();gate.suspend();await gate.resume(false);assert.equal(gate.userPaused,true);assert.equal(video.paused,true);}finally{gate.destroy();}
+});

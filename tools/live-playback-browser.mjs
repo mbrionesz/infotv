@@ -15,7 +15,7 @@ const media=http.createServer((req,res)=>{
   if(!latencyMode&&elapsed>=18000&&parsingFailures===0){parsingFailures++;res.setHeader('Content-Type','application/vnd.apple.mpegurl');res.end('#EXTM3U\n#EXTINF:2.000,\npart10.ts\n');return;}
   if(!latencyMode&&elapsed>=32000&&elapsed<36000){outageFailures++;res.writeHead(503);res.end();return;}
   const start=Math.min(latencyMode?12:38,Math.floor(elapsed/(segmentSeconds*1000)));let sequence=start;if(sequenceProbe){sequenceFailures++;sequence=Math.max(0,start-20);sequenceProbe--;}let text='#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:'+segmentSeconds+'\n#EXT-X-MEDIA-SEQUENCE:'+sequence+'\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x000102030405060708090a0b0c0d0e0f\n';
-  for(let i=start;i<start+6;i++)text+='#EXTINF:'+segmentSeconds+'.000,\npart'+String(i).padStart(2,'0')+'.ts\n';
+  for(let i=start;i<start+6;i++)text+='#EXTINF:'+segmentSeconds+'.000,\npart'+String(i).padStart(2,'0')+'.ts'+(sequenceProbe?'?stream=other':'')+'\n';
   if(!latencyMode&&elapsed>=12000&&elapsed<16000){duplicateLists++;text=text.replace('#EXT-X-TARGETDURATION:2\n','#EXT-X-TARGETDURATION:2\n#EXT-X-TARGETDURATION:2\n');}
   const brokenOrigin='http://127.0.0.1%20:'+media.address().port;
   text=text.replace('URI="key.bin"','URI="'+brokenOrigin+'/key.bin"').replace(/^(part\d+\.ts)$/gm,(_line,file)=>brokenOrigin+'/'+file);malformedUrisSent++;
@@ -55,6 +55,12 @@ try{
  await browser.waitFor('XuperPlayer.diagnostics.stage==="playing"&&!document.getElementById("player-video").paused&&document.getElementById("player-video").currentTime>0.5',150);
  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.autoplayBlocked'),false);assert.equal(await browser.evaluate('__xuper.state.streamError.includes("Pulsa OK")'),false);
  assert.equal(await browser.evaluate('XuperPlayer.diagnostics.hlsVersion'),'1.7.4');
+ if(!latencyMode){
+  await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:true});document.dispatchEvent(new Event("visibilitychange"))');await new Promise(r=>setTimeout(r,300));assert.equal(await browser.evaluate('document.getElementById("player-video").paused'),true);
+  await browser.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false});document.dispatchEvent(new Event("visibilitychange"))');await browser.waitFor('!document.getElementById("player-video").paused');
+  await browser.evaluate('window.dispatchEvent(new Event("offline"));window.dispatchEvent(new Event("online"))');await browser.waitFor('XuperPlayer.history().some(function(e){return e.kind==="network-online-recovery"})');
+  assert.equal(await browser.evaluate('JSON.stringify(XuperPlayer.history()).includes("live-license")'),false);
+ }
  const initialGate=await browser.evaluate('XuperPlayer.diagnostics.bufferGate');if(!latencyMode){assert.equal(initialGate.releaseTargetSeconds,3);assert.ok(initialGate.releasedBufferSeconds>=2.95);}
  if(latencyMode){
   await browser.waitFor('XuperPlayer.diagnostics.liveLatency.alignmentSeeks>=1&&XuperPlayer.diagnostics.liveLatency.engineTargetSeconds===10&&XuperPlayer.diagnostics.liveLatency.seconds<11.5',250);

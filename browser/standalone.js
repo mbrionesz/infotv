@@ -34,8 +34,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.8.5', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.8.5' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.8.6', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.8.6' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -65,7 +65,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.8.5', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.8.6', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -76,7 +76,7 @@ function request(method, payload, callback) {
   } catch (error) { done(error); }
   return true;
 }
-window.XuperStandalone = { allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.8.5', diagnostics: () => ({ lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.8.6', diagnostics: () => ({ lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 let diagnosticPanel=null,diagnosticSignal=null;
 function closeDiagnostics(){if(diagnosticSignal)diagnosticSignal.abort();diagnosticSignal=null;if(diagnosticPanel)diagnosticPanel.remove();diagnosticPanel=null;}
 window.XuperStandalone.probeCdns=async function(options={}){
@@ -89,7 +89,7 @@ window.XuperStandalone.probeCdns=async function(options={}){
 window.XuperStandalone.openDiagnostics=function(playback){
   closeDiagnostics();diagnosticSignal=requestSignal();
   diagnosticPanel=document.createElement('section');diagnosticPanel.className='xt-diagnostics';
-  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.8.5</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
+  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.8.6</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
   const panel=diagnosticPanel,signal=diagnosticSignal;
   const environment={version:window.XuperStandalone.version,viewport:[innerWidth,innerHeight],panel:[screen.width,screen.height],scale:document.getElementById('app').getBoundingClientRect().width/1920};
   const safe=Object.assign({},playback||window.XuperPlayer.diagnostics);
@@ -97,10 +97,10 @@ window.XuperStandalone.openDiagnostics=function(playback){
   const m=safe.media||{};for(const pair of [['Reproducción',safe.stage||'idle'],['Resolución',m.width?m.width+' × '+m.height:'Sin señal'],['Reserva de vídeo',Number.isFinite(m.bufferSeconds)?m.bufferSeconds.toFixed(1)+' s':'—'],['Ruta CDN',safe.cdnAttempt?safe.cdnAttempt+' / '+safe.cdnAvailable:'—']]){const card=document.createElement('div');const label=document.createElement('small');label.textContent=pair[0];card.appendChild(label);const value=document.createElement('strong');value.textContent=pair[1];card.appendChild(value);summary.appendChild(card);}
   panel.querySelector('.xt-diag-cdn').onclick=async()=>{const button=panel.querySelector('.xt-diag-cdn');if(button.disabled)return;button.disabled=true;const area=panel.querySelector('.xt-cdn-results');area.textContent='Midiendo HTTP HEAD · hasta seis destinos · no es ping ICMP…';try{const report=await window.XuperStandalone.probeCdns({signal});if(diagnosticPanel!==panel)return;area.textContent='';panel.classList.add('has-cdn');if(!report.results.length)area.textContent='Abre primero un canal para obtener sus servidores.';for(const row of report.results){const line=document.createElement('div');line.className='xt-cdn-row';line.textContent=row.host+' · '+row.scheme+' · '+row.elapsedMs+' ms · '+(row.httpStatus?'HTTP '+row.httpStatus:row.state);area.appendChild(line);}const note=document.createElement('small');note.textContent='Una respuesta 403/404 confirma respuesta HTTP, no disponibilidad de la señal. CORS o TLS pueden impedir la medición.';area.appendChild(note);}catch(_){area.textContent='No se pudo medir la conexión.';}finally{button.disabled=false;}};
   panel.dataset.action='0';panel.querySelector('button').classList.add('is-focused');
-  panel.querySelector('pre').textContent=JSON.stringify({entorno:environment,reproductor:safe,mando:remoteMetrics.snapshot()},null,2);
-  panel.querySelector('.xt-diag-network').onclick=()=>{const button=panel.querySelector('.xt-diag-network');if(button.disabled)return;button.disabled=true;button.textContent='Consultando DNS seguro…';const check=async()=>await nativeTransport.ensure()?nativeTransport.diagnose():new Promise((resolve,reject)=>core.call('networkDiagnostic',{},(error,result)=>error?reject(error):resolve(result)));check().then(network=>{if(diagnosticPanel!==panel)return;button.disabled=false;button.textContent='Comprobar DNS · Amarillo';panel.querySelector('pre').textContent=JSON.stringify({entorno:environment,reproductor:safe,mando:remoteMetrics.snapshot(),transporte:nativeTransport.snapshot(),red:network},null,2);},()=>{if(diagnosticPanel===panel){button.disabled=false;button.textContent='Error de diagnóstico · Amarillo';}});};
+  panel.querySelector('pre').textContent=JSON.stringify({entorno:environment,reproductor:safe,historial:window.XuperPlayer.history(),mando:remoteMetrics.snapshot()},null,2);
+  panel.querySelector('.xt-diag-network').onclick=()=>{const button=panel.querySelector('.xt-diag-network');if(button.disabled)return;button.disabled=true;button.textContent='Consultando DNS seguro…';const check=async()=>await nativeTransport.ensure()?nativeTransport.diagnose():new Promise((resolve,reject)=>core.call('networkDiagnostic',{},(error,result)=>error?reject(error):resolve(result)));check().then(network=>{if(diagnosticPanel!==panel)return;button.disabled=false;button.textContent='Comprobar DNS · Amarillo';panel.querySelector('pre').textContent=JSON.stringify({entorno:environment,reproductor:safe,historial:window.XuperPlayer.history(),mando:remoteMetrics.snapshot(),transporte:nativeTransport.snapshot(),red:network},null,2);},()=>{if(diagnosticPanel===panel){button.disabled=false;button.textContent='Error de diagnóstico · Amarillo';}});};
   panel.querySelector('button').onclick=closeDiagnostics;document.getElementById('app').appendChild(panel);
-  core.diagnostics((error,result)=>{if(diagnosticPanel!==panel)return;panel.querySelector('pre').textContent=JSON.stringify({entorno:environment,reproductor:safe,mando:remoteMetrics.snapshot(),transporte:nativeTransport.snapshot(),datos:error?{error:error.message}:result},null,2);});
+  core.diagnostics((error,result)=>{if(diagnosticPanel!==panel)return;panel.querySelector('pre').textContent=JSON.stringify({entorno:environment,reproductor:safe,historial:window.XuperPlayer.history(),mando:remoteMetrics.snapshot(),transporte:nativeTransport.snapshot(),datos:error?{error:error.message}:result},null,2);});
 };
 function handleRemote(event){
   const code=event.keyCode;
