@@ -1005,12 +1005,30 @@
     if (!e || !e.id) return !1;
     var t = String(e.id),
       a = !X.favs[t];
+    if(["__proto__","constructor","prototype"].indexOf(t)>=0)return !1;
+    if(a&&Object.keys(X.favs).length>=200){Yt("Tu lista admite hasta 200 títulos. Quita uno para agregar otro.");return !1;}
+    if(!Q.savedItems||typeof Q.savedItems!=="object"||Array.isArray(Q.savedItems))Q.savedItems={};
+    if(a)Q.savedItems[t]=librarySnapshot(e);else delete Q.savedItems[t];
     return (
       a ? (X.favs[t] = !0) : delete X.favs[t],
       (Q.favs = X.favs),
       K($, Q),
       a
     );
+  }
+  function librarySnapshot(item){
+    return {id:String(item.id),title:String(item.title||item.name||"Contenido").slice(0,200),poster:String(item.poster||item.cover||"").slice(0,4000),series:!!(item.series||x(item)),updatedAt:Date.now()};
+  }
+  function savedLibrary(){
+    var favorites=[],saved=Q.savedItems&&typeof Q.savedItems==="object"?Q.savedItems:{},keys=Object.keys(X.favs||{});
+    for(var i=0;i<keys.length&&favorites.length<200;i++){
+      var key=keys[i];if(!X.favs[key]||["__proto__","constructor","prototype"].indexOf(key)>=0)continue;
+      var item=saved[key];if(!item)for(var j=0;j<l.length;j++)if(String(l[j].id)===key){item=librarySnapshot(l[j]);break;}
+      if(!item)item={id:key,title:'Título guardado',poster:'',series:false};
+      if(item&&String(item.id)===key)favorites.push(librarySnapshot(item));
+    }
+    var history=Array.isArray(Q.history)?Q.history:[];
+    return {favorites:favorites,continueWatching:history.filter(function(item){return item&&item.id&&item.position>=3&&(!item.duration||item.position<item.duration-30);}).slice(0,30)};
   }
   function liveChannelKey(e) {
     return e
@@ -4614,6 +4632,7 @@
       t
     );
   }
+  var libraryPage=0;
   function ja() {
     for (
       var t = e("div", "settings-panel history-panel"),
@@ -4633,7 +4652,7 @@
           t.label,
         );
         ((i._activate = function () {
-          ((We = t.id), Ua("history", !1));
+          ((We = t.id), (libraryPage=0), Ua("history", !1));
           rt(ze.history.querySelector(".history-tab.is-selected"));
         }),
           a.appendChild(i));
@@ -4641,22 +4660,18 @@
     (t.appendChild(a), t.appendChild(e("div", "history-rule")));
     var r = [];
     if ("history" === We) r = Q.history || [];
-    else if ("favs" === We)
-      for (var o = 0; o < l.length; o++)
-        X.favs &&
-          X.favs[l[o].id] &&
-          r.push({
-            id: l[o].id,
-            title: l[o].title,
-            poster: l[o].poster || l[o].cover,
-            series: x(l[o]),
-            position: 0,
-          });
+    else if ("favs" === We) r=savedLibrary().favorites;
     var s = e("div", "history-total", "Total ");
     (s.appendChild(e("span", null, String(r.length))), t.appendChild(s));
+    var pageSize=15,pages=Math.max(1,Math.ceil(r.length/pageSize));libraryPage=Math.max(0,Math.min(libraryPage,pages-1));
+    if(pages>1){
+      var pager=e("div","library-pagination");
+      [-1,1].forEach(function(delta){var button=e("button","focusable library-page",delta<0?"Anterior":"Siguiente");button.disabled=libraryPage+delta<0||libraryPage+delta>=pages;if(button.disabled)button.classList.remove("focusable");button._activate=function(){if(button.disabled)return;libraryPage+=delta;Ua("history",!1);var next=ze.history.querySelector(".library-page:not(:disabled)")||ze.history.querySelector(".history-card");if(next)rt(next);};pager.appendChild(button);});
+      pager.appendChild(e("span","","Página "+(libraryPage+1)+" de "+pages));t.appendChild(pager);
+    }
     var d = e("div", "history-grid");
     if (r.length)
-      for (var c = 0; c < r.length && c < 15; c++)
+      for (var c = libraryPage*pageSize; c < r.length && c < (libraryPage+1)*pageSize; c++)
         (function (t) {
           var a = e("div", "history-card focusable"),
             i = document.createElement("img");
@@ -8016,6 +8031,8 @@
           (vt(), bt(e, !0));
         },
         resumeContent: cn,
+        library: savedLibrary,
+        openCollection: function(kind){We=kind==="favs"?"favs":"history";libraryPage=0;Ha();Ua("history",!0);},
         openDetail: function (e) {
           ba(l[e] || l[0]);
         },

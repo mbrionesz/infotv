@@ -11,7 +11,8 @@ export function createCatalog(core){
     panel.querySelectorAll('footer button').forEach(button=>button.disabled=true);
     core.call(fullCatalog?'catalogFullPage':searchMode?'catalogSearch':fetchPage?'catalogPage':'catalogQuery',{root,search:searchMode,pageNum:fullCatalog?Math.floor(offset/36)+1:remotePage,offset,limit:36,filters:Object.assign({},filters)},(error,result)=>{
       if(!active||run!==token)return;loading=false;
-      if(error&&fullCatalog&&offset===0){fullCatalog=false;Object.keys(filters).forEach(key=>{if(key!=='text')filters[key]='';});query(true);return;}
+      // A failed category/filter must never silently become an editorial feed.
+      if(error&&fullCatalog&&offset===0&&!searchMode&&!Object.keys(filters).some(key=>!!filters[key])){fullCatalog=false;query(true);return;}
       panel.querySelector('.xt-catalog-retry').hidden=!error;if(error){failedPage=fetchPage?remotePage:null;panel.querySelector('.xt-catalog-prev').disabled=offset===0;status('No se pudo cargar. Puedes reintentar o volver. '+(error.message||String(error)));refreshControls();mark();return;}
       items=(result.items||[]).filter(allowContent);total=result.total||0;loaded=result.loaded||0;if(fetchPage||fullCatalog)hasMore=!!result.hasMore;
       totalKnown=!!result.totalKnown;localFilter=!!result.localFilter;

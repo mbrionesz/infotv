@@ -79,3 +79,18 @@
 .player-subtitles-text{white-space:pre-line}
 
 .xt-guide-art{height:340px;display:flex;align-items:center;justify-content:center;border-radius:24px;background:linear-gradient(145deg,#303443,#17181f);color:#cbd1e0;font-size:100px}.xt-guide-actions button{width:100%}
+/* Saved titles and playback progress remain separate, reachable rows. */
+.home-page[data-dashboard=true]{overflow-y:auto;overflow-x:hidden}
+.dashboard-shelf{padding-bottom:48px}
+.dashboard-collection{margin-bottom:34px}
+.dashboard-collection-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.dashboard-collection-heading h2{margin-bottom:0}
+.dashboard-collection-more{font:inherit;font-size:21px;color:#ddd;background:#26262b;border:1px solid #48484f;border-radius:16px;padding:10px 20px}
+.dashboard-collection-more.is-focused{background:#fff;color:#111;outline:3px solid #fff}
+.dashboard-episode{display:block;font-size:18px;color:#b6b6c1;margin:0 4px 8px}
+.library-pagination{display:flex;align-items:center;margin:16px 0}
+.library-page{font:inherit;color:#eee;background:#29292e;border:1px solid #555;border-radius:12px;padding:12px 20px}
+.library-page.is-focused{background:#fff;color:#111;outline:3px solid #fff}
+.library-page:disabled{opacity:.4}
+
+.library-pagination>*{margin-right:18px}

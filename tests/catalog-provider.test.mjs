@@ -26,3 +26,11 @@ test('server search preserves page, root scope and reported total; filter metada
 test('an oversized provider page cannot flood the visible page with hundreds of titles',async()=>{
  const f=fixture((path,bean,cb)=>cb(null,{totalSize:1000,assetList:Array.from({length:500},(_,i)=>({contentId:String(i),name:'Title '+i}))}));const result=await invoke(f.core,'catalogBrowse','movies',{pageSize:36});assert.equal(result.items.length,36);assert.equal(result.total,1000);assert.equal(result.hasMore,true);
 });
+test('a category shelf failure falls back to filtering the same category, never the root',async()=>{
+ const f=fixture((path,bean,cb)=>{
+  if(path.endsWith('getColumnContents'))return cb(null,{childColumnList:[{id:'turkey',name:'Serie Turquía'}]});
+  if(path.endsWith('getShelveData'))return cb(new Error('Shelf unsupported'));
+  cb(null,{assetList:[{contentId:'turkish-series',name:'Turkish result',type:'teleplay'}],totalSize:1});
+ });
+ const result=await invoke(f.core,'catalogBrowse','series',{filters:{column:'turkey'}});assert.equal(result.items[0].id,'turkish-series');assert.equal(result.total,1);assert.deepEqual(f.calls.map(c=>c.path),['v3/getColumnContents','v3/getShelveData','v3/filterByContent']);assert.equal(f.calls.at(-1).bean.columnId,'turkey');assert.equal(f.calls.at(-1).bean.columnType,undefined);
+});
