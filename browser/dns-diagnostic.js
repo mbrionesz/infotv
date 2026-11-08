@@ -1,5 +1,91 @@
 // Browser-safe DoH diagnostics. Results do NOT override the browser/AVPlay DNS.
-export const resolvers=['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15','9.9.9.9','149.112.112.112'];
+export const resolverEndpoints=[
+  {
+    "ip": "1.1.1.1",
+    "host": "cloudflare-dns.com",
+    "path": "/dns-query",
+    "provider": "Cloudflare"
+  },
+  {
+    "ip": "1.0.0.1",
+    "host": "cloudflare-dns.com",
+    "path": "/dns-query",
+    "provider": "Cloudflare"
+  },
+  {
+    "ip": "8.8.8.8",
+    "host": "dns.google",
+    "path": "/dns-query",
+    "provider": "Google"
+  },
+  {
+    "ip": "8.8.4.4",
+    "host": "dns.google",
+    "path": "/dns-query",
+    "provider": "Google"
+  },
+  {
+    "ip": "94.140.14.14",
+    "host": "dns.adguard-dns.com",
+    "path": "/dns-query",
+    "provider": "AdGuard"
+  },
+  {
+    "ip": "94.140.15.15",
+    "host": "dns.adguard-dns.com",
+    "path": "/dns-query",
+    "provider": "AdGuard"
+  },
+  {
+    "ip": "9.9.9.9",
+    "host": "dns.quad9.net",
+    "path": "/dns-query",
+    "provider": "Quad9"
+  },
+  {
+    "ip": "149.112.112.112",
+    "host": "dns.quad9.net",
+    "path": "/dns-query",
+    "provider": "Quad9"
+  },
+  {
+    "ip": "45.90.28.0",
+    "host": "dns.nextdns.io",
+    "path": "/dns-query",
+    "provider": "NextDNS"
+  },
+  {
+    "ip": "45.90.30.0",
+    "host": "dns.nextdns.io",
+    "path": "/dns-query",
+    "provider": "NextDNS"
+  },
+  {
+    "ip": "76.76.2.0",
+    "host": "freedns.controld.com",
+    "path": "/p0",
+    "provider": "Control D"
+  },
+  {
+    "ip": "76.76.10.0",
+    "host": "freedns.controld.com",
+    "path": "/p0",
+    "provider": "Control D"
+  },
+  {
+    "ip": "223.5.5.5",
+    "host": "dns.alidns.com",
+    "path": "/dns-query",
+    "provider": "AliDNS"
+  },
+  {
+    "ip": "223.6.6.6",
+    "host": "dns.alidns.com",
+    "path": "/dns-query",
+    "provider": "AliDNS"
+  }
+];
+export const resolvers=resolverEndpoints.map(item=>item.ip);
 export function dnsQuestion(host){
   const name=String(host).toLowerCase().replace(/\.$/,'');
   if(name.length>253||!name.split('.').every(label=>/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)))throw new Error('Dominio inválido');
@@ -37,7 +123,8 @@ export function queryDoh(ip,question,timeout){
     xhr=new XMLHttpRequest();let encoded='';for(const value of question)encoded+=String.fromCharCode(value);
     // TLS identity is the IP origin: the browser must validate its certificate.
     // No forged Host/SNI, TLS bypass, fallback to HTTP or external proxy.
-    xhr.open('GET','https://'+ip+'/dns-query?dns='+btoa(encoded).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),true);
+    const endpoint=resolverEndpoints.find(item=>item.ip===ip);
+    xhr.open('GET','https://'+ip+(endpoint?endpoint.path:'/dns-query')+'?dns='+btoa(encoded).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),true);
     xhr.responseType='arraybuffer';xhr.timeout=timeout;xhr.setRequestHeader('Accept','application/dns-message');
     xhr.onerror=xhr.ontimeout=xhr.onabort=()=>reject(new Error('DoH no accesible: red, TLS o CORS'));
     xhr.onload=()=>{try{if(xhr.status!==200||!xhr.response||xhr.response.byteLength>65535)throw new Error('Respuesta DoH inválida');resolve(dnsAnswers(xhr.response,question));}catch(error){reject(error);}};

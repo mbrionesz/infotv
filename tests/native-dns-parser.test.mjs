@@ -1,4 +1,4 @@
-import test from 'node:test';import {execFileSync} from 'node:child_process';import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';import path from 'node:path';import os from 'node:os';
+import test from 'node:test';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';import {mkdtempSync,writeFileSync,rmSync} from 'node:fs';import path from 'node:path';import os from 'node:os';
 test('native DNS parser retains alternate A records and rejects blocked/private answers and truncated packets',()=>{
  const temp=mkdtempSync(path.join(os.tmpdir(),'xuper-dns-parser-'));
  try{
@@ -16,4 +16,12 @@ int main(){
   const flags=execFileSync('pkg-config',['--cflags','--libs','libcurl'],{encoding:'utf8'}).trim().split(/\s+/);
   execFileSync('g++',['-std=c++14','-Wno-deprecated-declarations',source,...flags,'-o',binary]);execFileSync(binary,[]);
  }finally{rmSync(temp,{recursive:true,force:true});}
+});
+
+test('native IP, TLS identity and path arrays match the browser diagnostic configuration',async()=>{
+ const {readFileSync}=await import('node:fs');const {resolverEndpoints}=await import('../browser/dns-diagnostic.js');const cpp=readFileSync('native/transport.cpp','utf8');
+ for(const [name,field] of [['ips','ip'],['names','host'],['paths','path']]){
+  const values=JSON.parse('['+cpp.match(new RegExp('const char\\* '+name+'\\[\\]\\s*=\\{([^}]+)\\}'))[1]+']');
+  assert.deepEqual(values,resolverEndpoints.map(e=>e[field]));
+ }
 });
