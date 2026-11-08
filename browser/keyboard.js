@@ -1,8 +1,9 @@
+import {readSearchHistory} from './stored-ui.js';
 export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()=>{},mode='search',onSubmit=()=>{}}={}){
   const panel=document.createElement('section');panel.className='xt-keyboard';
   const rows=mode==='url'?['qwertyuiop','asdfghjkl','zxcvbnm','1234567890','./:-_?=&%+#@~']:['QWERTYUIOP','ASDFGHJKL','ZXCVBNM','1234567890'];
-  let text=value,row=0,column=0;
-  let history=[];try{if(mode!=='url')history=JSON.parse(localStorage.getItem('xuper.searchHistory')||'[]');}catch(_){}
+  let text=String(value||'').slice(0,mode==='url'?2048:100),row=0,column=0;
+  let history=mode==='url'?[]:readSearchHistory();
   panel.innerHTML='<h2></h2><div class="xt-keyboard-value"></div><div class="xt-keyboard-grid"></div><div class="xt-keyboard-history"></div><p>Flechas · OK escribir · Return volver</p>';
   panel.querySelector('h2').textContent=title;
   const grid=panel.querySelector('.xt-keyboard-grid');

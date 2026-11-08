@@ -52,7 +52,8 @@ function pump(){
   while(postersActive<2 && postersQueue.length){
     const job=postersQueue.shift();postersActive++;
     const xhr=new XMLHttpRequest();xhr.open('GET',job.url,true);xhr.responseType='blob';xhr.timeout=6000;
-    function end(error){postersActive--;if(error)job.reject(error);pump();}
+    let ended=false;function end(error){if(ended)return;ended=true;postersActive--;if(error)job.reject(error);pump();}
+    xhr.onprogress=event=>{if(event.loaded>512*1024){xhr.abort();end(new Error('Imagen fuera del límite'));}};
     xhr.onerror=xhr.ontimeout=()=>end(new Error('No se pudo cachear imagen'));
     xhr.onload=async()=>{
       if(xhr.status!==200 || !xhr.response || xhr.response.size>512*1024)return end(new Error('Imagen fuera del límite'));

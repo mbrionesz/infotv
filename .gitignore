@@ -12,3 +12,6 @@ node_modules/
 docs/ux-tour-0.6.6/
 docs/ux-redesign/
 docs/ux-usability/
+
+# Generated security QA screenshots
+docs/qa-security-0.7/

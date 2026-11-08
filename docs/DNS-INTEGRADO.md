@@ -1,4 +1,15 @@
-# Estado actual — 0.5.5
+# Transporte actualizado — revisión local posterior a 0.7 beta
+
+Se ha compilado con el SDK Samsung y bibliotecas mantenidas: **cURL 8.23.0,
+OpenSSL 3.5.9 LTS y zlib 1.4**. Conserva las ocho IP DoH, Host/SNI, TLS verificado,
+caché y fallback. La prueba del WASM con sockets de laboratorio verifica HTTPS,
+gzip, rechazo de hostname incorrecto y consultas a las ocho IP sin DNS del proveedor.
+La validación del Samsung físico sigue pendiente. Ver [transporte moderno](TRANSPORTE-MODERNO.md).
+
+Las secciones siguientes documentan versiones anteriores; sus referencias a
+cURL 7.68.0/OpenSSL 1.1.1w no describen los binarios locales actualizados.
+
+# Estado histórico — 0.5.5
 
 Ocho direcciones DoH de cuatro proveedores: Cloudflare 1.1.1.1/1.0.0.1,
 Google 8.8.8.8/8.8.4.4, AdGuard 94.140.14.14/94.140.15.15 y Quad9
@@ -167,8 +178,9 @@ npm run test:browser
 npm run package
 ```
 
-El script activa el SDK de forma local, actualiza el puerto OpenSSL con hash
-SHA-512 fijado y genera hashes de fuentes/artefactos. El build normal verifica
+El script actual compila fuentes oficiales de OpenSSL, cURL y zlib con SHA-256
+fijados en `native/dependencies.json`, aplica la adaptación de sockets Samsung
+y genera hashes de fuentes/artefactos. El build normal verifica
 los binarios precompilados; no requiere el SDK en cada build de GitHub Actions.
 Pruebas nativas: g++, pkg-config, libcurl development y openssl. Chromium/FFmpeg
 siguen siendo herramientas sólo de desarrollo.

@@ -1,0 +1,17 @@
+--- a/lib/curlx/nonblock.c
++++ b/lib/curlx/nonblock.c
+@@ -45,7 +45,13 @@
+ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
+                    int nonblock   /* TRUE or FALSE */)
+ {
+-#ifdef HAVE_FCNTL_O_NONBLOCK
++#if defined(__EMSCRIPTEN__) && defined(XUPER_TIZEN_NONBLOCK_SOCKETS)
++  /* curl 8 creates HTTP sockets with SOCK_NONBLOCK atomically. Samsung's
++   * host bindings do not support changing socket flags through F_SETFL.
++   * Proxy/listen/socketpair transports are disabled in this build. */
++  (void)sockfd;
++  return nonblock ? 0 : -1;
++#elif defined(HAVE_FCNTL_O_NONBLOCK)
+   /* most recent Unix versions */
+   int flags;
+   flags = sfcntl(sockfd, F_GETFL, 0);

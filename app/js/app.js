@@ -2200,6 +2200,7 @@
         ((s = s || {}).gold ? " gold" : "") +
         (s.type3 ? " type3" : ""),
     );
+    l.setAttribute("role", "button"); l.setAttribute("aria-label", t.title || "Ver detalle");
     if ((i(l, a, n, r, o), t.poster)) {
       var d = e("img", "p-img");
       (d.setAttribute("data-poster-src", t.poster),
@@ -4324,9 +4325,11 @@
             ? "Visible: se muestran categorías y canales +18."
             : "Oculto: las categorías y los canales +18 no aparecen.",
         );
+      a.setAttribute("role", "switch"); a.setAttribute("aria-label", "Mostrar contenido adulto"); a.setAttribute("aria-checked", String(X.adultEnabled));
       return (
         (a._activate = function () {
           ((X.adultEnabled = !X.adultEnabled),
+            a.setAttribute("aria-checked", String(X.adultEnabled)),
             (Q.adultEnabled = X.adultEnabled),
             K($, Q),
             (a.className =
@@ -5427,10 +5430,14 @@
     var t = ++Yi;
     if (!e || !e.url) return ((pn = []), void (Bi && (Bi.innerHTML = "")));
     try {
+      var subtitleUrl = new URL(e.url, window.location.href);
+      if (!/^https?:$/.test(subtitleUrl.protocol) || subtitleUrl.username || subtitleUrl.password) return;
       var a = new XMLHttpRequest();
-      (a.open("GET", e.url, !0),
+      a.timeout = 8000;
+      a.onprogress = function (event) { if (event.loaded > 1024 * 1024) a.abort(); };
+      (a.open("GET", subtitleUrl.href, !0),
         (a.onload = function () {
-          t === Yi &&
+          t === Yi && a.responseText.length <= 1024 * 1024 &&
             a.status >= 200 &&
             a.status < 300 &&
             (pn = (function (e) {
@@ -5454,9 +5461,9 @@
                       l = hn(s[0].trim()),
                       d = hn(s[1].trim()),
                       c = o
-                        .join("<br>")
-                        .replace(/<font[^>]*>/gi, "")
-                        .replace(/<\/font>/gi, "")
+                        .join("\n")
+                        .replace(/<br\s*\/?>/gi, "\n")
+                        .replace(/<\/?(?:font|b|i|u)(?:\s[^>]*)?>/gi, "")
                         .trim();
                     c && t.push({ start: l, end: d, text: c });
                   }
@@ -5484,8 +5491,13 @@
             break;
           }
         if (t) {
-          var i = '<span class="player-subtitles-text">' + t.text + "</span>";
-          Bi.innerHTML !== i && (Bi.innerHTML = i);
+          if (Bi.textContent !== t.text) {
+            var cue = document.createElement("span");
+            cue.className = "player-subtitles-text";
+            cue.textContent = t.text;
+            Bi.textContent = "";
+            Bi.appendChild(cue);
+          }
         } else "" !== Bi.innerHTML && (Bi.innerHTML = "");
       } else "" !== Bi.innerHTML && (Bi.innerHTML = "");
   }

@@ -12,3 +12,13 @@ test('old TV frame counters and missing playback quality remain supported',()=>{
 test('recovery is bounded per rolling minute and replenishes for later independent outages',()=>{
  const budget=recoveryBudget();assert.equal(budget.take(0),1);assert.equal(budget.take(1000),2);assert.equal(budget.take(2000),3);assert.equal(budget.take(59000),0);assert.equal(budget.take(60000),3);assert.equal(budget.take(61000),3);assert.equal(budget.take(61001),0);
 });
+
+import {createStallWatch} from '../browser/playback-health.js';
+test('stalled live clock recovers despite a partial buffer or internally paused media',()=>{
+ const watch=createStallWatch(),sample={time:10,bufferSeconds:0.2,paused:true};
+ assert.equal(watch.check(sample,{now:0,started:true}),false);
+ assert.equal(watch.check(sample,{now:12001,started:true}),true);
+ assert.equal(watch.check(sample,{now:24002,started:true,userPaused:true}),false);
+ assert.equal(watch.check({...sample,time:11},{now:36003,started:true}),false);
+ assert.equal(watch.check(sample,{now:48004,started:true,hidden:true}),false);
+});

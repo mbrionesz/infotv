@@ -7,7 +7,7 @@
   document.getElementById('screen-settings').appendChild(node('h1','xt-settings-heading','Ajustes'));
   function catalog(kind){if(window.XuperCatalog)XuperCatalog.open(kind);}
   function guide(){if(window.XuperGuide)XuperGuide.open();}
-  var actions=[['TV en vivo','Canales y guía',guide],['Películas','Explorar catálogo',function(){catalog('movies');}],['Series','Temporadas y episodios',function(){catalog('series');}],['Buscar','Películas y series',function(){catalog('movies');XuperCatalog.search();}],['Mi lista','Películas y series guardadas',function(){__xuper.settingsPanel('history');}],['Ajustes','Imagen, reproducción y red',function(){__xuper.openSettings();}]];
+  var actions=[['TV en vivo','Canales y guía',guide],['Películas','Explorar catálogo',function(){catalog('movies');}],['Series','Temporadas y episodios',function(){catalog('series');}],['Buscar','Películas y series',function(){XuperCatalog.chooseSearch();}],['Mi lista','Películas y series guardadas',function(){__xuper.settingsPanel('history');}],['Ajustes','Imagen, reproducción y red',function(){__xuper.openSettings();}]];
   var refreshHome=function(){};window.addEventListener('xuper:home',function(){refreshHome();});
   function decorate(){
    var page=home.querySelector('.home-page'),target=page&&page.querySelector('.live-focus');if(!target||page.dataset.dashboard)return;

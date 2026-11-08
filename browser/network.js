@@ -11,7 +11,7 @@ export function request(options, responseCallback) {
   const req = new Events();
   const xhr = new XMLHttpRequest();
   const chunks = [];
-  let sent = false,aborted=false,timeout=12000;
+  let sent = false,aborted=false,tooLarge=false,timeout=12000;
   xhr.open(options.method || 'GET', target, true);
   xhr.responseType = 'arraybuffer';
   Object.keys(options.headers || {}).forEach(name => {
@@ -22,7 +22,8 @@ export function request(options, responseCallback) {
   req.abort = req.destroy = () => {aborted=true;xhr.abort();};
   xhr.onerror = () => { req.emit('error', new Error('Error de red, TLS o CORS en el televisor')); req.emit('close'); };
   xhr.ontimeout = () => { req.emit('timeout'); req.emit('close'); };
-  xhr.onabort = () => req.emit('close');
+  xhr.onprogress = event => { if(event.loaded>8*1024*1024){tooLarge=true;xhr.abort();} };
+  xhr.onabort = () => {if(tooLarge)req.emit('error',new Error('Respuesta mayor de 8 MB'));req.emit('close');};
   xhr.onload = () => {
     const response = new Events();
     response.statusCode = xhr.status; response.headers = {};

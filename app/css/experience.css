@@ -75,3 +75,7 @@
 .xt-guide-header-actions{display:flex;align-items:center}.xt-guide-header-actions button{margin:0 0 0 12px;min-width:0;font-size:22px}.xt-guide-header-actions button[hidden]{display:none}
 .xt-guide-preview video{height:425px}.xt-guide-actions{display:flex;flex-wrap:wrap;margin:14px 0}.xt-guide-actions button{font-size:22px;margin:0 12px 12px 0!important;padding:13px 18px}.xt-guide-actions button:disabled{opacity:.45}.xt-guide-status{font-size:21px;line-height:28px}
 #xt-guide[data-column="3"] .xt-guide-columns>section{border-color:#303034}
+
+.player-subtitles-text{white-space:pre-line}
+
+.xt-guide-art{height:340px;display:flex;align-items:center;justify-content:center;border-radius:24px;background:linear-gradient(145deg,#303443,#17181f);color:#cbd1e0;font-size:100px}.xt-guide-actions button{width:100%}

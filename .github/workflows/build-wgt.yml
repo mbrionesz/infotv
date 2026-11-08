@@ -13,7 +13,9 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: sudo apt-get update && sudo apt-get install -y g++ pkg-config libcurl4-openssl-dev openssl
       - run: npm test
+      - run: npm run test:native-wasm
       - run: npm run package
       - uses: actions/upload-artifact@v4
         with:

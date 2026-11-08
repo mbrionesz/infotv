@@ -29,6 +29,7 @@ def build(output=None):
     application = config.find('{http://tizen.org/ns/widgets}application')
     assert application.attrib['required_version'] == '4.0'
     assert config.attrib['version'] == info['version'] == json.loads((ROOT / 'package.json').read_text())['version']
+    native_info = json.loads((app / 'vendor/native/build-info.json').read_text())
     version = info['version']
     channel = "beta"
     widget = out / f'XuperTizen-{version}-{channel}-Tizen4plus-UNSIGNED.wgt'
@@ -45,7 +46,7 @@ def build(output=None):
     with zipfile.ZipFile(kit, 'w') as archive:
         for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github']:
             for file in sorted((ROOT / name).rglob('*')):
-                if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult', 'ux-tour-0.6.6', 'ux-redesign', 'ux-usability'}:
+                if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult', 'ux-tour-0.6.6', 'ux-redesign', 'ux-usability', 'qa-security-0.7'}:
                     add(archive, file, Path('XuperTizen') / file.relative_to(ROOT))
         for name in ['README.md', 'LICENSE-UPSTREAM', 'package.json', 'package-lock.json', 'apps2samsung-source.json', '.gitignore', '.gitattributes']:
             add(archive, ROOT / name, Path('XuperTizen') / name)
@@ -54,9 +55,10 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
-        'hardwareValidation': '0.7.0-beta-pending-on-Samsung-TV', 'providerValidation': '0.7.0-beta-pending-with-live-provider',
+        'hardwareValidation': '0.8.0-beta-pending-on-Samsung-TV', 'providerValidation': '0.8.0-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
-        'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion']
+        'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion'],
+        'nativeTransport': {name: native_info[name] for name in ['curl', 'openssl', 'zlib', 'sourceSha256']}
     }, indent=2) + '\n')
     return sums
 

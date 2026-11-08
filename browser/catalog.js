@@ -15,7 +15,14 @@ export function createCatalog(core){
       render(result.facets||{});status(total+' resultados · '+loaded+(result.remoteSearch?' títulos encontrados por el proveedor':' títulos cargados del proveedor')+(hasMore&&!searchMode?' · puedes cargar más':''));
     });
   }
-  function search(){if(keyboard)return;keyboard=openKeyboard({title:'Buscar películas y series',value:filters.text,onChange:value=>{if(!active)return;filters.text=value;searchMode=false;offset=0;clearTimeout(filterTimer);filterTimer=setTimeout(()=>query(),120);},onSubmit:()=>{if(active&&filters.text.trim().length>=2){clearTimeout(filterTimer);searchMode=true;offset=0;query();}},onClose:()=>{keyboard=null;}});}
+  function search(){if(keyboard)return;keyboard=openKeyboard({title:'Buscar en '+({movies:'Películas',series:'Series',kids:'Infantil',anime:'Anime',featured:'Destacados'}[root]||'Catálogo'),value:filters.text,onChange:value=>{if(!active)return;filters.text=value;searchMode=false;offset=0;clearTimeout(filterTimer);filterTimer=setTimeout(()=>query(),120);},onSubmit:()=>{if(active&&filters.text.trim().length>=2){clearTimeout(filterTimer);searchMode=true;offset=0;query();}},onClose:()=>{keyboard=null;}});}
+  function chooseSearch(){
+    open('movies');
+    const popup=document.createElement('div');popup.className='xt-filter-menu';popup.setAttribute('role','dialog');popup.setAttribute('aria-label','Elegir búsqueda');
+    const title=document.createElement('h2');title.textContent='¿Qué quieres buscar?';popup.appendChild(title);
+    const buttons=[['Películas','movies'],['Series','series']].map(([label,kind])=>{const button=document.createElement('button');button.textContent=label;button.onclick=()=>{filterMenu=null;popup.remove();open(kind);search();};popup.appendChild(button);return button;});
+    panel.appendChild(popup);filterMenu={node:popup,buttons,index:0};buttons[0].classList.add('selected');
+  }
   function controls(){return focusNodes;}
   function refreshControls(){focusNodes=Array.from(panel.querySelectorAll('button,select')).filter(node=>!node.disabled&&!node.hidden);previousRow=-1;}
   function mark(){
@@ -79,5 +86,5 @@ export function createCatalog(core){
     focus=catalogFocus(nodes,focus,code);
     mark();return true;
   }
-  return {open,close,resume,search,handle,get active(){return active;}};
+  return {open,close,resume,search,chooseSearch,handle,get active(){return active;}};
 }

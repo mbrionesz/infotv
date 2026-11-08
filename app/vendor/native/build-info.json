@@ -1,12 +1,15 @@
 {
   "sdk": "Samsung Emscripten 1.39.4.7",
-  "curl": "7.68.0",
-  "openssl": "1.1.1w",
+  "curl": "8.23.0",
+  "openssl": "3.5.9",
+  "zlib": "1.4",
   "experimental": true,
-  "sourceSha256": "4095d3dc19dd2ca08c251c5b29199024ece48050bb292e900cefc42f9904d4a9",
+  "dns": "IP-DoH-Host-SNI-TLS-verified",
+  "entropy": "Emscripten /dev/urandom backed by crypto.getRandomValues; no weak fallback",
+  "sourceSha256": "fc276114f74589cd1e403a1fba6acfc642485d2556deb712a010fce6f6253278",
   "assets": {
-    "transport.js": "906c670efb39ff6e30f060a12d887aaa0d4eeabb3cec5de78baa4f21f044007e",
-    "transport.wasm": "c3f4f53394b06875e3260a83cf2e72954993c0e8caefe6d7bb76200ad8afce6b",
+    "transport.js": "1f4f19c0547978773359162099d23fc3506e3419978086235f0ab8138839a300",
+    "transport.wasm": "c548ffdcb596a0e569c4dfc708c61626c01d8c8cfc0a3702d6010175081ad3fa",
     "transport.data": "427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285"
   }
 }

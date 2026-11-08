@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createNativeTransport} from '../browser/dnsx.js';
-function workers({dns={ip:'203.0.113.7',ttl:600,resolver:'8.8.8.8'},available=true}={}){
- const calls=[];return {calls,factory:()=>{const worker={terminate(){},postMessage(message){calls.push(message);queueMicrotask(()=>worker.onmessage({data:{id:message.id,result:message.method==='dns'?dns:{status:200,headers:'Content-Type: text/plain',body:new TextEncoder().encode('ok').buffer}}}));}};queueMicrotask(()=>worker.onmessage({data:{ready:available,reason:'unsupported'}}));return worker;}};
+function workers({dns={ip:'203.0.113.7',ttl:600,resolver:'8.8.8.8'},available=true,libraries=null}={}){
+ const calls=[];return {calls,factory:()=>{const worker={terminate(){},postMessage(message){calls.push(message);queueMicrotask(()=>worker.onmessage({data:{id:message.id,result:message.method==='dns'?dns:{status:200,headers:'Content-Type: text/plain',body:new TextEncoder().encode('ok').buffer}}}));}};queueMicrotask(()=>worker.onmessage({data:{ready:available,reason:'unsupported',libraries}}));return worker;}};
 }
 test('native HTTP uses resolved IP while preserving URL hostname and per-request headers; DNS is deduplicated and cached',async()=>{
  const mock=workers(),transport=createNativeTransport({workerFactory:mock.factory});
@@ -61,3 +61,5 @@ test('redirects cannot introduce URL credentials that initial requests forbid',a
  const mock=workers();let httpCalls=0;const factory=()=>{const worker=mock.factory(),send=worker.postMessage;worker.postMessage=message=>{if(message.method==='http'){httpCalls++;queueMicrotask(()=>worker.onmessage({data:{id:message.id,result:{status:302,headers:'Location: https://user:secret@other.example/live.m3u8',body:new ArrayBuffer(0)}}}));}else send(message);};return worker;};
  const transport=createNativeTransport({workerFactory:factory});try{await assert.rejects(transport.request({url:'https://cdn.example/live.m3u8'}),/Redirección insegura/);assert.equal(httpCalls,1);}finally{transport.dispose();}
 });
+
+test('diagnostics retain the library versions returned by the native worker',async()=>{const libraries={curl:'8.23.0',tls:'OpenSSL/3.5.9',zlib:'1.4'},mock=workers({libraries}),transport=createNativeTransport({workerFactory:mock.factory});try{assert.equal(await transport.ensure(),true);assert.deepEqual(transport.snapshot().libraries,libraries);}finally{transport.dispose();}});

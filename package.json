@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,7 +16,10 @@
     "test:latency": "node tools/live-latency-browser.mjs",
     "test:navigation": "node tools/navigation-regression-browser.mjs",
     "test:vod": "node tools/vod-playback-browser.mjs",
-    "test:startup": "node tools/startup-browser.mjs"
+    "test:startup": "node tools/startup-browser.mjs",
+    "test:security": "node tools/security-qa-browser.mjs",
+    "test:ux": "node tools/ux-usability-browser.mjs",
+    "test:native-wasm": "node tools/native-wasm-integration.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",

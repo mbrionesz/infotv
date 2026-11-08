@@ -3,7 +3,7 @@ import {createLiveLatency} from './live-latency.js';
 import {createFrameMeter} from './media-info.js';
 import {playlistShape,playlistReason,safeParserMessage} from './playlist-shape.js';
 import {createLiveBuffer} from './live-buffer.js';
-import {mediaHealth,recoveryBudget} from './playback-health.js';
+import {mediaHealth,recoveryBudget,createStallWatch} from './playback-health.js';
 import {playbackRejection,liveLoadPolicy} from './playback-policy.js';
 import {nativeHlsLoad} from './native-hls-loader.js';
 import Hls from 'hls.js';
@@ -29,7 +29,7 @@ export function createPlayer(getStream) {
     if(video&&canPlayListener)video.removeEventListener('canplay',canPlayListener);
     canPlayListener=null;playingListener = null;
     if(progressive){progressive.destroy();progressive=null;}
-    if (hls) { hls.destroy(); hls = null; }
+    if (hls) { const old=hls;hls=null;try{old.destroy();}catch(_){diagnostics.detail="hls-cleanup-error";} }
     if (av) { try { av.stop(); av.close(); } catch (_) {} av = null; }
     if (avObject) { avObject.remove(); avObject = null; }
     if (restored) { restored(); restored = null; }
@@ -62,7 +62,7 @@ export function createPlayer(getStream) {
     };
     totalDeadline=setTimeout(()=>fail('La señal no inició tras probar las rutas disponibles: etapa '+diagnostics.stage+'. Abre Diagnóstico.'),30000);
     const restartedRoutes=new Set();let sequenceRestartAt=null;
-    const openedAt=performance.now();let alignmentReadyAt=Infinity;let playPending=false,autoAttempts=0,gestureRequired=false,resuming=false;const networkBudget=recoveryBudget(),decoderBudget=recoveryBudget(1);let lastProgressAt=performance.now(),lastTime=0;
+    const openedAt=performance.now();let alignmentReadyAt=Infinity;let playPending=false,autoAttempts=0,gestureRequired=false,resuming=false;const networkBudget=recoveryBudget(),decoderBudget=recoveryBudget(1);const stallWatch=createStallWatch();
     function tryPlay(){
       if(serial!==run||started&&!resuming||bufferGate&&bufferGate.userPaused||playPending||gestureRequired||!video.paused||autoAttempts>=3)return;
       const playGeneration=attempt;autoAttempts++;playPending=true;
@@ -103,17 +103,16 @@ export function createPlayer(getStream) {
       recoveryTimer=setTimeout(()=>{recoveryTimer=null;if(serial===run&&generation===attempt&&hls)hls.startLoad(-1);},count*1000);
       return true;
     }
-    function recoverDecoder(){resuming=!video.paused;autoAttempts=0;playPending=false;diagnostics.recoveries++;hls.recoverMediaError();}
+    function recoverDecoder(){resuming=!(bufferGate&&bufferGate.userPaused);autoAttempts=0;playPending=false;diagnostics.recoveries++;hls.recoverMediaError();}
     healthTimer=setInterval(()=>{
       if(serial!==run||!video)return;
       if(hls)latencyPolicy.update(hls,video,options.live,performance.now()>=alignmentReadyAt);
       const sample=mediaHealth(video);if(frameMeter){frameMeter.sample();Object.assign(sample,frameMeter.read());}diagnostics.media=sample;if(options.onInfo)options.onInfo(diagnostics);
-      if(Math.abs(sample.time-lastTime)>0.05||sample.paused&&!(bufferGate&&bufferGate.waiting&&!bufferGate.userPaused)||document.hidden||!started){lastProgressAt=performance.now();lastTime=sample.time;return;}
-      if(bufferGate&&bufferGate.waiting&&sample.bufferSeconds>0){lastProgressAt=performance.now();return;}
-      if(refreshing||!hls||!options.live||performance.now()-lastProgressAt<12000)return;
-      lastProgressAt=performance.now();diagnostics.stallRecoveries++;record('no-progress-12s');
-      if(sample.bufferSeconds<1)recoverNetwork();
-      else if(decoderBudget.take(performance.now())){recoverDecoder();}
+      if(!stallWatch.check(sample,{now:performance.now(),started,hidden:document.hidden,userPaused:bufferGate?bufferGate.userPaused:sample.paused})||refreshing||!hls||!options.live)return;
+      diagnostics.stallRecoveries++;record('no-progress-12s');
+      if(sample.bufferSeconds<1&&recoverNetwork())return;
+      if(sample.bufferSeconds>=1&&decoderBudget.take(performance.now())){recoverDecoder();return;}
+      if(!retrySource())fail('La señal dejó de avanzar. Vuelve a elegir un canal; el menú sigue disponible.');
     },2000);
     playingListener = onPlaying;
     video.addEventListener('playing', onPlaying);
@@ -131,7 +130,7 @@ export function createPlayer(getStream) {
       if(hls){hls.destroy();hls=null;}
       try{video.pause();video.removeAttribute('src');video.load();}catch(_){}
       started=ready=false;paused=true;autoAttempts=0;playPending=false;gestureRequired=false;resuming=false;
-      lastProgressAt=performance.now();lastTime=0;diagnostics.httpStatus=0;diagnostics.media=null;diagnostics.level=null;
+      stallWatch.reset(performance.now(),0);diagnostics.httpStatus=0;diagnostics.media=null;diagnostics.level=null;
       const generation=attempt;
       recoveryTimer=setTimeout(()=>{recoveryTimer=null;if(serial===run&&generation===attempt)useHls(preservePause);},preservePause?0:250);
     }

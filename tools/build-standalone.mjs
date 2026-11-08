@@ -35,7 +35,7 @@ const plugin = {
 const nativeInfoPath=path.join(root,'app/vendor/native/build-info.json');
 {
  const nativeInfo=JSON.parse(readFileSync(nativeInfoPath,'utf8'));const nativeHash=createHash('sha256');
- for(const name of ['native/transport.cpp','native/cacert.pem','tools/build-native.mjs']){nativeHash.update(name+'\0');nativeHash.update(readFileSync(path.join(root,name)));}
+ for(const name of ['native/transport.cpp','native/cacert.pem','native/dependencies.json','native/patches/curl-nonblock-tizen.patch','tools/build-native.mjs']){nativeHash.update(name+'\0');nativeHash.update(readFileSync(path.join(root,name)));}
  if(nativeHash.digest('hex')!==nativeInfo.sourceSha256)throw new Error('Native transport source changed. Run node tools/build-native.mjs <Samsung-emsdk>');
  for(const [name,expected] of Object.entries(nativeInfo.assets))if(createHash('sha256').update(readFileSync(path.join(root,'app/vendor/native',name))).digest('hex')!==expected)throw new Error('Native artifact checksum mismatch: '+name);
 }

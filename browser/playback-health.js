@@ -13,3 +13,13 @@ export function recoveryBudget(limit=3,windowMs=60000){
  let attempts=[];
  return {take(now){attempts=attempts.filter(time=>now-time<windowMs);if(attempts.length>=limit)return 0;attempts.push(now);return attempts.length;}};
 }
+// Buffer quantity alone never proves playback progress. A partial buffer can stay
+// unchanged forever after an MSE failure; only the media clock resets this timer.
+export function createStallWatch(timeoutMs=12000){
+ let lastTime=null,lastProgressAt=null;
+ return {reset(now,time){lastTime=time;lastProgressAt=now;},check(sample,{now,started,hidden=false,userPaused=false}){
+  if(lastProgressAt===null||!started||hidden||userPaused||Math.abs(sample.time-lastTime)>0.05){lastProgressAt=now;lastTime=sample.time;return false;}
+  if(now-lastProgressAt<timeoutMs)return false;
+  lastProgressAt=now;return true;
+ }};
+}

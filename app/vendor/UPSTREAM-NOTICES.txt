@@ -50,3 +50,13 @@ dispositivo; la disponibilidad del servicio depende de su proveedor.
 - webworkify-webpack: MIT, upstream README (license declaration) included as webworkify-webpack-LICENSE.txt. This dependency is bundled by mpegts.js; worker mode is disabled for the custom authenticated loader in this implementation.
 
 These modules remultiplex containers; they do not transcode audio/video.
+
+## Native Samsung transport
+
+- cURL 8.23.0: curl license (MIT-style), included as `vendor/native/curl-LICENSE.txt`.
+- OpenSSL 3.5.9 LTS: Apache-2.0, included as `vendor/native/OpenSSL-LICENSE.txt`.
+- zlib 1.4: zlib license, included as `vendor/native/zlib-LICENSE.txt`.
+- Samsung Emscripten 1.39.4.7 compiler/runtime: supplied license included as `vendor/native/Emscripten-LICENSE.txt`.
+- Official source URLs and SHA-256 pins: `native/dependencies.json`. The narrow Samsung nonblocking-socket adaptation is in `native/patches/curl-nonblock-tizen.patch`.
+
+These libraries provide HTTP/TLS and DoH; they do not transcode media or mine cryptocurrency. Samsung hardware validation remains required.

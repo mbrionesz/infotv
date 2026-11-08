@@ -28,7 +28,12 @@ size_t headers(char* data,size_t size,size_t count,void*){size_t n=size*count;if
 void secure(CURL* handle){
  curl_easy_setopt(handle,CURLOPT_SSL_VERIFYPEER,1L);curl_easy_setopt(handle,CURLOPT_SSL_VERIFYHOST,2L);
  curl_easy_setopt(handle,CURLOPT_SSLVERSION,CURL_SSLVERSION_TLSv1_2);curl_easy_setopt(handle,CURLOPT_CAINFO,NET_CA_FILE);curl_easy_setopt(handle,CURLOPT_CONNECTTIMEOUT_MS,3500L);
- curl_easy_setopt(handle,CURLOPT_NOSIGNAL,1L);curl_easy_setopt(handle,CURLOPT_PROTOCOLS,CURLPROTO_HTTP|CURLPROTO_HTTPS);
+ curl_easy_setopt(handle,CURLOPT_NOSIGNAL,1L);
+#if LIBCURL_VERSION_NUM >= 0x075500
+ curl_easy_setopt(handle,CURLOPT_PROTOCOLS_STR,"http,https");
+#else
+ curl_easy_setopt(handle,CURLOPT_PROTOCOLS,CURLPROTO_HTTP|CURLPROTO_HTTPS);
+#endif
  curl_easy_setopt(handle,CURLOPT_FOLLOWLOCATION,0L);
 }
 std::string encode(const std::vector<unsigned char>& data){const char* table="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";std::string result;unsigned value=0;int bits=0;for(unsigned char ch:data){value=(value<<8)|ch;bits+=8;while(bits>=6){bits-=6;result+=table[(value>>bits)&63];}}if(bits)result+=table[(value<<(6-bits))&63];return result;}
@@ -52,6 +57,7 @@ bool parse(const Reply& reply,const std::vector<unsigned char>& q,std::vector<st
 extern "C" {
 API int net_probe(){int fd=socket(AF_INET,SOCK_STREAM,0);if(fd<0)return -1;close(fd);return 0;}
 API int net_init(){return int(curl_global_init(CURL_GLOBAL_DEFAULT));}
+API const char* net_build_info(){const auto* v=curl_version_info(CURLVERSION_NOW);static std::string info;info=std::string("{\"curl\":\"")+v->version+"\",\"tls\":\""+(v->ssl_version?v->ssl_version:"")+"\",\"zlib\":\""+(v->libz_version?v->libz_version:"")+"\"}";return info.c_str();}
 API const char* net_error(){return errorText.c_str();}
 API const unsigned char* net_body(){return body.empty()?nullptr:body.data();}
 API int net_size(){return int(body.size());}

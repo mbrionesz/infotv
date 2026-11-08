@@ -8,7 +8,8 @@ if(typeof tizentvwasm==='undefined'){
   const module=XuperNative({locateFile:name=>'native/'+name,onRuntimeInitialized:function(){
    api=module;
    if(api._net_init()!==0||api._net_probe()!==0){self.postMessage({ready:false,reason:'No inició HTTP/TLS'});return;}
-   self.postMessage({ready:true,engine:'samsung-wasm-curl'});
+   const libraries=api._net_build_info?JSON.parse(api.UTF8ToString(api._net_build_info())):null;
+   self.postMessage({ready:true,engine:'samsung-wasm-curl',libraries});
   },print:()=>{},printErr:()=>{},onAbort:()=>self.postMessage({ready:false,reason:'No pudo iniciar WebAssembly/TLS'})});
  }catch(error){self.postMessage({ready:false,reason:'Falló la carga del transporte Samsung: '+String(error.message||error).slice(0,180)});}
 }

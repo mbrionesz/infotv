@@ -16,13 +16,14 @@ export async function browserHarness(extra = []) {
     });
   });
   const socket = new WebSocket(wsUrl); await once(socket, 'open');
-  let id = 0; const pending = new Map(); const errors = [];
+  let id = 0; const pending = new Map(); const errors = []; const requests = []; const requestKeys = new Set();
   socket.addEventListener('message', event => {
     const message = JSON.parse(event.data);
     if (pending.has(message.id)) {
       const entry = pending.get(message.id); clearTimeout(entry.timer); pending.delete(message.id);
       if (message.error) entry.reject(new Error(JSON.stringify(message.error))); else entry.resolve(message.result);
     }
+    if (message.method === 'Network.requestWillBeSent') { try { const origin = new URL(message.params.request.url).origin, type = message.params.type; const key = origin + '|' + type; if (!requestKeys.has(key) && requests.length < 1000) { requestKeys.add(key); requests.push({ origin, type }); } } catch (_) {} }
     if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
   });
   function call(method, params = {}, sessionId) {
@@ -34,11 +35,11 @@ export async function browserHarness(extra = []) {
   }
   const { targetId } = await call('Target.createTarget', { url:'about:blank' });
   const { sessionId } = await call('Target.attachToTarget', { targetId, flatten:true });
-  await call('Runtime.enable', {}, sessionId); await call('Page.enable', {}, sessionId);
+  await call('Network.enable', {}, sessionId); await call('Runtime.enable', {}, sessionId); await call('Page.enable', {}, sessionId);
   await call('Emulation.setDeviceMetricsOverride', { width:1920, height:1080, deviceScaleFactor:1, mobile:false }, sessionId);
   await call('Emulation.setTimezoneOverride', { timezoneId:'America/Santiago' }, sessionId);
   const api = {
-    errors,
+    errors,requests,
     command: (method, params) => call(method, params, sessionId),
     async evaluate(expression) {
       const result = await call('Runtime.evaluate', { expression, returnByValue:true, awaitPromise:true }, sessionId);

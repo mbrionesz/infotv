@@ -1,0 +1,21 @@
+{
+  "openssl": {
+    "version": "3.5.9",
+    "archive": "openssl-3.5.9.tar.gz",
+    "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+    "sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a",
+    "series": "3.5 LTS"
+  },
+  "curl": {
+    "version": "8.23.0",
+    "archive": "curl-8.23.0.tar.gz",
+    "url": "https://github.com/curl/curl/releases/download/curl-8_23_0/curl-8.23.0.tar.gz",
+    "sha256": "e3de77cfa6367083c776a26647fc9f633b538c06c3baa73d931a252ac8f72b49"
+  },
+  "zlib": {
+    "version": "1.4",
+    "archive": "zlib-1.4.tar.gz",
+    "url": "https://github.com/madler/zlib/releases/download/v1.4/zlib-1.4.tar.gz",
+    "sha256": "02dd159783677a749c04adbdd02b55b8a2bcc7e054f51b76b549199a916ad584"
+  }
+}
