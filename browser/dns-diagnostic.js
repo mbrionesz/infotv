@@ -83,6 +83,24 @@ export const resolverEndpoints=[
     "host": "dns.alidns.com",
     "path": "/dns-query",
     "provider": "AliDNS"
+  },
+  {
+    "ip": "185.222.222.222",
+    "host": "doh.dns.sb",
+    "path": "/dns-query",
+    "provider": "DNS.SB"
+  },
+  {
+    "ip": "45.11.45.11",
+    "host": "doh.dns.sb",
+    "path": "/dns-query",
+    "provider": "DNS.SB"
+  },
+  {
+    "ip": "194.242.2.2",
+    "host": "dns.mullvad.net",
+    "path": "/dns-query",
+    "provider": "Mullvad"
   }
 ];
 export const resolvers=resolverEndpoints.map(item=>item.ip);

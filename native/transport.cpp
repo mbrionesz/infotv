@@ -88,9 +88,9 @@ API int net_request(const char* url,const char* method,const char* headerLines,c
 API int net_doh(const char* input){
  const std::string host=input?input:"";if(host.empty()||host.size()>253||host.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789.-")!=std::string::npos)return -1;
  auto q=question(host);if(q.empty())return -1;
- const char* ips[]={"1.1.1.1","1.0.0.1","8.8.8.8","8.8.4.4","94.140.14.14","94.140.15.15","9.9.9.9","149.112.112.112","45.90.28.0","45.90.30.0","76.76.2.0","76.76.10.0","223.5.5.5","223.6.6.6"};
- const char* names[]={"cloudflare-dns.com","cloudflare-dns.com","dns.google","dns.google","dns.adguard-dns.com","dns.adguard-dns.com","dns.quad9.net","dns.quad9.net","dns.nextdns.io","dns.nextdns.io","freedns.controld.com","freedns.controld.com","dns.alidns.com","dns.alidns.com"};
- const char* paths[]={"/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/p0","/p0","/dns-query","/dns-query"};
+ const char* ips[]={"1.1.1.1","1.0.0.1","8.8.8.8","8.8.4.4","94.140.14.14","94.140.15.15","9.9.9.9","149.112.112.112","45.90.28.0","45.90.30.0","76.76.2.0","76.76.10.0","223.5.5.5","223.6.6.6","185.222.222.222","45.11.45.11","194.242.2.2"};
+ const char* names[]={"cloudflare-dns.com","cloudflare-dns.com","dns.google","dns.google","dns.adguard-dns.com","dns.adguard-dns.com","dns.quad9.net","dns.quad9.net","dns.nextdns.io","dns.nextdns.io","freedns.controld.com","freedns.controld.com","dns.alidns.com","dns.alidns.com","doh.dns.sb","doh.dns.sb","dns.mullvad.net"};
+ const char* paths[]={"/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query","/p0","/p0","/dns-query","/dns-query","/dns-query","/dns-query","/dns-query"};
  CURLM* multi=curl_multi_init();constexpr int resolverCount=sizeof(ips)/sizeof(ips[0]);
  static_assert(sizeof(names)/sizeof(names[0])==resolverCount,"DoH host count mismatch");
  static_assert(sizeof(paths)/sizeof(paths[0])==resolverCount,"DoH path count mismatch");

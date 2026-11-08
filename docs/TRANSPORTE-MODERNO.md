@@ -1,6 +1,6 @@
 # Transporte Samsung modernizado, con DNS integrado
 
-Incorporado en la serie 0.8 beta y ampliado a 14 resolutores en 0.8.4. Las pruebas de laboratorio no sustituyen la validación física en el Samsung QN70F.
+Incorporado en la serie 0.8 beta y ampliado a 17 resolutores en 0.8.5. Las pruebas de laboratorio no sustituyen la validación física en el Samsung QN70F.
 
 ## Qué cambió
 
@@ -15,7 +15,7 @@ Las bibliotecas se compilan desde archivos oficiales con SHA-256 fijados en `nat
 
 ## DNS conservado
 
-Se conservan las ocho IP anteriores; 0.8.4 añade seis IP de tres proveedores. Control D usa el endpoint wire `/p0`; los demás utilizan `/dns-query`.
+Se conservan las ocho IP originales, las seis añadidas en 0.8.4 y se suman tres IP de dos proveedores en 0.8.5. Control D usa el endpoint wire `/p0`; los demás utilizan `/dns-query`.
 
 | Proveedor | Direcciones | Host/SNI HTTPS |
 | --- | --- | --- |
@@ -26,10 +26,12 @@ Se conservan las ocho IP anteriores; 0.8.4 añade seis IP de tres proveedores. C
 | NextDNS | 45.90.28.0, 45.90.30.0 | dns.nextdns.io |
 | Control D | 76.76.2.0, 76.76.10.0 | freedns.controld.com |
 | AliDNS | 223.5.5.5, 223.6.6.6 | dns.alidns.com |
+| DNS.SB | 185.222.222.222, 45.11.45.11 | doh.dns.sb |
+| Mullvad | 194.242.2.2 | dns.mullvad.net |
 
 - DoH wire-format por IP mediante `CURLOPT_CONNECT_TO`, conservando el dominio real en URL, Host y SNI.
 - TLS 1.2 o posterior, certificado y hostname verificados, CA de Mozilla empaquetadas. No se desactiva la validación.
-- Carrera de los catorce resolutores, presupuesto de 5 s y primera respuesta IPv4 válida.
+- Carrera de los diecisiete resolutores, presupuesto de 5 s y primera respuesta IPv4 válida.
 - Caché acotada de hasta 10 minutos respetando TTL; cooldown de 5 minutos tras fallo y deduplicación de consultas concurrentes.
 - Se conserva el fallback anterior e informado si falta la extensión, falla DoH o falla el transporte. En ese estado el navegador puede utilizar el DNS del TV: no se declara DNS seguro activo cuando no lo está.
 - Las rutas de portal, listas y vídeo mantienen el broker nativo y las credenciales correspondientes a cada origen.
@@ -52,7 +54,7 @@ Resultados:
 - HTTPS devuelve 200 al conectar por IP a un hostname de prueba, conservando Host y SNI.
 - Un hostname que no coincide con el certificado se rechaza con error cURL 60 (retorno nativo -61).
 - La respuesta gzip se descomprime correctamente.
-- Las catorce conexiones DoH se abren a las IP configuradas y puerto 443, con sockets no bloqueantes. No se usa una dirección obtenida del DNS del proveedor en esa prueba.
+- Las diecisiete conexiones DoH se abren a las IP configuradas y puerto 443, con sockets no bloqueantes. No se usa una dirección obtenida del DNS del proveedor en esa prueba.
 - El servidor DoH controlado entrega un mensaje DNS que el parser nativo valida y convierte en respuesta IPv4.
 
 Estas son pruebas del WASM y del protocolo con sockets de laboratorio, no una prueba de los servidores públicos desde Chile ni del firmware Samsung. La confianza del certificado se configura únicamente en la memoria de la instancia de prueba; el WGT conserva su CA de Mozilla.

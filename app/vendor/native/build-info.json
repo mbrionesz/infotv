@@ -6,10 +6,10 @@
   "experimental": true,
   "dns": "IP-DoH-Host-SNI-TLS-verified",
   "entropy": "Emscripten /dev/urandom backed by crypto.getRandomValues; no weak fallback",
-  "sourceSha256": "30c3a904527423d315f887fee131010862b725c0643aa492676ee927bfe750d6",
+  "sourceSha256": "2aa3b18c20fcbce3368c62bd3d9a99bee1a8cb70cc55b617c47079f636bbda08",
   "assets": {
-    "transport.js": "77281bc4eb52ef808082bcfdff9bd956f0107993f14d928b386cbb369c0f045b",
-    "transport.wasm": "f09c7de279d4712d9a7a69f3b9a57a9a7922c18187a5a365e7bb6229815197a7",
+    "transport.js": "16163f4f324e8afa514b6ee2413a9af065df1cbf8e1334b224ddddf55fdc57be",
+    "transport.wasm": "45c13c675faed5540173db9ea510ce261e6b826870d32ebf3f3de5c9ea6cedca",
     "transport.data": "427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285"
   }
 }

@@ -25,7 +25,7 @@ test('a failed native HTTP transfer returns control to XHR for that origin and r
   assert.equal(await transport.request({url:'https://cdn.example/'}),null);
   assert.equal(transport.snapshot().available,true);assert.equal(transport.snapshot().nativeDisabled,false);assert.deepEqual(transport.snapshot().originFallbacks,['https://cdn.example']);assert.equal(transport.snapshot().lastFailure.code,60);
   assert.equal(await transport.request({url:'https://cdn.example/again'}),null);assert.equal(count,1);
-  assert.deepEqual(transport.snapshot().dnsServers,['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15','9.9.9.9','149.112.112.112','45.90.28.0','45.90.30.0','76.76.2.0','76.76.10.0','223.5.5.5','223.6.6.6']);
+  assert.deepEqual(transport.snapshot().dnsServers,['1.1.1.1','1.0.0.1','8.8.8.8','8.8.4.4','94.140.14.14','94.140.15.15','9.9.9.9','149.112.112.112','45.90.28.0','45.90.30.0','76.76.2.0','76.76.10.0','223.5.5.5','223.6.6.6','185.222.222.222','45.11.45.11','194.242.2.2']);
   assert.deepEqual(transport.snapshot().dnsProviders.find(e=>e.ip==='76.76.2.0'),{ip:'76.76.2.0',host:'freedns.controld.com',path:'/p0',provider:'Control D'});
  }finally{transport.dispose();}
 });

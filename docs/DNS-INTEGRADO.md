@@ -1,10 +1,10 @@
-# DNS integrado — 0.8.4 beta
+# DNS integrado — 0.8.5 beta
 
-El transporte Samsung usa **14 IP DoH de siete proveedores**. Conserva las ocho anteriores y añade dos de NextDNS, dos de Control D y dos de AliDNS. Las rutas de los nuevos proveedores se validaron con consultas DNS wire públicas por IP/Host/SNI y TLS verificado desde el entorno (mediante su proxy). La prueba del WASM verifica todas las conexiones IP y fuerza que cada uno de los seis nuevos resolutores gane la carrera.
+El transporte Samsung usa **17 IP DoH de nueve proveedores**. Conserva las catorce anteriores y añade dos de DNS.SB y una de Mullvad. Las tres nuevas respondieron DNS wire válido a consultas públicas de prueba por IP con Host/SNI y TLS verificado desde el entorno. El WASM se recompiló para incluir las diecisiete direcciones.
 
-El presupuesto de resolución sigue siendo 5 s, con primera respuesta válida, caché respetando TTL hasta 10 minutos y cooldown de 5 minutos tras fallo. Las bibliotecas mantienen cURL 8.23.0, OpenSSL 3.5.9 y zlib 1.4. El fallback del navegador utiliza el DNS del TV y se informa como tal. La disponibilidad en la red del Samsung requiere prueba física.
+Se mantiene el presupuesto de 5 s con primera respuesta válida, caché respetando TTL hasta 10 minutos y cooldown de 5 minutos tras fallo. Las bibliotecas mantienen cURL 8.23.0, OpenSSL 3.5.9 y zlib 1.4. El fallback del navegador utiliza el DNS del TV y se informa como tal. La disponibilidad en la red del Samsung requiere prueba física.
 
-Ver [comparación de hosts y nuevos DNS](HOSTS-DNS-0.8.4.md) y [transporte moderno](TRANSPORTE-MODERNO.md).
+Ver [ampliación a 17 DNS](DNS-0.8.5.md), [comparación de hosts](HOSTS-DNS-0.8.4.md) y [transporte moderno](TRANSPORTE-MODERNO.md).
 
 Las secciones siguientes documentan versiones anteriores; sus referencias a
 cURL 7.68.0/OpenSSL 1.1.1w no describen los binarios locales actualizados.
