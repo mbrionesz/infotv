@@ -15,7 +15,11 @@ function rank(track,preferred){
  return 10;
 }
 function chooseAudioTrack(tracks,preferred){
- preferred=languageOf(preferred||'es');var best=-1,score=1000;
+ var requested=preferred;
+ preferred=languageOf(preferred||'es');
+ if(requested&&typeof requested==='object'&&requested.name){
+  for(var j=0;j<(tracks||[]).length;j++)if(tracks[j]&&languageOf(tracks[j])===preferred&&describe(tracks[j],j).name===requested.name)return j;
+ }var best=-1,score=1000;
  for(var i=0;i<(tracks||[]).length;i++){var value=rank(tracks[i],preferred);if(value<score){score=value;best=i;}}
  return best;
 }

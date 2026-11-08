@@ -55,7 +55,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
-        'hardwareValidation': '0.8.12-beta-pending-on-Samsung-TV', 'providerValidation': '0.8.12-beta-pending-with-live-provider',
+        'hardwareValidation': '0.8.13-beta-pending-on-Samsung-TV', 'providerValidation': '0.8.13-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion'],
         'nativeTransport': {name: native_info[name] for name in ['curl', 'openssl', 'zlib', 'sourceSha256']}

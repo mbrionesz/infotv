@@ -975,7 +975,9 @@
         subLang: 0,
         size: 0,
         style: 0,
-        subtitle: !0,
+        subtitle: !1,
+        subtitlePolicy: 0,
+        preferenceVersion: 2,
       },
       crOn: !1,
       favs: {},
@@ -1073,6 +1075,7 @@
         X.playback.hasOwnProperty(t) &&
           void 0 !== e[t] &&
           (X.playback[t] = e[t]);
+    if(!e||e.preferenceVersion!==2){X.playback.subtitlePolicy=0;X.playback.subtitle=false;X.playback.preferenceVersion=2;Y();}
     var a = J($, null);
     (a && a.id
       ? ((Q = a).history && Q.history.length) || (Q.history = [])
@@ -4057,7 +4060,7 @@
         lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="on"?"off":"on");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
         panel.appendChild(e("p","xt-setting-footnote","Audio e idioma de subtítulos son preferencias para el próximo título y requieren pistas disponibles. Tamaño y estilo afectan a los subtítulos externos; los integrados dependen del reproductor. Estas opciones no añaden pistas ni traducen contenido."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
-        var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados"));subtitles._activate=function(){X.playback.subtitle=!X.playback.subtitle;subtitles.textContent="Subtítulos · "+(X.playback.subtitle?"Activados":"Desactivados");subtitles.setAttribute("aria-pressed",String(X.playback.subtitle));nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);
+        var subtitleModes=["Automáticos · solo sin audio español","Siempre desactivados","Activados si están disponibles"];var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+subtitleModes[X.playback.subtitlePolicy||0]);subtitles._activate=function(){X.playback.subtitlePolicy=((X.playback.subtitlePolicy||0)+1)%3;X.playback.subtitle=X.playback.subtitlePolicy===2;subtitles.textContent="Subtítulos · "+subtitleModes[X.playback.subtitlePolicy];nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);panel.appendChild(e("p","xt-setting-footnote","Por defecto: español latino y subtítulos apagados. Si no hay audio español identificado, se usan subtítulos en español disponibles. Los cambios dentro de un título se recuerdan para esa película o serie y tienen prioridad."));
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
         Ba(panel,890,"Audio preferido",["Español latino","Portugués","Inglés"],"audio",X.playback.audio);
         Ba(panel,1000,"Idioma de subtítulos",["Español","Portugués","Inglés"],"subLang",X.playback.subLang);
@@ -5358,6 +5361,18 @@
         ? /^(pt|por)|portu/.test(a)
         : "en" === i && /^(en|eng|ing)|ingl/.test(a);
   }
+  function titlePreferences(item) {
+    var id=item&&String(item.id||'');return id&&Q.mediaPreferences&&Object.prototype.hasOwnProperty.call(Q.mediaPreferences,id)?Q.mediaPreferences[id]:{};
+  }
+  function saveTitlePreference(field,value) {
+    var item=X.playerItem,id=item&&String(item.id||'');if(X.playerMode!=='vod'||!id||['__proto__','constructor','prototype'].indexOf(id)>=0)return;
+    var prefs=Q.mediaPreferences;if(!prefs||typeof prefs!=='object'||Array.isArray(prefs))prefs=Q.mediaPreferences={};
+    var record=titlePreferences(item);record[field]=value;record.updatedAt=Date.now();prefs[id]=record;
+    var keys=Object.keys(prefs).sort(function(a,b){return (prefs[b].updatedAt||0)-(prefs[a].updatedAt||0);});for(var i=200;i<keys.length;i++)delete prefs[keys[i]];
+    K($,Q);
+  }
+  function preferredVodAudio(){return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
+  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn()});}
   function sn(e, t, a) {
     var i = X.playerItem;
     if (i && i.id && !(e < 3)) {
@@ -5436,6 +5451,8 @@
   }
   var pn = [],
     subtitleTask = null,
+    subtitleLoadedUrl = "",
+    subtitleFailureUrl = "",
     un = {},
     vn = {},
     fn = null;
@@ -5447,11 +5464,11 @@
       : 0;
   }
   function mn(e) {
-    var t = ++Yi;
+    var t = ++Yi;subtitleLoadedUrl="";subtitleFailureUrl="";
     if(subtitleTask){subtitleTask.cancel();subtitleTask=null;}pn=[];
     if(e&&e.url&&window.XuperStandalone&&XuperStandalone.loadSubtitles){
       subtitleTask=XuperStandalone.loadSubtitles(e);
-      subtitleTask.promise.then(function(cues){if(t===Yi){subtitleTask=null;pn=cues;yn(xe&&xe.currentTime||0);}},function(error){if(t!==Yi||error.name==='AbortError')return;subtitleTask=null;pn=[];Ji=false;Qi=null;ir();Yt(error.message||'No se pudieron cargar los subtítulos');});return;
+      subtitleTask.promise.then(function(cues){if(t===Yi){subtitleTask=null;subtitleLoadedUrl=e.url;pn=cues;yn(xe&&xe.currentTime||0);}},function(error){if(t!==Yi||error.name==='AbortError')return;subtitleTask=null;subtitleFailureUrl=e.url;pn=[];Ji=false;Qi=null;ir();Yt(error.message||'No se pudieron cargar los subtítulos');});return;
     }
     if (!e || !e.url) return ((pn = []), void (Bi && (Bi.innerHTML = "")));
     try {
@@ -5565,6 +5582,8 @@
       (Ki = !1),
       Yi++,
       (X.trackIndex = 0),
+      (subtitleLoadedUrl = ""),
+      (subtitleFailureUrl = ""),
       (pn = []),
       Bi && (Bi.innerHTML = ""));
   }
@@ -5609,12 +5628,12 @@
   function In(e) {
     for (
       var t = (e || "").split(/[,\/]/),
-        a = ["es", "pt", "en"][Number(X.playback.audio) || 0] || "es",
+        a = preferredVodAudio(),
         i = 0;
       i < t.length;
       i++
     )
-      if (on(t[i].trim(), a)) return i;
+      if (on(t[i].trim(), typeof a==="object"?a.language:a)) return i;
     return 0;
   }
   function En(e) {
@@ -5631,31 +5650,14 @@
     );
   }
   function An(e) {
-    var t = En(e);
-    if (Ki) {
-      if (Ji) {
-        if (!t.length) return ((Ji = !1), (Qi = null), void mn(null));
-        var a = !1;
-        if (Qi)
-          for (var i = 0; i < t.length; i++)
-            if (t[i].url === Qi.url) {
-              ((Qi = t[i]), (a = !0));
-              break;
-            }
-        if(!a)mn((Qi=t[0]));else if(!pn.length&&!subtitleTask)mn(Qi);
-      }
-    } else {
-      if (!X.playback.subtitle) return ((Ji = !1), (Qi = null), void mn(null));
-      if (!t.length) return ((Ji = !1), (Qi = null), void mn(null));
-      ((Ji = !0), (Qi = t[0]));
-      for (var n = 0; n < t.length; n++)
-        if (on(t[n].lang, rn())) {
-          Qi = t[n];
-          break;
-        }
-      if(window.XuperStandalone&&XuperStandalone.chooseAudioTrack){var preferred=XuperStandalone.chooseAudioTrack(t,rn());if(preferred>=0)Qi=t[preferred];}
-      mn(Qi);
-    }
+    if(X.screen!=='player'||X.playerMode!=='vod'||!window.XuperStandalone||!XuperStandalone.subtitleDecision)return;
+    var subtitles=En(e),tracks=window.XuperPlayer&&XuperPlayer.audioTracks?XuperPlayer.audioTracks():[];
+    var choice=XuperStandalone.subtitleDecision({subtitles:subtitles,audioTracks:tracks,manual:titlePreferences(X.playerItem).subtitle,mode:Number(X.playback.subtitlePolicy)||0,preferred:rn()});
+    if(choice&&choice.url===subtitleFailureUrl)choice=null;
+    var changed=!!choice!==Ji||!!choice&&(!Qi||choice.url!==Qi.url);
+    Ji=!!choice;Ki=!!titlePreferences(X.playerItem).subtitle;Qi=choice;
+    if(changed||choice&&subtitleLoadedUrl!==choice.url&&!subtitleTask)mn(choice);
+    if(changed)ir();
   }
   function Dn() {
     (Wi && clearTimeout(Wi),
@@ -6271,7 +6273,7 @@
             ((a.textContent = nr(t.lang || "Sub")),
               Qi && Qi.url === t.url && a.classList.add("is-selected"),
               (a._activate = function () {
-                ((Qi = t), (Ji = !0), (Ki = !0), mn(t), ir());var selected=Vi.querySelector(".is-selected")||Vi.firstChild;if(selected)rt(selected);Dn();
+                ((Qi = t), (Ji = !0), (Ki = !0), saveSubtitleChoice(), mn(t), ir());var selected=Vi.querySelector(".is-selected")||Vi.firstChild;if(selected)rt(selected);Dn();
               }),
               Vi.appendChild(a));
           })(t[r]);
@@ -6339,6 +6341,7 @@
     }
   }
   function or(e) {
+    var actual=window.XuperPlayer&&XuperPlayer.audioTracks?XuperPlayer.audioTracks():[],chosen=actual.filter(function(track){return track.index===e;})[0];
     if ("player" !== X.screen || !xe) return ((Xi = e), void ($i = !0));
     if ("relay" === X.streamMode || "smooth" === X.streamMode)
       if (((Xi = e), ($i = !0), br)) {
@@ -6347,7 +6350,7 @@
       } else sr();
     else
       rr(e)
-        ? ((Xi = e), ($i = !0), (Gi = Date.now() + 5e3), jr("Idioma cambiado"))
+        ? ((Xi = e), ($i = !0), chosen&&saveTitlePreference("audio",{language:chosen.language,name:chosen.name}), (Gi = Date.now() + 5e3), jr("Idioma cambiado"))
         : jr(
             "Esta fuente no ofrece esa pista de audio al reproductor.",
           );
@@ -6471,9 +6474,9 @@
         (Oi._activate = function () {
           if (((Ki = !0), (Ji = !Ji))) {
             var e = En(un[Ln(bn())]);
-            (!Qi && e.length && (Qi = e[0]), Qi && mn(Qi));
+            if(!Qi&&e.length){var savedSub=titlePreferences(X.playerItem).subtitle,preferredSub=savedSub&&savedSub.language||rn(),subIndex=window.XuperStandalone&&XuperStandalone.chooseAudioTrack?XuperStandalone.chooseAudioTrack(e,preferredSub):-1;Qi=e[subIndex>=0?subIndex:0];}if(Qi)mn(Qi);
           } else mn(null);
-          (ir(), Dn());
+          (saveSubtitleChoice(), ir(), Dn());
         }),
       Hi)
     )
@@ -7145,7 +7148,7 @@
     }
   }
   function zr() {
-    if(subtitleTask){subtitleTask.cancel();subtitleTask=null;}
+    mn(null);
     (Lr(), "vod" === X.playerMode && xe) &&
       sn(
         br ? Cr + (xe.currentTime || 0) : xe.currentTime || 0,
@@ -7481,11 +7484,11 @@
         var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
         window.XuperPlayer.open(xe, e, { mime: s, live: "live" === X.playerMode,
           startTime:resumeRecord?Math.max(0,Number(resumeRecord.position)||0):0,
-          preferredAudio: ["es", "pt", "en"][Number(X.playback.audio)||0] || "es",
+          preferredAudio: preferredVodAudio(),
           audioIndex: $i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
           onNotice: function (message) { Yt(message); },
-          onInfo: function (data) { var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
+          onInfo: function (data) { if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
         ln=null;
@@ -7555,7 +7558,7 @@
         i.container = n;
       }
       i.trackIndex = X.trackIndex || 0;
-      i.preferredAudio=["es","pt","en"][Number(X.playback.audio)||0]||"es";
+      i.preferredAudio=preferredVodAudio();
       var r = X.playerEpisode,
         o = (r && r.id) || (e && e.id) || "",
         s = un[o] || un[Ln(e)],

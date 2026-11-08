@@ -23,11 +23,12 @@ export function createPlayer(getStream) {
   let progressive=null,lifecycle=null,selectProgressiveAudio=null;const journal=createPlaybackJournal();
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
+  let manualAudio=null;
   let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null,frameMeter=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
-    selectProgressiveAudio=null;
+    selectProgressiveAudio=null;manualAudio=null;
     if(lifecycle)lifecycle.cancel();
     if(frameMeter){frameMeter.destroy();frameMeter=null;}
     if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
@@ -246,7 +247,7 @@ export function createPlayer(getStream) {
       hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run&&generation===attempt) hls.loadSource(playbackSource); });
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
         if(serial!==run||generation!==attempt||!hls||!options.preferredAudio)return;
-        const index=audioLanguage.chooseAudioTrack(data.audioTracks||[],options.preferredAudio);diagnostics.audioPreferenceMatched=index>=0;
+        const index=audioLanguage.chooseAudioTrack(data.audioTracks||[],manualAudio||options.preferredAudio);diagnostics.audioPreferenceMatched=index>=0;
         if(index>=0)hls.audioTrack=index;
       });
       hls.on(Hls.Events.AUDIO_TRACK_SWITCHED,(_event,data)=>{if(serial===run&&hls){diagnostics.selectedAudio=data.id;diagnostics.selectedAudioLanguage=audioLanguage.languageOf(hls.audioTracks[data.id]);}});
@@ -419,7 +420,7 @@ export function createPlayer(getStream) {
 
   function selectAudio(index) {
     if(selectProgressiveAudio)return selectProgressiveAudio(index);
-    if (hls) { if (index < 0 || index >= hls.audioTracks.length) return false; hls.audioTrack = index; return true; }
+    if (hls) { if (index < 0 || index >= hls.audioTracks.length) return false; manualAudio=audioLanguage.describe(hls.audioTracks[index],index);hls.audioTrack = index; return true; }
     if (av && ready) {
       try { const tracks = av.getTotalTrackInfo().filter(track => track.type === 'AUDIO'); if (!tracks[index]) return false; av.setSelectTrack('AUDIO', tracks[index].index);diagnostics.selectedAudio=index;diagnostics.selectedAudioLanguage=diagnostics.audioTracks[index]&&diagnostics.audioTracks[index].language||''; return true; } catch (_) { return false; }
     }
