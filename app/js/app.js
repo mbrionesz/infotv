@@ -788,8 +788,8 @@
               e.episodes.length &&
               !X.detailEpisode &&
               (X.detailEpisode = e.episodes[0]),
-              dn(e),
-              (e._detailsLoaded = !0));
+              (e._detailsLoaded = !0),
+              dn(e));
           } else
             ((e._detailsLoaded = !0),
               e.episodes || (e.episodes = []),
@@ -4061,8 +4061,8 @@
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
         Ba(panel,890,"Audio preferido",["Español latino","Portugués","Inglés"],"audio",X.playback.audio);
         Ba(panel,1000,"Idioma de subtítulos",["Español","Portugués","Inglés"],"subLang",X.playback.subLang);
-        Ba(panel,1110,"Tamaño de subtítulos",["Normal","Grande","Pequeño"],"size",X.playback.size);
-        Ba(panel,1220,"Estilo de subtítulos",["Blanco","Amarillo","Fondo oscuro"],"style",X.playback.style);
+        Ba(panel,1110,"Tamaño de subtítulos",["Normal","Grande","Pequeño","Muy grande"],"size",X.playback.size);
+        Ba(panel,1220,"Estilo de subtítulos",["Blanco","Amarillo","Fondo oscuro","Cian","Verde lima"],"style",X.playback.style);
         return panel;
       }
       var t = Fa("Configuración global de reproducción");
@@ -5336,9 +5336,9 @@
     an = 0;
   function nn() {
     ((Zi =
-      ["normal", "big", "small"][Number(X.playback.size) || 0] || "normal"),
+      ["normal", "big", "small", "huge"][Number(X.playback.size) || 0] || "normal"),
       (en =
-        ["white", "yellow", "black"][Number(X.playback.style) || 0] || "white"),
+        ["white", "yellow", "black", "cyan", "lime"][Number(X.playback.style) || 0] || "white"),
       Ki || (Ji = !!X.playback.subtitle),
       Zn(
         ["cover", "contain", "16-9", "4-3"][Number(X.playback.screen) || 0] ||
@@ -5375,8 +5375,10 @@
                 series: !!x(i),
                 episodeId: r && r.id ? String(r.id) : "",
                 episodeNumber: (r && (r.number || r.seriesNumber)) || "",
+                seasonId: i.seasonId||i.id,
                 position: Math.floor(e),
-                duration: Math.floor(t || i.duration || 0),
+                seek:window.XuperPlayer&&XuperPlayer.bookmark?XuperPlayer.bookmark(e):null,
+                duration: window.XuperPlayer&&XuperPlayer.diagnostics.engine==="mpegts.js"&&!XuperPlayer.diagnostics.sourceDuration&&!(xe&&xe.ended)?0:Math.floor(t || i.duration || 0),
                 updatedAt: n,
               },
             ],
@@ -5392,14 +5394,16 @@
   }
   var ln = null;
   function dn(e) {
-    var t = ln;
-    if (t && e && String(t.id) === String(e.id) && t.episodeId && e.episodes)
-      for (var a = 0; a < e.episodes.length; a++)
-        if (String(e.episodes[a].id) === t.episodeId)
-          return (
-            (X.detailEpisode = e.episodes[a]),
-            void (X.playerEpisode = e.episodes[a])
-          );
+    var record=ln;if(!record||!e||String(record.id)!==String(e.id)||!record.episodeId)return;
+    function choose(){for(var i=0;i<(e.episodes||[]).length;i++)if(String(e.episodes[i].id)===String(record.episodeId)){X.detailEpisode=e.episodes[i];X.playerEpisode=e.episodes[i];return true;}return false;}
+    if(choose()||!e._detailsLoaded||!record.seasonId||String(record.seasonId)===String(e.seasonId||e.id)||e._resumeSeasonLoading)return;
+    var seasonIndex=-1;for(var i=0;i<(e.seasons||[]).length;i++)if(String(e.seasons[i].id)===String(record.seasonId)){seasonIndex=i;break;}
+    if(seasonIndex<0)return;e._resumeSeasonLoading=true;
+    P("detail",{contentId:record.seasonId},function(error,result){
+      e._resumeSeasonLoading=false;if(X.screen!=="detail"||X.detail!==e)return;
+      if(error||!result||!result.item){Yt("No se pudo recuperar la temporada guardada.");return;}
+      var id=e.id,title=e.title,poster=e.poster,seasons=e.seasons;H(e,result.item);e.id=id;e.title=title;e.poster=poster;e.seasons=seasons;e.seasonId=record.seasonId;e.episodes=result.episodes||[];X.detailSeason=seasonIndex;choose();Ca(e);Jn(e);Mn(e);
+    });
   }
   function cn(e) {
     if (e) {
@@ -5415,7 +5419,7 @@
             s = !0;
             break;
           }
-        if (s || (a && o(n.title || "") === a)) return ((ln = e), void ba(n));
+        if (s || (a && o(n.title || "") === a)) return ((ln = s?Object.assign({},e,{id:n.id,seasonId:e.seasonId||e.id}):e), void ba(n));
       }
       var c = T(
         {
@@ -5498,9 +5502,9 @@
   }
   function gn() {
     Bi &&
-      (Bi.classList.remove("size-small", "size-normal", "size-big"),
+      (Bi.classList.remove("size-small", "size-normal", "size-big", "size-huge"),
       Bi.classList.add("size-" + Zi),
-      Bi.classList.remove("color-white", "color-yellow", "color-black"),
+      Bi.classList.remove("color-white", "color-yellow", "color-black", "color-cyan", "color-lime"),
       Bi.classList.add("color-" + en));
   }
   function yn(e) {
@@ -6212,7 +6216,7 @@
       (fn = null));
   }
   function ar() {
-    var notice=document.getElementById("dps-audio-notice"),tsAudio=window.XuperPlayer&&XuperPlayer.diagnostics.engine==="mpegts.js";
+    var notice=document.getElementById("dps-audio-notice"),tsAudio=window.XuperPlayer&&XuperPlayer.diagnostics.engine==="mpegts.js"&&!(XuperPlayer.bookmark&&XuperPlayer.bookmark(xe&&xe.currentTime||0));
     if(tsAudio&&!notice){notice=e("p","dps-audio-notice","En este archivo MPEG-TS, cambiar de pista reinicia la reproducción.");notice.id="dps-audio-notice";var audioRow=document.getElementById("dps-row-audio");if(audioRow)audioRow.parentNode.insertBefore(notice,audioRow);}
     if(!tsAudio&&notice)notice.remove();
     if (Pi) {
@@ -6476,14 +6480,14 @@
       for (var r = Hi.querySelectorAll(".dps-btn"), o = 0; o < r.length; o++)
         (function (e) {
           e._activate = function () {
-            ((Zi = e.getAttribute("data-size") || "normal"), gn(), ir());
+            ((Zi = e.getAttribute("data-size") || "normal"), (X.playback.size=["normal","big","small","huge"].indexOf(Zi)), Y(), gn(), ir());
           };
         })(r[o]);
     if (Ui)
       for (var s = Ui.querySelectorAll(".dps-btn"), l = 0; l < s.length; l++)
         (function (e) {
           e._activate = function () {
-            ((en = e.getAttribute("data-style") || "white"), gn(), ir());
+            ((en = e.getAttribute("data-style") || "white"), (X.playback.style=["white","yellow","black","cyan","lime"].indexOf(en)), Y(), gn(), ir());
           };
         })(s[l]);
     (Fi &&
@@ -7394,7 +7398,7 @@
           (Lr(), Gn(), v());
         }),
         (xe.onended = function () {
-          "vod" === X.playerMode && Qn();
+          if("vod"===X.playerMode){sn(xe.currentTime,xe.duration,true);Qn();}
         }),
         (xe.ontimeupdate = function () {
           if (
@@ -7474,13 +7478,17 @@
       if (window.XuperPlayer) {
         xe.classList.add("is-active");
         Te && (Te.style.display = "none");
+        var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
         window.XuperPlayer.open(xe, e, { mime: s, live: "live" === X.playerMode,
+          startTime:resumeRecord?Math.max(0,Number(resumeRecord.position)||0):0,
           preferredAudio: ["es", "pt", "en"][Number(X.playback.audio)||0] || "es",
           audioIndex: $i ? Xi : undefined,
+          resumeHint:resumeRecord?resumeRecord.seek:null,
           onNotice: function (message) { Yt(message); },
           onInfo: function (data) { var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
+        ln=null;
         if(X.playerMode==="vod"){var subtitleInfo=un[Ln(X.playerItem)];if(subtitleInfo)An(subtitleInfo);}
         return;
       }
@@ -7671,6 +7679,7 @@
     }
   }
   function Kr(e, a) {
+    if(e&&e._resumeSeasonLoading){Yt("Recuperando la temporada guardada…");return;}
     Ce || lr();
     var i =
         !a ||

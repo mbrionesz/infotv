@@ -50,13 +50,18 @@ await build({entryPoints:[path.join(root,'browser/native-worker.js')],outfile:pa
 await build({entryPoints:[path.join(root,'node_modules/hls.js/dist/hls.worker.js')],outfile:path.join(root,'app/vendor/hls-worker.js'),bundle:false,format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
 const tsLanguagePlugin={name:'ts-language-selection',setup(builder){
   builder.onResolve({filter:/^mpegts\.js$/},()=>({path:path.join(root,'node_modules/mpegts.js/src/mpegts.js')}));
-  builder.onLoad({filter:/mpegts\.js\/src\/.*\.ts$/},args=>{
+  builder.onLoad({filter:/mpegts\.js\/src\/.*\.(?:ts|js)$/},args=>{
     let source=readFileSync(args.path,'utf8').replace(/import \* as EventEmitter from 'events';/g,"import EventEmitter from 'events';").replace(/import \* as work from 'webworkify-webpack';/g,"import work from 'webworkify-webpack';");
     if(args.path.endsWith('/demux/ts-demuxer.ts')){
+      const durationAnchor='this.config_ = config;';if(source.split(durationAnchor).length!==2)throw new Error('Unexpected TS constructor');source=source.replace(durationAnchor,durationAnchor+'\nthis.duration_ = Math.max(0, Number(config.xuperTsDuration)||0);this.media_info_.duration=this.duration_;');
       const anchor='this.pmt_ = pmt;';if(source.split(anchor).length!==2)throw new Error('Unexpected MPEG-TS PMT parser; review language selection adapter');
       source='import {selectTsAudioPmt} from '+JSON.stringify(path.join(root,'browser/ts-audio-pmt.js'))+';\n'+source.replace(anchor,'selectTsAudioPmt(pmt, data, this.config_);\n'+anchor);
+      source='import {observeTsSeek,attachTsSeek} from '+JSON.stringify(path.join(root,'browser/ts-seek.js'))+';\n'+source;
+      for(const call of ['this.onDataAvailable(null, this.video_track_);','this.onDataAvailable(this.audio_track_, null);','this.onDataAvailable(this.audio_track_, this.video_track_);']){if(source.split(call).length!==2)throw new Error('Unexpected TS sample dispatch');source=source.replace(call,'observeTsSeek(this, '+(call.includes('null,')?'null, this.video_track_':call.includes(', null')?'this.audio_track_, null':'this.audio_track_, this.video_track_')+');\n'+call);}
+      source=source.replace(/this\.onMediaInfo\(mi\);/g,'attachTsSeek(this, mi);this.onMediaInfo(mi);');
     }
-    return {contents:source,loader:'ts',resolveDir:path.dirname(args.path)};
+    if(args.path.endsWith('/core/transmuxing-controller.js')){const anchor='let segmentInfo = Object.assign({}, mediaInfo);';if(source.split(anchor).length!==2)throw new Error('Unexpected TS media-info adapter');source=source.replace(anchor,'if(this._config.xuperTsSeek)this._mediaInfo.hasKeyframesIndex=mediaInfo.hasKeyframesIndex;\n'+anchor);}
+    return {contents:source,loader:args.path.endsWith('.ts')?'ts':'js',resolveDir:path.dirname(args.path)};
   });
 }};
 await build({entryPoints:[path.join(root,'browser/vod-entry.js')],outfile:path.join(root,'app/vendor/vod.js'),bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,legalComments:'eof',define:{__VERSION__:JSON.stringify(JSON.parse(readFileSync(path.join(root,'node_modules/mpegts.js/package.json'),'utf8')).version)},plugins:[tsLanguagePlugin]});

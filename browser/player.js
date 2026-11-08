@@ -63,7 +63,7 @@ export function createPlayer(getStream) {
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
     diagnostics.vodBrowserFallbacks=0;diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistGrace=null;diagnostics.buffered404Retries=0;diagnostics.playlistNormalized=0;diagnostics.playlistContinuity=null;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
-    diagnostics.audioTracks=[];diagnostics.selectedAudio=-1;diagnostics.selectedAudioLanguage='';diagnostics.preferredAudio=options.preferredAudio||'es';diagnostics.audioPreferenceMatched=null;
+    diagnostics.audioTracks=[];diagnostics.selectedAudio=-1;diagnostics.selectedAudioLanguage='';diagnostics.preferredAudio=options.preferredAudio||'es';diagnostics.audioPreferenceMatched=null;diagnostics.tsIndex=null;diagnostics.sourceDuration=Number(stream.duration)>0?Number(stream.duration):0;diagnostics.resume={requested:Number(options.startTime)||0,applied:false};
     const fail = message => {
       if (serial !== run) return;
       const failedStage=diagnostics.stage;record('playback-failed',diagnostics.httpStatus,true);diagnostics.error = message; stop();diagnostics.stage=failedStage;if(options.live)bindLifecycle(true);options.onError(message);
@@ -82,7 +82,7 @@ export function createPlayer(getStream) {
       });
     }
     resumePlayback=()=>{gestureRequired=false;autoAttempts=0;diagnostics.autoplayBlocked=false;resuming=started;tryPlay();};
-    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;alignmentReadyAt=performance.now()+500;if(hls)latencyPolicy.update(hls,video,options.live,false);resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';record('playback-started');if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); diagnostics.channelOpenMs=diagnostics.sourceResolveMs===null?null:diagnostics.sourceResolveMs+diagnostics.startupMs;if (options.onStarted) options.onStarted(); };
+    const onPlaying = () => { if (serial !== run||engine==='hls.js'&&(!hls||video.readyState<2)) return; started = ready = true;if(diagnostics.resume.requested>0)diagnostics.resume.applied=Math.abs(video.currentTime-diagnostics.resume.requested)<2;alignmentReadyAt=performance.now()+500;if(hls)latencyPolicy.update(hls,video,options.live,false);resuming=false;gestureRequired=false; paused = false;diagnostics.stage='playing';diagnostics.error='';record('playback-started');if(sequenceRestartAt!==null){diagnostics.sequenceRecoveryMs=Math.round(performance.now()-sequenceRestartAt);sequenceRestartAt=null;}diagnostics.sequenceRestartPending=false;diagnostics.autoplayBlocked=false;if(!diagnostics.startupMs)diagnostics.startupMs=Math.round(performance.now()-openedAt);clearTimeout(totalDeadline);clearTimeout(deadline); diagnostics.channelOpenMs=diagnostics.sourceResolveMs===null?null:diagnostics.sourceResolveMs+diagnostics.startupMs;if (options.onStarted) options.onStarted(); };
     function record(detail,status=0,fatal=false){
       diagnostics.events.push({atMs:Math.round(performance.now()-openedAt),detail:String(detail).slice(0,70),status,fatal});
       if(diagnostics.events.length>12)diagnostics.events.shift();
@@ -230,7 +230,7 @@ export function createPlayer(getStream) {
           return this.browserLoad(context,config,callbacks);
         }
       }
-      hls = new Hls({loader:SourceLoader, enableWorker: diagnostics.worker, workerPath:new URL('vendor/hls-worker.js',document.baseURI).href, lowLatencyMode: false, backBufferLength: 10,
+      hls = new Hls({startPosition:!options.live&&options.startTime>0?options.startTime:-1,loader:SourceLoader, enableWorker: diagnostics.worker, workerPath:new URL('vendor/hls-worker.js',document.baseURI).href, lowLatencyMode: false, backBufferLength: 10,
         maxBufferLength: 30, maxMaxBufferLength: 45, maxBufferSize: 24 * 1000 * 1000,
         liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 10, maxLiveSyncPlaybackRate:1, capLevelToPlayerSize: true,
         capLevelOnFPSDrop:true,fpsDroppedMonitoringPeriod:5000,fpsDroppedMonitoringThreshold:0.15,
@@ -294,6 +294,7 @@ export function createPlayer(getStream) {
     }
     function native() {
       engine = diagnostics.engine = 'html5';
+      if(options.startTime>0)video.addEventListener('loadedmetadata',()=>{if(serial===run)video.currentTime=options.startTime;},{once:true});
       video.src = source; video.load();
       const p = video.play(); if (p && p.catch) p.catch(() => options.onError('Pulsa OK para iniciar el vídeo.'));
       video.onerror = () => fail('Formato de vídeo o audio no compatible con este televisor.');
@@ -351,20 +352,32 @@ export function createPlayer(getStream) {
         av.prepareAsync(() => {
           if (serial !== run || !av) return;
           clearTimeout(nativeTimer);ready = true;
+          if(options.startTime>0)try{av.seekTo(Math.floor(options.startTime*1000));}catch(_){}
           try{const tracks=av.getTotalTrackInfo().filter(track=>track.type==='AUDIO').map(track=>{let extra={};try{extra=JSON.parse(track.extra_info||'{}');}catch(_){}return {index:track.index,language:extra.language||extra.lang||'',name:extra.language||extra.lang||''};});const index=audioLanguage.chooseAudioTrack(tracks,options.preferredAudio||'es');if(index>=0)av.setSelectTrack('AUDIO',tracks[index].index);diagnostics.audioTracks=tracks.map(audioLanguage.describe);diagnostics.selectedAudio=index;diagnostics.selectedAudioLanguage=index>=0?audioLanguage.languageOf(tracks[index]):'';}catch(_){}
           emit('loadedmetadata'); emit('loadeddata'); av.play(); paused = false; emit('play'); emit('playing');
         }, fallback);
         nativeTimer=setTimeout(function(){diagnostics.detail='avplay-prepare-timeout';fallback();},8000);arm();
       } catch (_) { fallback(); }
     }
+    function clockInBuffer(time){for(let i=0;i<video.buffered.length;i++)if(time>=video.buffered.start(i)&&time<video.buffered.end(i))return true;return false;}
     function useProgressive(index=0,audioIndex=options.audioIndex,resume=null){
       if(!window.MediaSource)return fail('Este TV no ofrece MediaSource para vídeo autorizado MP4/TS.');
       if(serial!==run)return;clearTimeout(deadline);if(progressive){progressive.destroy();progressive=null;}
+      if(!resume&&options.startTime>0)resume={time:options.startTime,paused:false};if(resume)resume=Object.assign({},resume,{seekDone:false});
       const generation=++attempt;playPending=false;autoAttempts=0;gestureRequired=false;started=ready=false;const candidate=candidates[index];const ts=/mp2t|\.ts(?:[?#]|$)/i.test((stream.mime||options.mime||'')+' '+source);
       playbackSource=candidate.url;diagnostics.transport=new URL(candidate.url).protocol==='https:'?'https':'http';
       diagnostics.seekMode=ts?'buffered':'indexed';engine=diagnostics.engine=ts?'mpegts.js':'mp4box';diagnostics.stage='loading-file';diagnostics.unsupportedRoute='';diagnostics.container=ts?'MPEG-TS':'MP4';diagnostics.cdnAttempt=index+1;
-      canPlayListener=()=>{if(serial!==run||generation!==attempt)return;if(resume&&resume.time>0&&!resume.seekDone){resume.seekDone=true;video.currentTime=resume.time;return;}if(resume&&resume.paused){ready=started=true;diagnostics.stage='paused';clearTimeout(deadline);clearTimeout(totalDeadline);return;}tryPlay();};video.addEventListener('canplay',canPlayListener);
-      selectProgressiveAudio=selected=>{if(!Number.isInteger(selected)||selected<0||selected>=diagnostics.audioTracks.length)return false;if(selected===diagnostics.selectedAudio)return true;const position=video.currentTime,wasPaused=video.paused;if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;diagnostics.selectedAudio=selected;diagnostics.selectedAudioLanguage=diagnostics.audioTracks[selected].language;if(ts&&position>1&&options.onNotice)options.onNotice('Cambio de audio MPEG-TS: esta fuente sin índice vuelve al inicio.');useProgressive(index,selected,{time:ts?0:position,paused:wasPaused});return true;};
+      canPlayListener=()=>{
+        if(serial!==run||generation!==attempt||!progressive||video.readyState<2)return;
+        if(resume&&resume.time>0&&!resume.seekDone){
+          if(ts&&progressive.canSeek&&!progressive.canSeek(resume.time)&&!clockInBuffer(resume.time)){
+            const indexState=diagnostics.tsIndex;if((resume.hint||options.resumeHint)&&(!indexState||indexState.savedAnchorVerified&&!indexState.seekable))return;
+            if(options.onNotice)options.onNotice('No hay un anclaje válido para este archivo; la reproducción comienza al inicio.');resume.time=0;resume.seekDone=true;
+          }else{resume.seekDone=true;video.currentTime=resume.time;diagnostics.resume.accepted=video.currentTime;return;}
+        }
+        if(resume&&resume.paused){ready=started=true;resume.paused=false;diagnostics.stage='paused';clearTimeout(deadline);clearTimeout(totalDeadline);return;}tryPlay();
+      };video.addEventListener('canplay',canPlayListener);
+      selectProgressiveAudio=selected=>{if(!Number.isInteger(selected)||selected<0||selected>=diagnostics.audioTracks.length)return false;if(selected===diagnostics.selectedAudio)return true;const position=video.currentTime,wasPaused=video.paused,hint=progressive&&progressive.bookmark?progressive.bookmark(position):null;if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;diagnostics.selectedAudio=selected;diagnostics.selectedAudioLanguage=diagnostics.audioTracks[selected].language;if(ts&&!hint&&position>1&&options.onNotice)options.onNotice('Cambio de audio MPEG-TS: no hay índice válido y vuelve al inicio.');useProgressive(index,selected,{time:ts&&!hint?0:position,paused:wasPaused,hint});return true;};
       function progressiveError(message){
         if(serial!==run||generation!==attempt)return;
         diagnostics.detail='vod-route-failed';record('vod-route-failed',diagnostics.httpStatus,true);
@@ -374,7 +387,7 @@ export function createPlayer(getStream) {
       // Ignoring them leaves MP4/TS waiting until the global startup timeout.
       video.onerror=()=>{if(progressive&&video.error)progressiveError('El TV no pudo decodificar '+diagnostics.container+' (código '+video.error.code+').');};
       deadline=setTimeout(()=>progressiveError('El servidor no inició el vídeo '+diagnostics.container+' a tiempo.'),candidates.length>1?8000:20000);
-      const settings={onNotice:message=>{if(serial===run&&generation===attempt){record('ts-unindexed-seek');if(options.onNotice)options.onNotice(message);}},duration:stream.duration||0,preferredAudio:options.preferredAudio,audioIndex,audioLabels:stream.audio||'',onAudioTracks:(tracks,selected)=>{if(serial!==run||generation!==attempt)return;diagnostics.audioTracks=tracks.map(audioLanguage.describe);diagnostics.selectedAudio=selected;diagnostics.selectedAudioLanguage=audioLanguage.languageOf(tracks[selected]);diagnostics.audioPreferenceMatched=diagnostics.selectedAudioLanguage===audioLanguage.languageOf(options.preferredAudio||'es');},onRead:info=>{if(serial===run&&generation===attempt){if(info.fallback){diagnostics.vodBrowserFallbacks++;record('vod-browser-fallback');}if(info.retry)diagnostics.vodRetries++;diagnostics.httpStatus=info.status;diagnostics.vodBytes=(diagnostics.vodBytes||0)+info.bytes;if(Number.isFinite(info.total))diagnostics.vodTotalBytes=info.total;}},onReady:info=>{if(serial===run&&generation===attempt){diagnostics.stage='buffering';const v=info.videoTracks&&info.videoTracks[0],a=info.audioTracks&&info.audioTracks[0];diagnostics.codecs={video:{codec:v&&v.codec||info.videoCodec||'',container:'video/mp4'},audio:{codec:a&&a.codec||info.audioCodec||'',container:'audio/mp4'}};}} ,onError:progressiveError};
+      const settings={onNotice:message=>{if(serial===run&&generation===attempt){record('ts-unindexed-seek');if(options.onNotice)options.onNotice(message);}},duration:stream.duration||0,preferredAudio:options.preferredAudio,audioIndex,resumeHint:resume&&resume.hint||options.resumeHint,onSeekIndex:info=>{if(serial===run&&generation===attempt){diagnostics.tsIndex=info;diagnostics.seekMode=info.seekable?'indexed':'buffered';if(info.seekable&&canPlayListener&&video.readyState>=2)setTimeout(()=>{if(serial===run&&generation===attempt&&canPlayListener)canPlayListener();},0);}},audioLabels:stream.audio||'',onAudioTracks:(tracks,selected)=>{if(serial!==run||generation!==attempt)return;diagnostics.audioTracks=tracks.map(audioLanguage.describe);diagnostics.selectedAudio=selected;diagnostics.selectedAudioLanguage=audioLanguage.languageOf(tracks[selected]);diagnostics.audioPreferenceMatched=diagnostics.selectedAudioLanguage===audioLanguage.languageOf(options.preferredAudio||'es');},onRead:info=>{if(serial===run&&generation===attempt){if(info.fallback){diagnostics.vodBrowserFallbacks++;record('vod-browser-fallback');}if(info.retry)diagnostics.vodRetries++;diagnostics.httpStatus=info.status;diagnostics.vodBytes=(diagnostics.vodBytes||0)+info.bytes;if(Number.isFinite(info.total))diagnostics.vodTotalBytes=info.total;}},onReady:info=>{if(serial===run&&generation===attempt){diagnostics.stage='buffering';const v=info.videoTracks&&info.videoTracks[0],a=info.audioTracks&&info.audioTracks[0];diagnostics.codecs={video:{codec:v&&v.codec||info.videoCodec||'',container:'video/mp4'},audio:{codec:a&&a.codec||info.audioCodec||'',container:'audio/mp4'}};}} ,onError:progressiveError};
       ensureVodRuntime().then(runtime=>{if(serial!==run||generation!==attempt)return;try{const session=(ts?runtime.openTs:runtime.openMp4)(video,candidate.url,candidate.headers,settings);if(serial===run&&generation===attempt)progressive=session;else session.destroy();}catch(error){settings.onError(error.message);}},error=>settings.onError(error.message));
     }
     function begin(){
@@ -414,5 +427,5 @@ export function createPlayer(getStream) {
   }
   lifecycle=createPlaybackLifecycle();
   if(window.addEventListener)window.addEventListener('pagehide',()=>journal.flush());
-  return { open, stop, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, audioTracks:()=>{if(hls)return hls.audioTracks.map((track,index)=>Object.assign(audioLanguage.describe(track,index),{selected:index===hls.audioTrack}));return (diagnostics.audioTracks||[]).map((track,index)=>Object.assign({},track,{index,selected:index===diagnostics.selectedAudio}));}, capabilities, diagnostics };
+  return { open, stop, bookmark:position=>progressive&&progressive.bookmark?progressive.bookmark(position):null, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, audioTracks:()=>{if(hls)return hls.audioTracks.map((track,index)=>Object.assign(audioLanguage.describe(track,index),{selected:index===hls.audioTrack}));return (diagnostics.audioTracks||[]).map((track,index)=>Object.assign({},track,{index,selected:index===diagnostics.selectedAudio}));}, capabilities, diagnostics };
 }
