@@ -1,3 +1,4 @@
+import {playlistTimelineIssue,clockOutsideBuffer} from './playlist-timeline.js';
 import {ensureVodRuntime} from './vod-runtime.js';
 import {createLiveLatency} from './live-latency.js';
 import {createFrameMeter} from './media-info.js';
@@ -54,7 +55,7 @@ export function createPlayer(getStream) {
     let headers = candidates[0].headers;
     const isHls = /\.m3u8(?:[?#]|$)/i.test(source) || /mpegurl/i.test(stream.mime || options.mime || '');
     const custom = Object.keys(headers).filter(key => !/^(user-agent|cookie)$/i.test(key));
-    diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
+    diagnostics.vodRetries=0;diagnostics.vodBytes=0;diagnostics.vodTotalBytes=0;diagnostics.unsupportedRoute='';diagnostics.container=isHls?'HLS':(stream.mime||options.mime||'desconocido');diagnostics.error = ''; diagnostics.recoveries = 0;diagnostics.httpStatus=0;diagnostics.detail='';diagnostics.stage='opening';diagnostics.cdnAttempt=1;diagnostics.cdnAvailable=candidates.length;diagnostics.cdnReceived=1+(stream.backupUrls||[]).length;diagnostics.cdnLimit=MAX_CDN_CANDIDATES;diagnostics.cdnHosts=candidates.map(item=>new URL(item.url).hostname);diagnostics.playlistHosts=[];diagnostics.uriRepairs=0;diagnostics.worker=false;diagnostics.freshPlaylistRetries=0;diagnostics.networkRetries=0;diagnostics.networkRecoveries=0;diagnostics.autoplayBlocked=false;diagnostics.playRejection='';diagnostics.startupMs=0;diagnostics.sourceResolveMs=Number.isFinite(stream.resolveMs)?stream.resolveMs:null;diagnostics.channelOpenMs=null;diagnostics.media=null;diagnostics.events=[];diagnostics.level=null;diagnostics.codecs={};diagnostics.stallRecoveries=0;diagnostics.sourceRefreshes=options._sourceRefreshed?1:0;diagnostics.bufferGate=null;diagnostics.playlistRejected=0;diagnostics.playlistTimelineError=null;diagnostics.timelineResets=0;diagnostics.playlistError=null;diagnostics.playlistRepairs=0;diagnostics.playlistHistory=[];diagnostics.playlistRequests=0;diagnostics.sequenceRestarts=0;diagnostics.sequenceFailovers=0;diagnostics.sequenceRestartPending=false;diagnostics.sequenceRecoveryMs=null;
     diagnostics.transport=/^https:/i.test(source)?'https':'http';diagnostics.httpsFallback=false;
     const fail = message => {
       if (serial !== run) return;
@@ -62,7 +63,7 @@ export function createPlayer(getStream) {
     };
     totalDeadline=setTimeout(()=>fail('La señal no inició tras probar las rutas disponibles: etapa '+diagnostics.stage+'. Abre Diagnóstico.'),30000);
     const restartedRoutes=new Set();let sequenceRestartAt=null;
-    const openedAt=performance.now();let alignmentReadyAt=Infinity;let playPending=false,autoAttempts=0,gestureRequired=false,resuming=false;const networkBudget=recoveryBudget(),decoderBudget=recoveryBudget(1);const stallWatch=createStallWatch();
+    const openedAt=performance.now();let alignmentReadyAt=Infinity;let playPending=false,autoAttempts=0,gestureRequired=false,resuming=false;const networkBudget=recoveryBudget(),decoderBudget=recoveryBudget(1);const stallWatch=createStallWatch();let clockMismatchChecks=0;
     function tryPlay(){
       if(serial!==run||started&&!resuming||bufferGate&&bufferGate.userPaused||playPending||gestureRequired||!video.paused||autoAttempts>=3)return;
       const playGeneration=attempt;autoAttempts++;playPending=true;
@@ -103,11 +104,14 @@ export function createPlayer(getStream) {
       recoveryTimer=setTimeout(()=>{recoveryTimer=null;if(serial===run&&generation===attempt&&hls)hls.startLoad(-1);},count*1000);
       return true;
     }
-    function recoverDecoder(){resuming=!(bufferGate&&bufferGate.userPaused);autoAttempts=0;playPending=false;diagnostics.recoveries++;hls.recoverMediaError();}
+    function recoverDecoder(){resuming=bufferGate?!bufferGate.userPaused:!video.paused;autoAttempts=0;playPending=false;diagnostics.recoveries++;hls.recoverMediaError();}
     healthTimer=setInterval(()=>{
       if(serial!==run||!video)return;
       if(hls)latencyPolicy.update(hls,video,options.live,performance.now()>=alignmentReadyAt);
       const sample=mediaHealth(video);if(frameMeter){frameMeter.sample();Object.assign(sample,frameMeter.read());}diagnostics.media=sample;if(options.onInfo)options.onInfo(diagnostics);
+      const clockMismatch=options.live&&started&&!document.hidden&&!(bufferGate&&bufferGate.userPaused)&&!video.seeking&&clockOutsideBuffer(sample);
+      clockMismatchChecks=clockMismatch?clockMismatchChecks+1:0;
+      if(clockMismatchChecks>=2&&!refreshing&&hls){clockMismatchChecks=0;diagnostics.timelineResets++;record('media-clock-outside-buffer');recoverSequence();return;}
       if(!stallWatch.check(sample,{now:performance.now(),started,hidden:document.hidden,userPaused:bufferGate?bufferGate.userPaused:sample.paused})||refreshing||!hls||!options.live)return;
       diagnostics.stallRecoveries++;record('no-progress-12s');
       if(sample.bufferSeconds<1&&recoverNetwork())return;
@@ -130,7 +134,7 @@ export function createPlayer(getStream) {
       if(hls){hls.destroy();hls=null;}
       try{video.pause();video.removeAttribute('src');video.load();}catch(_){}
       started=ready=false;paused=true;autoAttempts=0;playPending=false;gestureRequired=false;resuming=false;
-      stallWatch.reset(performance.now(),0);diagnostics.httpStatus=0;diagnostics.media=null;diagnostics.level=null;
+      clockMismatchChecks=0;stallWatch.reset(performance.now(),0);diagnostics.httpStatus=0;diagnostics.media=null;diagnostics.level=null;
       const generation=attempt;
       recoveryTimer=setTimeout(()=>{recoveryTimer=null;if(serial===run&&generation===attempt)useHls(preservePause);},preservePause?0:250);
     }
@@ -163,15 +167,32 @@ export function createPlayer(getStream) {
       const Loader=Hls.DefaultConfig.loader;
       const useHttps=diagnostics.httpsFallback;
       class SourceLoader extends Loader{
-        getResponseHeader(name){if(this.nativeActive){const line=(this.nativeHeaders||'').split(/[\r\n]+/).find(value=>value.toLowerCase().startsWith(name.toLowerCase()+':'));return line?line.slice(line.indexOf(':')+1).trim():null;}return super.getResponseHeader(name);}
-        abort(){clearTimeout(this.freshnessTimer);if(this.cancelNative){this.cancelNative();this.stats.aborted=true;}super.abort();}
-        destroy(){clearTimeout(this.freshnessTimer);if(this.cancelNative)this.cancelNative();super.destroy();}
+        constructor(config){super(config);this.loaderConfig=config;}
+        browserLoad(context,config,callbacks){
+          if(!this.browserLoadUsed){this.browserLoadUsed=true;return super.load(context,config,callbacks);}
+          if(this.browserRetry)this.browserRetry.destroy();
+          this.browserRetry=new Loader(this.loaderConfig);this.stats=this.browserRetry.stats;this.context=context;
+          return this.browserRetry.load(context,config,callbacks);
+        }
+        getResponseHeader(name){if(this.nativeActive){const line=(this.nativeHeaders||'').split(/[\r\n]+/).find(value=>value.toLowerCase().startsWith(name.toLowerCase()+':'));return line?line.slice(line.indexOf(':')+1).trim():null;}return this.browserRetry?this.browserRetry.getResponseHeader(name):super.getResponseHeader(name);}
+        abort(){clearTimeout(this.freshnessTimer);if(this.cancelNative){this.cancelNative();this.stats.aborted=true;}if(this.browserRetry)this.browserRetry.abort();else super.abort();}
+        destroy(){clearTimeout(this.freshnessTimer);if(this.cancelNative)this.cancelNative();if(this.browserRetry){this.browserRetry.destroy();this.browserRetry=null;}super.destroy();}
         load(context,config,callbacks){
           if(useHttps){try{const target=new URL(context.url);if(target.protocol==='http:'&&target.hostname===new URL(playbackSource).hostname)target.protocol='https:';context.url=target.href;}catch(_) {}}
           const original=callbacks;callbacks=Object.assign({},original,{onSuccess:(response,stats,request,network)=>{
             if(serial!==run||generation!==attempt)return;
             if(typeof response.data==='string'){
               const shape=playlistShape(response.data),previous=playlistFacts.get(context.url);
+              const timelineIssue=options.live&&playlistTimelineIssue(previous,shape.facts,performance.now()-openedAt);
+              if(timelineIssue){
+                diagnostics.playlistRejected++;diagnostics.playlistTimelineError=Object.assign({atMs:Math.round(performance.now()-openedAt),cdnAttempt:diagnostics.cdnAttempt},timelineIssue);record(timelineIssue.kind);
+                // Retry before handing the payload to HLS. Once merged, a bad
+                // sequence can move its live timeline thousands of seconds away.
+                this.timelineRetries=(this.timelineRetries||0)+1;
+                if(this.timelineRetries<=2){this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)this.load(context,config,original);},this.timelineRetries*250);}
+                else{this.freshnessTimer=setTimeout(()=>{this.freshnessTimer=null;if(serial===run&&generation===attempt)recoverSequence();},0);}
+                return;
+              }
               const unchanged=previous&&Number.isFinite(shape.facts.mediaSequence)&&shape.facts.mediaSequence===previous.mediaSequence;
               if(options.live&&diagnostics.liveLatency.experimental&&context.type==='level'&&unchanged&&(this.freshnessRetries||0)<2){
                 this.freshnessRetries=(this.freshnessRetries||0)+1;diagnostics.freshPlaylistRetries++;
@@ -188,8 +209,8 @@ export function createPlayer(getStream) {
             original.onSuccess(response,stats,request,network);
           }});
           const transport=window.XuperNativeTransport;
-          if(transport&&transport.snapshot().available)return nativeHlsLoad(this,transport,context,config,callbacks,headers,()=>super.load(context,config,callbacks),()=>{diagnostics.networkRetries++;});
-          return super.load(context,config,callbacks);
+          if(transport&&transport.snapshot().available)return nativeHlsLoad(this,transport,context,config,callbacks,headers,()=>this.browserLoad(context,config,callbacks),()=>{diagnostics.networkRetries++;});
+          return this.browserLoad(context,config,callbacks);
         }
       }
       hls = new Hls({loader:SourceLoader, enableWorker: diagnostics.worker, workerPath:new URL('vendor/hls-worker.js',document.baseURI).href, lowLatencyMode: false, backBufferLength: 10,

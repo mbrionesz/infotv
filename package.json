@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -19,7 +19,8 @@
     "test:startup": "node tools/startup-browser.mjs",
     "test:security": "node tools/security-qa-browser.mjs",
     "test:ux": "node tools/ux-usability-browser.mjs",
-    "test:native-wasm": "node tools/native-wasm-integration.mjs"
+    "test:native-wasm": "node tools/native-wasm-integration.mjs",
+    "test:timeline": "node tools/timeline-regression-browser.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",
