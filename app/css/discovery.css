@@ -37,3 +37,7 @@
 .xt-guide-channels button{font-size:16px}
 .xt-guide-technical{font-size:15px;line-height:1.5;color:#9db7c6;min-height:45px;margin:10px 0}
 .xt-playback-info{position:absolute;left:517.5px;right:40px;top:149.5px;font-size:17px;line-height:28px;color:#b7ccdb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Catalog metadata can wrap without covering the first row of posters. */
+.xt-catalog-status{height:auto;min-height:30px;line-height:1.3;max-height:62px}
+.xt-catalog-filters select{min-width:0;flex:1}
+#xt-catalog [hidden]{display:none!important}

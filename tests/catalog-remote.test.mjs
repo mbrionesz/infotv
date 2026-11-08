@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createRemoteCatalog} from '../browser/catalog-remote.js';
+test('remote page retains portal totals while applying resolution only to current page',async()=>{
+ const calls=[];const query=createRemoteCatalog(async(method,payload)=>{calls.push({method,payload});if(method==='catalogColumns')return {columns:[{id:'a',name:'Popular'}]};if(method==='catalogFilters')return {genres:['Drama'],years:['2024'],countries:['Chile']};return {items:[{id:'a',title:'HD',resolution:'720p'},{id:'b',title:'FHD',resolution:'1080p'}],total:21000,hasMore:true};});
+ const result=await query({root:'movies',pageNum:2,filters:{genre:'Drama',resolution:'720p'}});assert.equal(result.fullCatalog,true);assert.equal(result.total,21000);assert.equal(result.localFilter,true);assert.equal(result.items.length,1);assert.equal(result.items[0].id,'a');assert.equal(calls[0].payload.filters.resolution,undefined);assert.deepEqual(result.facets.genres,['Drama']);assert.equal(result.facets.columns[0].name,'Popular');
+});
+test('filter metadata failure does not discard playable titles or invent a known total',async()=>{
+ const query=createRemoteCatalog(async(method)=>{if(method==='catalogBrowse')return {items:[{id:'a',title:'A'}],total:null,hasMore:false};throw new Error('Unavailable metadata');});const result=await query({root:'series'});assert.equal(result.items.length,1);assert.equal(result.totalKnown,false);assert.equal(result.metadataUnavailable,true);
+});
+test('a provider repeating a full page cannot create an endless next-page loop',async()=>{
+ const query=createRemoteCatalog(async(method)=>method==='catalogBrowse'?{items:Array.from({length:36},(_,i)=>({id:String(i),title:'Repeated '+i})),total:21000,hasMore:true}:{});
+ assert.equal((await query({root:'movies',pageNum:1})).hasMore,true);const next=await query({root:'movies',pageNum:2});assert.equal(next.repeatedPage,true);assert.equal(next.hasMore,false);
+});

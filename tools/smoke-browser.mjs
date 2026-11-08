@@ -63,7 +63,7 @@ try {
       var core=api.core;
       var originalCall=core.call;
       core.call=function(method,payload,cb){
-        if(method==='catalogPage'||method==='catalogQuery'||method==='catalogSearch'){
+        if(method==='catalogFullPage'||method==='catalogPage'||method==='catalogQuery'||method==='catalogSearch'){
           var rows=Array.from({length:36},function(_,i){return {id:(payload.root==='series'?'series-test-':'test-')+i,title:'Título de prueba '+i,year:'2024',country:'Chile',poster:i<6?'assets/catalog/sintel.jpg':''}});
           cb(null,{items:rows,total:21000,loaded:21000,facets:{genres:['Drama'],years:['2024'],countries:['Chile'],resolutions:[]},hasMore:true});return;
         }
@@ -82,7 +82,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.8.7');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.8.8');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');

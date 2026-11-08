@@ -3,13 +3,15 @@ import {createDnsDiagnostic} from './dns-diagnostic.js';
 import core from '../companion/lib/magis.js';
 import { createCache } from './cache.js';
 import { createCatalogIndex } from './catalog-index.js';
+import {createRemoteCatalog} from './catalog-remote.js';
 import crypto from './crypto.js';
 const dnsDiagnostic=createDnsDiagnostic();let lastStreamHost='',lastPortalCode='';
 const cache = createCache(self.indexedDB);
 const catalog = createCatalogIndex();
 const pageProgress=new Map();
 const inflight = new Map();
-const metadata = new Set(['home','liveCategories','liveChannels','search']);
+const metadata = new Set(['home','liveCategories','liveChannels','search','catalogBrowse','catalogColumns','catalogFilters','catalogSearchPage']);
+const remoteCatalog=createRemoteCatalog(execute);
 const stats = { requests:0,cacheHits:0,staleHits:0,errors:0 };
 let cryptoVerified=false;
 try{
@@ -17,6 +19,10 @@ try{
   cryptoVerified=Buffer.concat([decipher.update(Buffer.from('c8c781f3c07c806c304a26ac5327083541155b5cfcbfed46','hex')),decipher.final()]).toString('utf8')==='XuperTizen worker';
 }catch(_){}
 function invoke(method,payload,done) {
+  if(method==='catalogBrowse')return core.catalogBrowse(payload.root,payload,done);
+  if(method==='catalogColumns')return core.catalogColumns(payload.root,done);
+  if(method==='catalogFilters')return core.catalogFilters(payload.root,done);
+  if(method==='catalogSearchPage')return core.catalogSearchPage(payload.root,payload,done);
   if (method==='home') return core.home(payload.root||'movies',payload.pageNum,done);
   if (method==='liveCategories') return core.getLiveCategories((error,categories)=>done(error,{categories:categories||[]}));
   if (method==='liveChannels') return core.getLiveChannels(payload.columnId,payload.pageNum,payload.pageSize,(error,channels,hasMore)=>done(error,{channels:(channels||[]).map(channel=>{
@@ -64,6 +70,7 @@ function pump(){
 }
 async function execute(method,payload){
   stats.requests++;
+  if(method==='catalogFullPage')return remoteCatalog(payload);
   if(method==='catalogQuery')return catalog.query(payload.root||'movies',payload);
   if(method==='catalogSearch'){
     const value=String(payload.filters&&payload.filters.text||'').trim();
