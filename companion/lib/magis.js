@@ -1116,10 +1116,10 @@ function isCfl(e) {
 }
 function withScheme(e) {
   var r = trim(e).replace(/\/+$/, "");
-  return (
-    (r = r.replace(/^http:\/\//i, "https://")),
-    /^https:\/\//.test(r) ? r : "https://" + r
-  );
+  // Preserve an explicit endpoint supplied by the portal. Changing HTTP to
+  // HTTPS changes the service/port and can make an otherwise valid CDN fail.
+  // Bare hosts still default to HTTPS; never downgrade HTTPS speculatively.
+  return /^https?:\/\//i.test(r) ? r : "https://" + r;
 }
 function vodCdns(e) {
   var r = [],
@@ -1167,19 +1167,21 @@ function vodCdns(e) {
 function getSlb(e) {
   if (slbCache && Date.now() < slbCache.at + SLB_TTL)
     return e(null, slbCache.slb);
-  firstCall(
-    [
-      { path: "v15/getSlbInfo", bean: slbBean() },
-      { path: "v14/getSlbInfo", bean: slbBean() },
-    ],
-    function (r, t) {
-      return r
-        ? e(r)
-        : vodCdns(t).length
-          ? ((slbCache = { at: Date.now(), slb: t }), void e(null, t))
-          : e(new Error("el portal no expuso CDN de vod libre"));
-    },
-  );
+  // A successful v15 response can contain no usable VOD routes. Try v14 in
+  // that case too; firstCall only advances on transport/portal errors.
+  call("v15/getSlbInfo", slbBean(), function (error, result) {
+    if (!error && vodCdns(result).length) {
+      slbCache = { at: Date.now(), slb: result };
+      return e(null, result);
+    }
+    call("v14/getSlbInfo", slbBean(), function (fallbackError, fallback) {
+      if (fallbackError) return e(fallbackError);
+      if (!vodCdns(fallback).length)
+        return e(new Error("el portal no expuso CDN de vod libre"));
+      slbCache = { at: Date.now(), slb: fallback };
+      e(null, fallback);
+    });
+  });
 }
 function fieldNumber(e) {
   var r = text(e).match(/(\d+(?:\.\d+)?)/);

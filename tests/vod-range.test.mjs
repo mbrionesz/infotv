@@ -23,3 +23,9 @@ test('cancellation while native fallback is pending does not start a hidden brow
  const reader=createVodReader('https://example.com/movie.ts');
  try{const pending=reader.read(0);reader.abort();finish(null);await assert.rejects(pending,{name:'AbortError'});assert.equal(xhrCalls,0);}finally{reader.close();delete globalThis.window;delete globalThis.XMLHttpRequest;}
 });
+test('VOD reports an unsuccessful HTTP status before range validation fails',async()=>{
+ const reads=[];globalThis.window={XuperNativeTransport:{snapshot:()=>({available:true}),request:async()=>({status:404,headers:'',body:new Uint8Array([1]).buffer})}};
+ const reader=createVodReader('https://example.com/missing.ts',{},info=>reads.push(info));
+ try{await assert.rejects(reader.read(0),{status:404});assert.equal(reads.at(-1).status,404);assert.equal(reads.at(-1).bytes,0);}finally{reader.close();delete globalThis.window;}
+ assert.throws(()=>validateRange(206,'',new Uint8Array([1]).buffer,0,3),/sin Content-Range/);
+});
