@@ -1031,20 +1031,26 @@ function catalogColumns(root,callback){
 function catalogFilters(root,callback){
   catalogRequest(root,"v3/filterGenre",{columnId:CATALOG_ROOTS[root]},function(error,result){
     if(error)return callback(error);result=result||{};
-    function values(list){var out=[];for(var i=0;i<(list||[]).length;i++){var v=list[i],key=typeof v==="object"&&v?text(v.key||v.value||v.name):text(v);if(key&&out.indexOf(key)<0)out.push(key);}return out.slice(0,250);}
+    function values(list){var out=[],seen={};for(var i=0;i<(list||[]).length;i++){
+      var v=list[i],object=v&&typeof v==="object",key=object?text(v.key!=null?v.key:v.id!=null?v.id:v.value!=null?v.value:v.name):text(v);
+      if(!key||Object.prototype.hasOwnProperty.call(seen,key))continue;seen[key]=true;
+      var label=object?text(v.label||v.name||v.value||key):key;
+      out.push(label===key?key:{id:key,name:label});
+    }return out.slice(0,250);}
     callback(null,{genres:values(result.tags),years:values(result.year),countries:values(result.originalCountry)});
   });
 }
 function catalogBrowse(root,options,callback){
   options=options||{};var page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(60,parseInt(options.pageSize,10)||36)),filters=options.filters||{};
+  var filtered=!!(filters.genre||filters.year||filters.country);
   function fetch(column,alternative){
     var bean={columnId:column||CATALOG_ROOTS[root],pageNum:page,pageSize:size},path=column?"v3/getShelveData":"v3/filterByContent";
-    if(column&&alternative)path="v3/filterByContent";
-    if(column&&!alternative)bean.columnType="2";
+    if(column&&(alternative||filtered))path="v3/filterByContent";
+    if(column&&!alternative&&!filtered)bean.columnType="2";
     else{if(filters.genre)bean.tags=text(filters.genre);if(filters.year)bean.year=text(filters.year);if(filters.country)bean.originalCountry=text(filters.country);}
     catalogRequest(root,path,bean,function(error,result){
-      if(error&&column&&!alternative)return fetch(column,true);
-      if(error)return callback(error);result=result||{};var raw=result.assetList||[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
+      if(error&&column&&!alternative&&!filtered)return fetch(column,true);
+      if(error)return callback(error);result=result||{};var raw=result.assetList||[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative&&!filtered?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
       callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,hasMore:known?page*size<declared:raw.length>=size});
     });
   }

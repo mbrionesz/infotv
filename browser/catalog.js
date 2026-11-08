@@ -55,7 +55,7 @@ export function createCatalog(core){
       const select=panel.querySelector('[data-filter="'+key+'"]');select.textContent='';
       const values=(facets[list]||[]).slice();if(filters[key]&&!values.some(value=>(typeof value==='object'?value.id:value)===filters[key]))values.unshift(key==='column'?{id:filters[key],name:filters[key]}:filters[key]);
       for(const value of ['',...values]){const option=document.createElement('option');option.value=typeof value==='object'?value.id:value;option.textContent=(typeof value==='object'?value.name:value)||select.dataset.label;select.appendChild(option);}
-      select.value=filters[key];select.hidden=key==='column'&&!fullCatalog;select.disabled=!values.length||fullCatalog&&key!=='resolution'&&(searchMode||!!filters.column&&key!=='column');
+      select.value=filters[key];select.hidden=key==='column'&&!fullCatalog;select.disabled=!values.length||fullCatalog&&key!=='resolution'&&searchMode;
     }
     panel.querySelector('.xt-catalog-prev').disabled=offset===0;panel.querySelector('.xt-catalog-next').disabled=fullCatalog?!hasMore:offset+36>=total;
     panel.querySelector('.xt-catalog-more').hidden=fullCatalog;panel.querySelector('.xt-catalog-more').disabled=!hasMore||searchMode;refreshControls();mark();
@@ -67,7 +67,7 @@ export function createCatalog(core){
     panel.querySelector('h1').textContent=({movies:'Películas',series:'Series',anime:'Anime',kids:'Infantil',featured:'Destacados'})[root]||'Catálogo';
     document.getElementById('app').appendChild(panel);panel.querySelector('.xt-catalog-search').onclick=search;panel.querySelector('.xt-catalog-clear').onclick=()=>{Object.keys(filters).forEach(key=>filters[key]='');searchMode=false;offset=0;query();};
     if(window.IntersectionObserver)posterObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){window.XuperStandalone.loadPoster(entry.target,entry.target.dataset.poster);posterObserver.unobserve(entry.target);}}),{root:panel.querySelector('.xt-catalog-grid')});
-    panel.querySelectorAll('select').forEach(node=>{node.disabled=true;node.onchange=()=>{filters[node.dataset.filter]=node.value;if(node.dataset.filter==='column'){filters.genre=filters.year=filters.country=filters.resolution='';}if(node.dataset.filter!=='resolution')offset=0;query();};});
+    panel.querySelectorAll('select').forEach(node=>{node.disabled=true;node.onchange=()=>{filters[node.dataset.filter]=node.value;if(node.dataset.filter==='column')filters.resolution='';if(node.dataset.filter!=='resolution')offset=0;query();};});
     panel.querySelector('.xt-catalog-prev').onclick=()=>{if(loading)return;offset=Math.max(0,offset-36);query();};
     panel.querySelector('.xt-catalog-next').onclick=()=>{if(loading)return;offset+=36;query();};
     panel.querySelector('.xt-catalog-more').onclick=()=>{if(loading)return;remotePage++;query(true);};panel.querySelector('.xt-catalog-retry').onclick=()=>{if(loading)return;if(failedPage!==null){remotePage=failedPage;query(true);}else query();};panel.querySelectorAll('footer button').forEach(button=>button.disabled=true);selectedNode=null;refreshControls();mark();query(true);

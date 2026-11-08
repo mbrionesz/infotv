@@ -95,9 +95,12 @@ async function execute(method,payload){
     if(!/^https?:\/\//i.test(payload.url||''))throw new Error('URL inválida');
     return {blob:await poster(payload.url)};
   }
-  const key=method+':'+JSON.stringify(payload);
+  // Filter option records now preserve id/label pairs; do not reuse v1 pages
+  // whose category/filter selection may have been discarded.
+  const key=(/^catalog/.test(method)?'catalog-v2:':'')+method+':'+JSON.stringify(payload);
+  const cacheable=metadata.has(method)&&!(/^catalog/.test(method)&&payload.fresh===true);
   let stale=null;
-  if(metadata.has(method)){
+  if(cacheable){
     const hit=await cache.get('metadata',key);
     if(hit){stats.cacheHits++;if(method==='home')catalog.add(payload.root||'movies',hit.items);return Object.assign({},hit,{cached:true});}
     stale=await cache.get('metadata',key,true);
@@ -109,14 +112,14 @@ async function execute(method,payload){
   }).then(async result=>{
     if((method==='resolve'||method==='resolveLive')&&result&&result.url){try{lastStreamHost=new URL(result.url).hostname;}catch(_) {}}
     if(method==='home')catalog.add(payload.root||'movies',result.items);
-    if(metadata.has(method)){
+    if(cacheable){
       await cache.put('metadata',key,result,method==='liveChannels'?300000:600000);
       cache.prune('metadata',160,16*1024*1024);
     }
     return result;
   },async error=>{
     stats.errors++;if(error.portalCode)lastPortalCode=String(error.portalCode);
-    if(metadata.has(method)){
+    if(cacheable){
       const hit=await cache.get('metadata',key,true);
       if(hit){stats.staleHits++;return Object.assign({},hit,{cached:true,stale:true});}
     }
