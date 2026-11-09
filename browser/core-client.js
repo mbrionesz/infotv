@@ -38,7 +38,7 @@ export function createCoreClient() {
       pending.set(id,{callback,timer});target.postMessage({id,method,payload:payload||{}});
     }catch(error){const entry=pending.get(id);if(entry){clearTimeout(entry.timer);pending.delete(id);}callback(error);}
   }
-  const api={call,session:{ready:false},diagnostics:callback=>call('diagnostics',{},(error,result)=>{if(result)api.session.ready=!!result.sessionReady;callback(error,result);}),poster:(url,callback)=>call('poster',{url},callback)};
+  const api={call,session:{ready:false},diagnostics:callback=>call('diagnostics',{},(error,result)=>{if(result)api.session.ready=!!result.sessionReady;callback(error,result);}),poster:(url,callback,size='card')=>call('poster',{url,size},callback)};
   api.home=(root,pageNum,callback)=>call('home',{root,pageNum},callback);
   api.search=(value,callback)=>call('search',{value},callback);
   api.detail=(contentId,callback)=>call('detail',{contentId},callback);

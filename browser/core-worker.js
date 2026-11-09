@@ -44,21 +44,22 @@ function invoke(method,payload,done) {
   done(new Error('Método no disponible'));
 }
 let postersActive=0;const postersQueue=[];
-async function thumbnail(blob){
+async function thumbnail(blob,size){
   if(typeof OffscreenCanvas!=='function'||typeof createImageBitmap!=='function')return blob;
   let bitmap;
   try{
-    bitmap=await createImageBitmap(blob);const scale=Math.min(1,320/bitmap.width,480/bitmap.height);
+    bitmap=await createImageBitmap(blob);const scale=Math.min(1,(size==='hero'?1600:480)/bitmap.width,(size==='hero'?900:720)/bitmap.height);
     if(scale===1)return blob;
     const canvas=new OffscreenCanvas(Math.max(1,Math.round(bitmap.width*scale)),Math.max(1,Math.round(bitmap.height*scale)));
     canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
     return await canvas.convertToBlob({type:'image/webp',quality:.8});
   }catch(_){return blob;}finally{if(bitmap&&bitmap.close)bitmap.close();}
 }
-function poster(url) {
-  return cache.get('posters',url).then(hit=>{
+function poster(url,size='card') {
+  size=size==='hero'?'hero':'card';const key=(size==='hero'?'hero:':'card480:')+url;
+  return cache.get('posters',key).then(hit=>{
     if(hit){stats.cacheHits++;return hit;}
-    return new Promise((resolve,reject)=>{if(postersQueue.length>=12){reject(new Error('Cola de imágenes ocupada'));return;}postersQueue.push({url,resolve,reject});pump();});
+    return new Promise((resolve,reject)=>{if(postersQueue.length>=12){reject(new Error('Cola de imágenes ocupada'));return;}postersQueue.push({url,key,size,resolve,reject});pump();});
   });
 }
 function pump(){
@@ -66,12 +67,12 @@ function pump(){
     const job=postersQueue.shift();postersActive++;
     const xhr=new XMLHttpRequest();xhr.open('GET',job.url,true);xhr.responseType='blob';xhr.timeout=6000;
     let ended=false;function end(error){if(ended)return;ended=true;postersActive--;if(error)job.reject(error);pump();}
-    xhr.onprogress=event=>{if(event.loaded>512*1024){xhr.abort();end(new Error('Imagen fuera del límite'));}};
+    xhr.onprogress=event=>{if(event.loaded>(job.size==='hero'?2*1024*1024:512*1024)){xhr.abort();end(new Error('Imagen fuera del límite'));}};
     xhr.onerror=xhr.ontimeout=()=>end(new Error('No se pudo cachear imagen'));
     xhr.onload=async()=>{
-      if(xhr.status!==200 || !xhr.response || xhr.response.size>512*1024)return end(new Error('Imagen fuera del límite'));
-      const blob=await thumbnail(xhr.response);job.resolve(blob);end();
-      cache.put('posters',job.url,blob,7*86400000).then(()=>cache.prune('posters',80,12*1024*1024));
+      if(xhr.status!==200 || !xhr.response || xhr.response.size>(job.size==='hero'?2*1024*1024:512*1024))return end(new Error('Imagen fuera del límite'));
+      const blob=await thumbnail(xhr.response,job.size);job.resolve(blob);end();
+      cache.put('posters',job.key,blob,7*86400000).then(()=>cache.prune('posters',80,18*1024*1024));
     };xhr.send();
   }
 }
@@ -101,7 +102,7 @@ async function execute(method,payload){
   if(method==='fetchM3u')return {channels:await fetchPlaylist(payload.url)};
   if(method==='poster'){
     if(!/^https?:\/\//i.test(payload.url||''))throw new Error('URL inválida');
-    return {blob:await poster(payload.url)};
+    return {blob:await poster(payload.url,payload.size)};
   }
   // Filter option records now preserve id/label pairs; do not reuse v1 pages
   // whose category/filter selection may have been discarded.

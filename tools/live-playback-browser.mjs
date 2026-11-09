@@ -14,7 +14,7 @@ const media=http.createServer((req,res)=>{
   if(!latencyMode&&elapsed>6000&&playlistFailures===0){playlistFailures++;res.writeHead(404);res.end();return;}
   if(!latencyMode&&elapsed>=18000&&parsingFailures===0){parsingFailures++;res.setHeader('Content-Type','application/vnd.apple.mpegurl');res.end('#EXTM3U\n#EXTINF:2.000,\npart10.ts\n');return;}
   if(!latencyMode&&elapsed>=32000&&elapsed<36000){outageFailures++;res.writeHead(503);res.end();return;}
-  const start=Math.min(latencyMode?12:38,Math.floor(elapsed/(segmentSeconds*1000)));let sequence=start;if(sequenceProbe){sequenceFailures++;sequence=Math.max(0,start-20);sequenceProbe--;}let text='#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:'+segmentSeconds+'\n#EXT-X-MEDIA-SEQUENCE:'+sequence+'\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x000102030405060708090a0b0c0d0e0f\n';
+  const start=Math.min(latencyMode?12:83,Math.floor(elapsed/(segmentSeconds*1000)));let sequence=start;if(sequenceProbe){sequenceFailures++;sequence=Math.max(0,start-20);sequenceProbe--;}let text='#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:'+segmentSeconds+'\n#EXT-X-MEDIA-SEQUENCE:'+sequence+'\n#EXT-X-KEY:METHOD=AES-128,URI="key.bin",IV=0x000102030405060708090a0b0c0d0e0f\n';
   for(let i=start;i<start+6;i++)text+='#EXTINF:'+segmentSeconds+'.000,\npart'+String(i).padStart(2,'0')+'.ts'+(sequenceProbe?'?stream=other':'')+'\n';
   if(!latencyMode&&elapsed>=12000&&elapsed<16000){duplicateLists++;text=text.replace('#EXT-X-TARGETDURATION:2\n','#EXT-X-TARGETDURATION:2\n#EXT-X-TARGETDURATION:2\n');}
   const brokenOrigin='http://127.0.0.1%20:'+media.address().port;
@@ -33,7 +33,7 @@ const app=http.createServer((req,res)=>{
 });
 try{
  writeFileSync(path.join(temp,'key.bin'),randomBytes(16));writeFileSync(path.join(temp,'keyinfo'),'key.bin\n'+path.join(temp,'key.bin')+'\n000102030405060708090a0b0c0d0e0f\n');
- execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc=size='+(latencyMode?'1280x720':'320x180')+':rate=24','-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t','90','-c:v','libx264','-threads','1','-profile:v','baseline','-pix_fmt','yuv420p','-g',String(segmentSeconds*24),'-sc_threshold','0','-c:a','aac','-ac','2','-hls_time',String(segmentSeconds),'-hls_list_size','0','-hls_flags','independent_segments','-hls_key_info_file',path.join(temp,'keyinfo'),'-hls_segment_filename',path.join(temp,'part%02d.ts'),path.join(temp,'all.m3u8')]);
+ execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','testsrc=size='+(latencyMode?'1280x720':'320x180')+':rate=24','-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t',latencyMode?'90':'180','-c:v','libx264','-threads','1','-profile:v','baseline','-pix_fmt','yuv420p','-g',String(segmentSeconds*24),'-sc_threshold','0','-c:a','aac','-ac','2','-hls_time',String(segmentSeconds),'-hls_list_size','0','-hls_flags','independent_segments','-hls_key_info_file',path.join(temp,'keyinfo'),'-hls_segment_filename',path.join(temp,'part%02d.ts'),path.join(temp,'all.m3u8')]);
  app.listen(0,'127.0.0.1');media.listen(0,'127.0.0.1');await Promise.all([once(app,'listening'),once(media,'listening')]);const stream=`http://127.0.0.1:${media.address().port}/live.m3u8`;
  browser=await browserHarness();await browser.command('Network.setUserAgentOverride',{userAgent:'Mozilla/5.0 (SMART-TV; Tizen 9.0) Chrome/130 Safari/537.36'});
  await browser.command('Page.addScriptToEvaluateOnNewDocument',{source:`
@@ -100,11 +100,15 @@ try{
  for(let i=0;i<50&&!seen.some(row=>row.url.endsWith('.ts')&&row.auth==='backup-live-test'&&row.license==='backup-live-license');i++)await new Promise(resolve=>setTimeout(resolve,100));
  assert.ok(seen.some(row=>row.url.endsWith('.ts')&&row.auth==='backup-live-test'&&row.license==='backup-live-license'),'Backup must fetch its own authorized media: '+JSON.stringify(seen.slice(-12)));
  const sequenceFailover=await browser.evaluate('({restarts:XuperPlayer.diagnostics.sequenceRestarts,failovers:XuperPlayer.diagnostics.sequenceFailovers,cdn:XuperPlayer.diagnostics.cdnAttempt})');
+ // Wait for a clean backup refresh before injecting a new regression. The
+ // first backup list may still belong to the preceding injected incident.
+ const cleanSequence=Math.floor((Date.now()-startedAt)/(segmentSeconds*1000));
+ await browser.waitFor('XuperPlayer.diagnostics.playlistHistory.some(row=>row.cdnAttempt===2&&row.serverMediaSequence>='+cleanSequence+')',100);
  sequenceProbe=1000;
  await browser.waitFor('XuperPlayer.diagnostics.sequenceRestarts===2&&XuperPlayer.diagnostics.sequenceRestartPending===true',180);
  await browser.evaluate('XuperPlayer.stop()');const stoppedGets=manifestGets;await new Promise(resolve=>setTimeout(resolve,500));assert.equal(manifestGets,stoppedGets);assert.equal(await browser.evaluate('XuperPlayer.diagnostics.engine'),'');
 
- await browser.evaluate(`__xuper.show('home');delete document.getElementById('player-video').play;window.fixtureBlockPlay=true;var basePlay=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(fixtureBlockPlay)return Promise.reject(new DOMException('Fixture gesture gate','NotAllowedError'));return basePlay.call(this)};XuperGuide.open();XuperGuide.handle({keyCode:39});XuperGuide.handle({keyCode:13});`);
+ await browser.evaluate(`__xuper.show('home');delete document.getElementById('player-video').play;window.fixtureBlockPlay=true;var basePlay=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(fixtureBlockPlay)return Promise.reject(new DOMException('Fixture gesture gate','NotAllowedError'));return basePlay.call(this)};XuperGuide.open();XuperGuide.focusContent();XuperGuide.handle({keyCode:13});`);
  await browser.waitFor('XuperGuide.diagnostics().autoplayBlocked===true');const resolvedBefore=await browser.evaluate('liveResolves');
  await browser.evaluate('fixtureBlockPlay=false;document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:13,bubbles:true}))');
  await browser.waitFor('document.getElementById("player-video").currentTime>0.5',150);

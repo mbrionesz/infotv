@@ -1,0 +1,51 @@
+/* A+: one 1920x1080 canvas; the viewport adapter scales it to the TV. */
+#app.tv-shell-ready #screen-home .home-tabs,#app.tv-shell-ready #screen-home .home-pages,#app.tv-shell-ready #screen-home .home-sidebar-bg,#app.tv-shell-ready #screen-home .home-notify{display:none!important}
+#screen-home{background:#090d15!important}#screen-home:before{background:#090d15!important}
+.xt-topnav{position:absolute;left:96px;right:96px;top:38px;height:82px;display:flex;align-items:center;z-index:400;color:#f3f6fc;font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif}
+.xt-top-brand{display:flex;align-items:center;font-size:34px;font-weight:600;width:430px}.xt-top-symbol{font-size:44px;color:#a8e0ff;margin-right:18px}.xt-top-thin{font-weight:400;color:#c3cad5}.xt-top-brand small{display:block;font-size:15px;color:#9bb0cc;margin-top:4px;letter-spacing:2px}
+.xt-topnav nav{display:flex;align-items:center;margin:auto}.xt-topnav button{font-family:inherit;cursor:pointer;border:1px solid transparent;background:transparent;color:#a6b5cb;font-size:32px;padding:14px 28px;margin:0 8px;border-radius:36px;min-height:64px}.xt-topnav button.is-current{color:#fff;border-bottom-color:#c5e1ff}.xt-topnav button.is-focused{background:#eff5ff;color:#111b2b;border-color:#fff;outline:3px solid #fff;outline-offset:2px}.xt-topnav .xt-top-settings{width:68px;height:68px;padding:15px;margin-left:auto}.xt-top-settings svg{width:100%;height:100%}
+#app.tv-shell-ready #xt-catalog,#app.tv-shell-ready #xt-guide{top:145px;height:935px;padding:0 96px 30px;background:#090d15}
+#app.tv-shell-ready #xt-catalog header{height:65px;margin:0 0 9px;align-items:center;justify-content:flex-end}
+#app.tv-shell-ready #xt-catalog header>div:first-child,#app.tv-shell-ready #xt-catalog .xt-catalog-destinations,#app.tv-shell-ready #xt-catalog .xt-catalog-back,#app.tv-shell-ready #xt-catalog .xt-catalog-clear,#app.tv-shell-ready #xt-catalog .xt-catalog-filter-toggle{display:none}
+#app.tv-shell-ready #xt-catalog header button{font-size:23px;min-height:52px;padding:10px 24px;margin-left:12px}
+#app.tv-shell-ready #xt-catalog .xt-catalog-status{height:25px;font-size:18px;line-height:24px;margin:0 0 8px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-grid{height:800px;display:block;padding:4px 7px 60px;overflow-y:auto;overflow-x:hidden}
+#app.tv-shell-ready #xt-catalog[data-filtered=true] .xt-discovery-grid{height:705px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-hero{height:325px;min-height:325px;margin:0 0 22px;border-radius:22px;position:relative;background:#142136;overflow:hidden}
+#app.tv-shell-ready #xt-catalog .xt-discovery-hero.is-compact{height:235px;min-height:235px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-copy{width:69%;padding:28px 34px;z-index:2;background:linear-gradient(90deg,#142136 60%,transparent)}
+#app.tv-shell-ready #xt-catalog .xt-discovery-kicker{font-size:16px;letter-spacing:2px;color:#a9c1de}
+#app.tv-shell-ready #xt-catalog .xt-discovery-copy h2{font-size:56px;line-height:1.08;max-height:120px;overflow:hidden;margin:12px 0}
+#app.tv-shell-ready #xt-catalog .xt-discovery-description{font-size:24px;line-height:30px;max-height:35px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-actions{margin-top:20px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-actions button{font-size:24px;min-height:58px;border-radius:32px;margin-right:14px;padding:12px 28px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-art{width:55%;height:100%;object-fit:cover;object-position:center;right:0;top:0}
+#app.tv-shell-ready #xt-catalog .xt-discovery-art-portrait{width:37%;object-fit:contain;object-position:right center;background:#101c2e}
+#app.tv-shell-ready #xt-catalog .is-compact .xt-discovery-copy{padding-top:18px}.is-compact .xt-discovery-kicker{display:none}
+.xt-carousel-controls{position:absolute;right:25px;bottom:20px;display:flex;align-items:center;z-index:3;background:#0b1728bb;border-radius:35px;padding:4px 7px}.xt-carousel-controls button{width:50px;min-width:50px;min-height:50px;padding:4px!important;text-align:center!important;font-size:32px!important;border-radius:50%!important}.xt-carousel-count{font-size:20px;color:#e1edfb;padding:0 15px}
+.xt-quick-filters{display:flex;justify-content:space-between;align-items:center;padding:0 0 20px;margin:0 0 20px;border-bottom:1px solid #29374b}.xt-genre-chips,.xt-quick-extra{display:flex;align-items:center}
+#xt-catalog .xt-quick-filters button{font-size:22px;min-height:48px;border-radius:28px;padding:10px 20px;margin-right:10px;background:#1b2a40;border-color:#3a4f6c;color:#dce8f8}
+#xt-catalog .xt-quick-filters button.is-active{background:#e9f2ff;color:#172439;border-color:#fff}
+#app.tv-shell-ready #xt-catalog .xt-discovery-section{margin-bottom:28px}#app.tv-shell-ready #xt-catalog .xt-showcase-row-head h2{font-size:31px;font-weight:500}
+#app.tv-shell-ready #xt-catalog .xt-discovery-card{width:230px;min-width:230px;height:420px;min-height:420px;margin-right:20px;background:transparent;border:0;border-radius:14px;padding:0}
+#app.tv-shell-ready #xt-catalog .xt-discovery-card strong{font-size:24px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+#app.tv-shell-ready #xt-catalog .xt-discovery-card small{font-size:21px;color:#aebfd5}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card{width:310px;min-width:310px;height:250px;min-height:250px}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame{height:174px;aspect-ratio:auto}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame img{object-fit:cover;object-position:center 28%}
+.xt-cinematic-results{display:flex;flex-wrap:wrap;margin:0 -10px}#app.tv-shell-ready #xt-catalog .xt-cinematic-results .xt-catalog-card{width:calc(16.666% - 20px);margin:0 10px 22px}
+#app.tv-shell-ready #xt-catalog footer{bottom:25px;left:96px;right:96px;min-height:66px}#app.tv-shell-ready #xt-catalog .xt-filter-menu{left:880px;top:25px;width:870px;max-height:760px}
+#app.tv-shell-ready #xt-guide header{height:110px;align-items:center;margin-bottom:22px}#app.tv-shell-ready #xt-guide header p,#app.tv-shell-ready #xt-guide header .xt-eyebrow{display:none}#app.tv-shell-ready #xt-guide h1{font-size:42px}
+#app.tv-shell-ready #xt-guide .xt-guide-columns{height:700px}#app.tv-shell-ready #xt-guide .xt-guide-columns>section{border-radius:18px;background:#132035;border-color:#2c405e}#app.tv-shell-ready #xt-guide .xt-guide-preview{background:linear-gradient(140deg,#1c3b52,#102136)}
+#app.tv-shell-ready #xt-guide footer{left:96px;right:96px;bottom:25px}
+#app.tv-header-focus #xt-catalog button.selected{outline:none;background:#22354d;color:#e8eff9}#app.tv-header-focus #xt-guide .selected{background:#22354d!important;color:#e8eff9!important}
+#app.tv-shell-ready .xt-panel button.selected{background:#eef5ff;color:#111c2b;outline:3px solid #fff;outline-offset:2px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-grid::-webkit-scrollbar{width:6px}#app.tv-shell-ready #xt-catalog .xt-discovery-grid::-webkit-scrollbar-thumb{background:#47607e;border-radius:5px}
+
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame{padding-bottom:0}
+#xt-catalog .xt-quick-filters button{max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+#xt-catalog .xt-genre-chips button{max-width:210px}
+
+.xt-topnav[hidden]{display:none!important}
+#app.tv-shell-ready #xt-catalog .xt-catalog-status:empty{display:none}
+#app.tv-shell-ready #xt-catalog .xt-discovery-card strong{height:30px;line-height:30px;margin:10px 2px 5px}

@@ -23,7 +23,8 @@
     "test:audio": "node tools/audio-subtitles-browser.mjs",
     "test:discovery": "node tools/discovery-browser.mjs",
     "test:catalog": "node tools/catalog-browser.mjs",
-    "test:timeline": "node tools/timeline-regression-browser.mjs"
+    "test:timeline": "node tools/timeline-regression-browser.mjs",
+    "test:cinematic": "node tools/cinematic-browser.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",

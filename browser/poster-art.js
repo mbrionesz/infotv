@@ -7,10 +7,10 @@ export function posterCandidates(item={},wide=false){
   if(result.length===6)break;
  }return result;
 }
-export function preparePoster(image,item,wide=false){const urls=posterCandidates(item,wide);image.dataset.posterCandidates=JSON.stringify(urls);if(urls.length)image.dataset.poster=urls[0];return urls;}
+export function preparePoster(image,item,wide=false){image.dataset.posterSize=wide?'hero':'card';const urls=posterCandidates(item,wide);image.dataset.posterCandidates=JSON.stringify(urls);if(urls.length)image.dataset.poster=urls[0];else delete image.dataset.poster;return urls;}
 export function createPosterFrame(item){const frame=document.createElement('div');frame.className='xt-poster-frame';const placeholder=document.createElement('span');placeholder.className='xt-poster-placeholder';placeholder.setAttribute('aria-hidden','true');placeholder.textContent=String(item.title||'X').slice(0,1).toUpperCase();frame.appendChild(placeholder);const image=document.createElement('img');image.alt='';image.decoding='async';preparePoster(image,item);frame.appendChild(image);return {frame,image};}
 export function installPosterLoader(core,window){
- const urls=[];
+ const urls=[];let bytes=0;
  function loadPoster(image,url){
   let candidates;try{candidates=JSON.parse(image.dataset.posterCandidates||'null');}catch(_){}if(!Array.isArray(candidates)||!candidates.length)candidates=posterCandidates({poster:url});
   if(!candidates.length)return;const key=candidates.join('\n');let state=image.__xuperArt;
@@ -21,6 +21,6 @@ export function installPosterLoader(core,window){
   fetch(image,state);
  }
  function next(image){const state=image.__xuperArt;if(!state||state.pending)return;state.index++;image.classList.remove('is-loaded');if(state.index>=state.candidates.length){image.removeAttribute('src');image.parentElement?.classList.remove('has-art');return;}fetch(image,state);}
- function fetch(image,state){state.pending=true;const candidate=state.candidates[state.index],index=state.index;core.poster(candidate,(error,result)=>{if(!image.isConnected||image.__xuperArt!==state||state.index!==index)return;state.pending=false;if(error||!result?.blob){image.src=candidate;return;}const local=window.URL.createObjectURL(result.blob);urls.push(local);image.src=local;if(urls.length>80)window.URL.revokeObjectURL(urls.shift());});}
- return {load:loadPoster,dispose(){urls.forEach(url=>window.URL.revokeObjectURL(url));urls.length=0;}};
+ function fetch(image,state){state.pending=true;const candidate=state.candidates[state.index],index=state.index;core.poster(candidate,(error,result)=>{if(!image.isConnected||image.__xuperArt!==state||state.index!==index)return;state.pending=false;if(error||!result?.blob){image.src=candidate;return;}const local=window.URL.createObjectURL(result.blob);urls.push({url:local,size:result.blob.size||0});bytes+=result.blob.size||0;image.src=local;while(urls.length>80||bytes>16*1024*1024&&urls.length>1){const old=urls.shift();bytes-=old.size;window.URL.revokeObjectURL(old.url);}},image.dataset.posterSize==='hero'?'hero':'card');}
+ return {load:loadPoster,dispose(){urls.forEach(item=>window.URL.revokeObjectURL(item.url));urls.length=0;}};
 }

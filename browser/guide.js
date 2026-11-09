@@ -81,7 +81,7 @@ export function createGuide(core){
     keyboard=openKeyboard({title:'Buscar canales',value:query,onChange:value=>{query=value;clearTimeout(filterTimer);filterTimer=setTimeout(filter,100);},onClose:()=>{keyboard=null;filter();}});
   }
   function open(options={}){
-    if(active)return;if(panel)close();
+    if(active)return;if(panel)close();if(window.XuperShell&&XuperShell.active&&window.XuperCatalog&&XuperCatalog.active)XuperCatalog.close();active=true;
     if(window.__xuper)__xuper.show('home');
     query='';action=0;headerAction=0;active=true;panel=document.createElement('section');panel.id='xt-guide';panel.className='xt-panel';
     panel.innerHTML='<header><div><span class="xt-eyebrow">TV EN VIVO</span><h1>Encuentra tu canal</h1><p>XuperTizen by Matias</p></div><div class="xt-guide-header-actions"><button class="xt-guide-query">Buscar canal</button><button class="xt-guide-favorites">★ Mis canales</button><button class="xt-guide-refresh">Actualizar</button><button class="xt-guide-delete" hidden>Eliminar lista</button></div></header><div class="xt-guide-columns"><section><h2>Categorías</h2><div class="xt-guide-categories"></div></section><section><h2>Canales <small class="xt-guide-count"></small></h2><div class="xt-guide-channels"></div></section><section class="xt-guide-preview"><div class="xt-guide-art" aria-hidden="true"><svg viewBox="0 0 100 100" width="96" height="96" fill="currentColor"><path d="M30 16v68l54-34z"/></svg></div><h2 class="xt-guide-title">Selecciona una señal</h2><p class="xt-guide-info">OK abre el canal a pantalla completa. → permite guardar el favorito.</p><div class="xt-guide-actions"></div><p class="xt-guide-status" role="status"></p></section></div><footer>Flechas para navegar · OK para elegir · Volver para salir</footer>';
@@ -92,16 +92,18 @@ export function createGuide(core){
     const actions=panel.querySelector('.xt-guide-actions');const save=button('☆ Agregar a favoritos',toggleFavorite);save.className='xt-guide-save';actions.appendChild(save);
     actionButtons=Array.from(actions.children);
     portalCategories=[];column=0;category=0;rebuildCategories();if(options.favorites)category=categories.findIndex(item=>item.id==='__favorites');if(options.addons)category=customAddons.length?categories.findIndex(item=>item.id===customAddons[0].id):categories.findIndex(item=>item.id==='__m3u_add');if(options.addons&&!customAddons.length){renderCategories();renderChannels();addList();}else load();focus();
+    if(window.XuperShell)XuperShell.onOpen('tv');
     core.getLiveCategories((error,result)=>{if(!active||error||!result||!result.length)return;portalCategories=result.filter(item=>String(item.id)!=='76182');rebuildCategories();});
   }
-  function resume(){if(!suspended||!panel)return false;suspended=false;active=true;panel.hidden=false;focus();return true;}
+  function suspend(){if(!panel)return;suspended=true;active=false;panel.hidden=true;if(window.XuperShell)XuperShell.onSuspend('tv');}
+  function resume(){if(!suspended||!panel)return false;suspended=false;active=true;panel.hidden=false;focus();if(window.XuperShell)XuperShell.onOpen('tv');return true;}
   function close(){
     suspended=false;if(deleteDialog){deleteDialog.node.remove();deleteDialog=null;}
     if(keyboard){keyboard.close();keyboard=null;}
     active=false;sequence++;clearTimeout(filterTimer);clearTimeout(switchTimer);if(panel)panel.remove();panel=null;
     // Playback leaves the legacy focus on hidden player controls. Restore a
     // visible home control before releasing remote events to the main screen.
-    if(window.__xuper&&__xuper.state.screen==='home')__xuper.focus('.live-focus');
+    if(window.XuperShell&&XuperShell.active)XuperShell.onClose();else if(window.__xuper&&__xuper.state.screen==='home')__xuper.focus('.live-focus');
   }
   function handle(event){
     if(!active)return false;
@@ -114,13 +116,14 @@ export function createGuide(core){
       if(key===13){deleteDialog.buttons[deleteDialog.index].click();return true;}
       deleteDialog.buttons.forEach((b,i)=>b.classList.toggle('selected',i===deleteDialog.index));return true;
     }
-    if([10009,461,27].includes(key)){close();return true;}
+    if([10009,461,27].includes(key)){if(window.XuperShell&&XuperShell.active)XuperShell.focusHeader();else close();return true;}
     if(key===403){
       const cat=categories[category];if(column===0&&cat&&cat.custom){deleteList();return true;}
       toggleFavorite();return true;
     }
     if(key===404){search();return true;}if(key===405){load(false,true);return true;}if(key===406){fullscreen();return true;}
     if(column===3){
+      if(key===38&&window.XuperShell&&XuperShell.active){XuperShell.focusHeader();return true;}
       if(key===37||key===39)headerAction=Math.max(0,Math.min(headerButtons.length-1,headerAction+(key===39?1:-1)));
       else if(key===40)column=1;
       else if(key===13)headerButtons[headerAction].click();
@@ -137,5 +140,5 @@ export function createGuide(core){
     else if(key===427||key===428){channel=(channel+(key===427?1:-1)+visible.length)%Math.max(1,visible.length);renderChannels();clearTimeout(switchTimer);switchTimer=setTimeout(fullscreen,120);}
     focus();return true;
   }
-  return {open,openAddons:()=>open({addons:true}),openFavorites:()=>open({favorites:true}),close,resume,handle,get active(){return active;},diagnostics:()=>window.XuperPlayer.diagnostics};
+  return {open,suspend,focusContent:()=>{column=1;focus();},openAddons:()=>open({addons:true}),openFavorites:()=>open({favorites:true}),close,resume,handle,get active(){return active;},diagnostics:()=>window.XuperPlayer.diagnostics};
 }

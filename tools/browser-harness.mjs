@@ -54,7 +54,7 @@ export async function browserHarness(extra = []) {
     async close() {
       pending.forEach(entry => clearTimeout(entry.timer)); socket.close(); process.kill();
       if (process.exitCode === null) await once(process, 'exit');
-      rmSync(directory, { recursive:true, force:true });
+      rmSync(directory, { recursive:true, force:true, maxRetries:5, retryDelay:100 });
     }
   };
   return api;
