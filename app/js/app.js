@@ -977,6 +977,7 @@
         style: 0,
         subtitle: !1,
         subtitlePolicy: 0,
+        font: 0,
         preferenceVersion: 2,
       },
       crOn: !1,
@@ -4095,6 +4096,8 @@
         panel.appendChild(e("p","xt-setting-footnote","Audio e idioma de subtítulos son preferencias para el próximo título y requieren pistas disponibles. Tamaño y estilo afectan a los subtítulos externos; los integrados dependen del reproductor. Estas opciones no añaden pistas ni traducen contenido."));
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
         var subtitleModes=["Automáticos · solo sin audio español","Siempre desactivados","Activados si están disponibles"];var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+subtitleModes[X.playback.subtitlePolicy||0]);subtitles._activate=function(){X.playback.subtitlePolicy=((X.playback.subtitlePolicy||0)+1)%3;X.playback.subtitle=X.playback.subtitlePolicy===2;subtitles.textContent="Subtítulos · "+subtitleModes[X.playback.subtitlePolicy];nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);panel.appendChild(e("p","xt-setting-footnote","Por defecto: español latino y subtítulos apagados. Si no hay audio español identificado, se usan subtítulos en español disponibles. Los cambios dentro de un título se recuerdan para esa película o serie y tienen prioridad."));
+        Ba(panel,700,"Fuente de subtítulos",["Sistema","Cine · Open Sans","Serif","Monoespaciada"],"font",X.playback.font||0);
+        panel.appendChild(e("p","xt-setting-footnote","Las fuentes se incluyen en la app. Cine usa Open Sans; no es la fuente propietaria Netflix Sans. Los subtítulos incrustados en la imagen no se pueden modificar."));
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
         Ba(panel,890,"Audio preferido",["Español latino","Portugués","Inglés"],"audio",X.playback.audio);
         Ba(panel,1000,"Idioma de subtítulos",["Español","Portugués","Inglés"],"subLang",X.playback.subLang);
@@ -5533,12 +5536,15 @@
         a.send());
     } catch (e) {}
   }
+  function subtitleFontValue(){var saved=X.playerMode==='vod'&&X.screen==='player'?titlePreferences(X.playerItem).font:undefined;var value=Number.isInteger(saved)?saved:Number(X.playback.font)||0;return value>=0&&value<=3?value:0;}
   function gn() {
     Bi &&
       (Bi.classList.remove("size-small", "size-normal", "size-big", "size-huge"),
       Bi.classList.add("size-" + Zi),
       Bi.classList.remove("color-white", "color-yellow", "color-black", "color-cyan", "color-lime"),
-      Bi.classList.add("color-" + en));
+      Bi.classList.add("color-" + en),
+      Bi.classList.remove("font-system","font-sans","font-serif","font-mono"),
+      Bi.classList.add("font-"+["system","sans","serif","mono"][subtitleFontValue()]));
   }
   function yn(e) {
     if (Bi)
@@ -6281,6 +6287,8 @@
     }
   }
   function ir() {
+    var fontRow=document.getElementById('dps-row-font');if(fontRow)fontRow.classList.toggle('is-visible',Ji&&En(un[Ln(bn())]).length>0);
+    var fontValue=subtitleFontValue();document.querySelectorAll('[data-sub-font]').forEach(function(button){button.classList.toggle('is-selected',Number(button.dataset.subFont)===fontValue);});
     var t = En(un[Ln(bn())]);
     if (Oi) {
       var i = Oi.parentNode;
@@ -6523,6 +6531,7 @@
             ((en = e.getAttribute("data-style") || "white"), (X.playback.style=["white","yellow","black","cyan","lime"].indexOf(en)), Y(), gn(), ir());
           };
         })(s[l]);
+    document.querySelectorAll('[data-sub-font]').forEach(function(button){button._activate=function(){saveTitlePreference('font',Number(button.dataset.subFont));gn();ir();Dn();};});
     (Fi &&
       (Fi._activate = function () {
         tr();
@@ -7502,13 +7511,15 @@
         Te && (Te.style.display = "none");
         var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
         var checkpointContext=X.playerMode==="vod"?{item:Object.assign({},X.playerItem),episode:X.playerEpisode&&Object.assign({},X.playerEpisode)}:null;
+        gn();
+        var formatInfo=document.getElementById("vod-format-info");if(formatInfo)formatInfo.textContent="Formato pendiente";
         window.XuperPlayer.open(xe, e, { onCheckpoint:function(){if(checkpointContext)checkpointVod(checkpointContext);}, mime: s, live: "live" === X.playerMode,
           startTime:resumeRecord?XuperStandalone.resumeClock(resumeRecord):0,
           preferredAudio: preferredVodAudio(),
           audioIndex: $i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
           onNotice: function (message) { Yt(message); },
-          onInfo: function (data) { if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data); },
+          onInfo: function (data) { if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod")format.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
         ln=null;

@@ -34,7 +34,7 @@
       <div class="welcome-credit">by Matias</div>
       <div class="welcome-status" role="status">Iniciando<span aria-hidden="true"> ···</span></div>
     </div>
-    <div class="welcome-version">v0.9.9 · beta</div>
+    <div class="welcome-version">v0.9.10 · beta</div>
   </section>
 
   <!-- ============================================================
@@ -122,7 +122,7 @@
           <span class="vod-time-total" id="vod-time-total">00:00:00</span>
         </div>
         <div class="vod-bottom-row">
-          <div class="vod-infobar-title" id="vod-infobar-title"></div>
+          <div class="vod-infobar-title" id="vod-infobar-title"></div><div id="vod-format-info" aria-live="off"></div>
           <div class="vod-infobar-tips">
             <div class="vod-tip"><img src="assets/original/common/icon_info_exit.png" alt=""><span>Salir</span></div>
             <div class="vod-tip"><img src="assets/original/common/icon_info_ok.png" alt=""><span>Pausar o reproducir</span></div>
@@ -250,6 +250,14 @@
               <button class="dps-btn focusable" data-size="small">Pequeño</button>
             </div>
           </div>
+          <div class="dps-row dps-sub-subrow" id="dps-row-font">
+            <div class="dps-label">Fuente</div><div class="dps-options scrollable">
+              <button class="dps-btn focusable" data-sub-font="0">Sistema</button>
+              <button class="dps-btn focusable" data-sub-font="1">Cine · Open Sans</button>
+              <button class="dps-btn focusable" data-sub-font="2">Serif</button>
+              <button class="dps-btn focusable" data-sub-font="3">Monoespaciada</button>
+            </div>
+          </div>
           <!-- Subtitle Color Style -->
           <div class="dps-row dps-sub-subrow" id="dps-row-style">
             <div class="dps-label">Color</div>
@@ -345,5 +353,6 @@
 <link rel="stylesheet" href="css/lounge.css">
 <link rel="stylesheet" href="css/vod-player.css">
   <link rel="stylesheet" href="css/simplified.css">
+<link rel="stylesheet" href="css/subtitle-fonts.css">
 </body>
 </html>

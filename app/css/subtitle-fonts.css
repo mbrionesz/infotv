@@ -1,0 +1,15 @@
+/* Local, licensed fonts: loaded only when selected. */
+@font-face{font-family:XuperOpenSans;src:url('../assets/fonts/OpenSans-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:XuperSerif;src:url('../assets/fonts/DejaVuSerif.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:XuperMono;src:url('../assets/fonts/LiberationMono-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+.player-subtitles.font-system .player-subtitles-text{font-family:Arial,'Helvetica Neue',sans-serif}
+.player-subtitles.font-sans .player-subtitles-text{font-family:XuperOpenSans,Arial,sans-serif}
+.player-subtitles.font-serif .player-subtitles-text{font-family:XuperSerif,Georgia,serif}
+.player-subtitles.font-mono .player-subtitles-text{font-family:XuperMono,'Courier New',monospace}
+#vod-format-info{font-size:19px;line-height:28px;color:#b7c7d9;margin-top:5px}
+#screen-player .vod-bottom-row{margin-bottom:18px}
+#screen-player .vod-infobar-content{height:205px}
+#screen-player .player-vod-infobar{height:345px}
+
+#dps-row-font{min-height:66px;margin-bottom:30px}
+#dps-row-font .dps-btn{width:270px;min-width:270px;padding:0 15px;font-size:24px}

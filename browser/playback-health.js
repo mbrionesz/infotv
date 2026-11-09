@@ -1,10 +1,11 @@
+import {frameAspect} from './media-info.js';
 // Read counters only: no frame callback loop and no audio clock adjustment.
 export function mediaHealth(video){
  let buffered=0,bufferStart=null,bufferEnd=null;
  try{for(let i=0;i<video.buffered.length;i++){const start=video.buffered.start(i),end=video.buffered.end(i);bufferStart=bufferStart===null?start:Math.min(bufferStart,start);bufferEnd=bufferEnd===null?end:Math.max(bufferEnd,end);if(video.currentTime>=start-0.1&&video.currentTime<=end)buffered=Math.max(0,end-video.currentTime);}}catch(_){}
  let quality=null;try{quality=video.getVideoPlaybackQuality&&video.getVideoPlaybackQuality();}catch(_){}
  return {bufferStart,bufferEnd,time:Math.round(video.currentTime*100)/100,bufferSeconds:Math.round(buffered*100)/100,
- width:video.videoWidth||0,height:video.videoHeight||0,playbackRate:video.playbackRate||1,
+ width:video.videoWidth||0,height:video.videoHeight||0,aspect:frameAspect(video.videoWidth,video.videoHeight),playbackRate:video.playbackRate||1,
  totalFrames:quality?quality.totalVideoFrames:video.webkitDecodedFrameCount||0,
  droppedFrames:quality?quality.droppedVideoFrames:video.webkitDroppedFrameCount||0,
  paused:!!video.paused,readyState:video.readyState||0};

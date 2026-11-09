@@ -1,3 +1,4 @@
+export function frameAspect(width,height){width=Number(width);height=Number(height);if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)return null;const ratio=width/height,candidates=[[16/9,'16:9'],[4/3,'4:3'],[21/9,'21:9'],[2.39,'2.39:1'],[2.4,'2.40:1'],[1.85,'1.85:1'],[2,'2:1'],[1,'1:1']];const closest=candidates.slice().sort((a,b)=>Math.abs(a[0]-ratio)-Math.abs(b[0]-ratio))[0];return {ratio:Math.round(ratio*10000)/10000,label:Math.abs(closest[0]-ratio)/ratio<0.006?closest[1]:ratio.toFixed(2)+':1',source:'decoded-frame',embeddedBars:'unknown'};}
 export function formatMediaInfo(d={}){
  const media=d.media||{},level=d.level||{},codecs=d.codecs||{};
  const width=media.width||level.width,height=media.height||level.height;
@@ -6,7 +7,7 @@ export function formatMediaInfo(d={}){
  const fps=Number.isFinite(declared)&&declared>0?declared.toFixed(2).replace('.',',')+' FPS declarados':Number.isFinite(measured)&&measured>0?measured.toFixed(2).replace('.',',')+' FPS medidos':'FPS sin datos';
  function codec(value){return /^avc1/i.test(value)?'H.264':/^hev1|^hvc1/i.test(value)?'HEVC':/^mp4a/i.test(value)?'AAC':/^ec-3/i.test(value)?'E-AC-3':/^ac-3/i.test(value)?'AC-3':value||'';}
  const video=codec(codecs.video&&codecs.video.codec),audio=codec(codecs.audio&&codecs.audio.codec);
- return [resolution,fps,video,audio].filter(Boolean).join(' · ');
+ const aspect=frameAspect(width,height);return [resolution,fps,video,audio,aspect?'Fotograma '+aspect.label:''].filter(Boolean).join(' · ');
 }
 // One frame callback per health sample, not a per-frame JavaScript loop.
 export function createFrameMeter(video){
