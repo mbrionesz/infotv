@@ -37,3 +37,11 @@ Las capturas usan datos de demostración. La consulta del proveedor desde este e
 ## Corrección independiente del panel de fuentes
 
 El panel de audio/subtítulos ahora usa filas completas: fuentes y tamaños en dos columnas, colores en una fila y audio/idiomas con ajuste de línea. El cuerpo se desplaza verticalmente, con indicador de desplazamiento visible y botón Listo fijo. Las pruebas verifican cada opción y el recorrido horizontal/vertical del mando, además de carga y persistencia de las fuentes existentes.
+
+## A+ · Cinemática con categorías
+
+Variante pedida tras elegir A. Abrir `a-plus.html` o `index.html?design=c&section=movies` (también `series` y `tv`). Conserva el destacado y las filas de A; añade debajo una barra de géneros rápidos, Colecciones y Año. No agrega destinos al menú superior.
+
+Al elegir género, colección o año el destacado se reduce y se muestra la fila filtrada; Quitar filtros restaura Seguir viendo, Colecciones y Mi lista. La búsqueda conserva los filtros. El prototipo permite combinar Drama + Prime Video + 2026, con datos simulados, y comprueba que existan resultados y que limpiar recupere las filas. Las colecciones, años y calidades reales deben venir del portal al implementar la variante. No se ha cambiado el catálogo ni el reproductor de producción.
+
+Capturas nuevas: `c-movies.png`, `c-series.png`, `c-tv.png` y los estados `c-movies-filtrado.png` / `c-series-filtrado.png`. La comprobación de navegador cubre 54 combinaciones de diseño, sección y resolución, sin errores de consola. No equivale a una prueba en hardware Samsung.
