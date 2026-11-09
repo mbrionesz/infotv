@@ -4217,7 +4217,7 @@
     (ze.netdiag = (function () {
       if(window.XuperStandalone){
         var nativePanel=samsungSettingsCard("Conoce tu conexión","Estado de la señal, reserva de vídeo y tiempos HTTP desde tu televisor.");
-        nativePanel.appendChild(e("div","xt-setting-body","Revisa el transporte activo, el mando y los servidores del canal. Puedes medir conexión HTTP y consultar DNS seguro. Una respuesta del servidor no garantiza que la señal esté disponible."));
+        nativePanel.appendChild(e("div","xt-setting-body","Revisa el transporte activo, el mando y los servidores del canal. Puedes medir latencia HTTP, consultar DNS seguro y probar la descarga de internet (4 MiB). La prueba no mide la velocidad del enlace Wi-Fi. Una respuesta del servidor no garantiza que la señal esté disponible."));
         var nativeButton=e("div","dg-btn focusable xt-open-diagnostics","Abrir diagnóstico");
         nativeButton.className+=" xt-setting-action";nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
         return nativePanel;

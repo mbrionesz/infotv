@@ -17,11 +17,12 @@ try{
  for(let i=0;i<8;i++)await browser.evaluate('__xuper.key(40)');
  const position=await browser.evaluate('({group:__xuper.state.focus._group,scroll:document.getElementById("settings-right").scrollTop,visible:(function(){var a=__xuper.state.focus.getBoundingClientRect(),b=document.getElementById("settings-right").getBoundingClientRect();return a.top>=b.top&&a.bottom<=b.bottom})()})');
  assert.equal(position.group,'style');assert.ok(position.scroll>0);assert.ok(position.visible);
- for(const group of ['screen','audio','subLang','size','style']){
+ for(const group of ['screen','audio','subLang','size','style','font']){
  const value=await browser.evaluate('(function(){var el=document.querySelector(".settings-panel.is-active .pb-opt[data-unused]");var options=Array.from(document.querySelectorAll(".settings-panel.is-active .pb-opt")).filter(function(x){return x._group==='+JSON.stringify(group)+'});__xuper.focus(options[1]);__xuper.key(13);return {value:__xuper.state.playback['+JSON.stringify(group)+'],checked:options[1].classList.contains("is-checked")}})()');assert.equal(value.value,1);assert.ok(value.checked);
  }
  await browser.evaluate('__xuper.focus(document.querySelector(".xt-setting-action"));__xuper.key(13);__xuper.key(13)');
- await browser.evaluate('__xuper.focus(document.querySelectorAll(".xt-setting-action")[1]);__xuper.key(13);__xuper.key(13)');
+ await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".xt-setting-action")).find(b=>b.textContent.startsWith("Subtítulos")));__xuper.key(13);__xuper.key(13);__xuper.key(13)');
+ await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".xt-setting-action")).find(b=>b.textContent.includes("TMDB")));__xuper.key(13)');assert.ok(await browser.evaluate('!!document.querySelector(".xt-tmdb-settings")'));await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');assert.equal(await browser.evaluate('!!document.querySelector(".xt-tmdb-settings")'),false);
  await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".settings-panel.is-active .pb-opt")).filter(function(x){return x._group==="style"})[1])');await browser.screenshot(path.join(out,'ajustes-final-'+width+'.png'));
  }
  if(id==='parent')await browser.evaluate('__xuper.key(13);__xuper.key(13)');
