@@ -8,6 +8,7 @@ import {carouselItems} from './carousel.js';
 const node=(tag,cls,text)=>{const value=document.createElement(tag);value.className=cls;if(text)value.textContent=text;return value;};
 export function discoveryFocus(nodes,index,code){
  if(!nodes.length)return 0;index=Math.max(0,Math.min(index,nodes.length-1));const group=el=>Number(el.dataset.navrow||-1),current=nodes[index],row=group(current),same=nodes.filter(el=>group(el)===row),column=same.indexOf(current);
+ if(current.classList.contains('xt-showcase-all')&&(code===37||code===40)){const first=same.find(el=>el!==current&&el.classList.contains('xt-discovery-card'));if(first)return nodes.indexOf(first);}
  if(code===37||code===39)return nodes.indexOf(same[Math.max(0,Math.min(same.length-1,column+(code===39?1:-1)))]);
  if(code===38||code===40){const rows=Array.from(new Set(nodes.map(group))).sort((a,b)=>a-b),at=rows.indexOf(row),next=rows[Math.max(0,Math.min(rows.length-1,at+(code===40?1:-1)))],targets=nodes.filter(el=>group(el)===next);return nodes.indexOf(targets[Math.min(column,targets.length-1)]);}
  return index;

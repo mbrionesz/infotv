@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {stabilityLabel} from '../browser/diagnostic-cards.js';
+import {liveChannelInfo} from '../browser/live-channel-info.js';
+test('stability describes only a measured short sample',()=>{assert.equal(stabilityLabel({}).state,'warning');assert.equal(stabilityLabel({samples:[30,35,40],jitterMs:10,latencyMs:35}).label,'Estable en esta prueba');assert.equal(stabilityLabel({samples:[30,400,40],jitterMs:370,latencyMs:40}).state,'warning');});
+test('channel quality uses dimensions rather than a marketing channel name',()=>{const window={__xuper:{channels:[{name:'Canal 4K',logo:'https://example.org/logo.png'}],state:{channel:0}},XuperPlayer:{diagnostics:{media:{width:1920,height:1080}}}};assert.equal(liveChannelInfo(window).quality,'1080p Full HD');window.XuperPlayer.diagnostics={};assert.equal(liveChannelInfo(window).quality,'Calidad no informada');window.__xuper.channels[0].uhd=true;assert.equal(liveChannelInfo(window).quality,'UHD · declarado');});

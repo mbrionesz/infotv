@@ -4217,7 +4217,7 @@
     (ze.netdiag = (function () {
       if(window.XuperStandalone){
         var nativePanel=samsungSettingsCard("Conoce tu conexión","Estado de la señal, reserva de vídeo y tiempos HTTP desde tu televisor.");
-        nativePanel.appendChild(e("div","xt-setting-body","Revisa el transporte activo, el mando y los servidores del canal. Puedes medir latencia HTTP, consultar DNS seguro y probar la descarga de internet (4 MiB). La prueba no mide la velocidad del enlace Wi-Fi. Una respuesta del servidor no garantiza que la señal esté disponible."));
+        nativePanel.appendChild(e("div","xt-setting-body","Revisa tu conexión con tarjetas de latencia, descarga, estabilidad de la prueba y servidores del canal. Puedes comprobar DNS y realizar una descarga de 4 MiB. No mide la velocidad física del Wi-Fi ni garantiza disponibilidad de la señal."));
         var nativeButton=e("div","dg-btn focusable xt-open-diagnostics","Abrir diagnóstico");
         nativeButton.className+=" xt-setting-action";nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
         return nativePanel;
@@ -5356,9 +5356,9 @@
     an = 0;
   function nn() {
     ((Zi =
-      ["normal", "big", "small", "huge"][Number(X.playback.size) || 0] || "normal"),
+      ["normal", "big", "small", "huge"][subtitleOptionValue("size",3)] || "normal"),
       (en =
-        ["white", "yellow", "black", "cyan", "lime"][Number(X.playback.style) || 0] || "white"),
+        ["white", "yellow", "black", "cyan", "lime"][subtitleOptionValue("style",4)] || "white"),
       Ki || (Ji = !!X.playback.subtitle),
       Zn(
         ["cover", "contain", "16-9", "4-3"][Number(X.playback.screen) || 0] ||
@@ -5537,15 +5537,21 @@
         a.send());
     } catch (e) {}
   }
-  function subtitleFontValue(){var saved=X.playerMode==='vod'&&X.screen==='player'?titlePreferences(X.playerItem).font:undefined;var value=Number.isInteger(saved)?saved:Number(X.playback.font)||0;return value>=0&&value<=3?value:0;}
+  function subtitleOptionValue(field,max){var saved=X.playerMode==='vod'&&X.screen==='player'?titlePreferences(X.playerItem)[field]:undefined;var value=Number.isInteger(saved)?saved:Number(X.playback[field])||0;return value>=0&&value<=max?value:0;}
+  function subtitleFontValue(){return subtitleOptionValue('font',3);}
+  function syncSubtitleChoices(){
+    var choices=[['[data-sub-font]',String(subtitleFontValue()),'data-sub-font'],['#dps-style-options [data-style]',en,'data-style'],['#dps-size-options [data-size]',Zi,'data-size']];
+    choices.forEach(function(group){document.querySelectorAll(group[0]).forEach(function(button){var selected=button.getAttribute(group[2])===group[1];button.classList.toggle('is-selected',selected);button.setAttribute('role','radio');button.setAttribute('aria-checked',String(selected));});});
+  }
   function gn() {
+    Zi=["normal","big","small","huge"][subtitleOptionValue("size",3)];en=["white","yellow","black","cyan","lime"][subtitleOptionValue("style",4)];
     Bi &&
       (Bi.classList.remove("size-small", "size-normal", "size-big", "size-huge"),
       Bi.classList.add("size-" + Zi),
       Bi.classList.remove("color-white", "color-yellow", "color-black", "color-cyan", "color-lime"),
       Bi.classList.add("color-" + en),
       Bi.classList.remove("font-system","font-sans","font-serif","font-mono"),
-      Bi.classList.add("font-"+["system","sans","serif","mono"][subtitleFontValue()]));
+      Bi.classList.add("font-"+["system","sans","serif","mono"][subtitleFontValue()]));syncSubtitleChoices();
   }
   function yn(e) {
     if (Bi)
@@ -6289,7 +6295,7 @@
   }
   function ir() {
     var fontRow=document.getElementById('dps-row-font');if(fontRow)fontRow.classList.toggle('is-visible',Ji&&En(un[Ln(bn())]).length>0);
-    var fontValue=subtitleFontValue();document.querySelectorAll('[data-sub-font]').forEach(function(button){button.classList.toggle('is-selected',Number(button.dataset.subFont)===fontValue);});
+    syncSubtitleChoices();
     var t = En(un[Ln(bn())]);
     if (Oi) {
       var i = Oi.parentNode;
@@ -6522,14 +6528,14 @@
       for (var r = Hi.querySelectorAll(".dps-btn"), o = 0; o < r.length; o++)
         (function (e) {
           e._activate = function () {
-            ((Zi = e.getAttribute("data-size") || "normal"), (X.playback.size=["normal","big","small","huge"].indexOf(Zi)), Y(), gn(), ir());
+            ((Zi = e.getAttribute("data-size") || "normal"), (X.playback.size=["normal","big","small","huge"].indexOf(Zi)), Y(), saveTitlePreference("size",X.playback.size), gn(), ir());
           };
         })(r[o]);
     if (Ui)
       for (var s = Ui.querySelectorAll(".dps-btn"), l = 0; l < s.length; l++)
         (function (e) {
           e._activate = function () {
-            ((en = e.getAttribute("data-style") || "white"), (X.playback.style=["white","yellow","black","cyan","lime"].indexOf(en)), Y(), gn(), ir());
+            ((en = e.getAttribute("data-style") || "white"), (X.playback.style=["white","yellow","black","cyan","lime"].indexOf(en)), Y(), saveTitlePreference("style",X.playback.style), gn(), ir());
           };
         })(s[l]);
     document.querySelectorAll('[data-sub-font]').forEach(function(button){button._activate=function(){saveTitlePreference('font',Number(button.dataset.subFont));gn();ir();Dn();};});
@@ -6673,8 +6679,8 @@
     (Se.appendChild(C), dr(), hr());
     var w = e("div", "pc-menu");
     (w.appendChild(e("div", "ic")),
-      w.appendChild(e("div", "l1", "Presione [OK] para reproducir")),
-      w.appendChild(e("div", "l2", "(Arriba: Categorías · OK: Filtrar)")),
+      w.appendChild(e("div", "l1", "OK · Ver canal")),
+      w.appendChild(e("div", "l2", "↑ Categorías · → Volver al vídeo")),
       Se.appendChild(w));
   }
   function closeLiveChannelSearch(returnFocus) {
@@ -7893,7 +7899,7 @@
   }
   function no() {
     if ("live" === X.playerMode) {
-      ((X.channelsOpen = !0),
+      (ui(), (X.channelsOpen = !0),
         Se.classList.add("is-active"),
         dr(),
         hr(X.channel),
@@ -7902,8 +7908,8 @@
       if (e) {
         rt(e);
         var t = e.parentNode,
-          a = 111 * X.channel;
-        (a < t.scrollTop || a + 109.5 > t.scrollTop + t.clientHeight) &&
+          a = e.offsetTop;
+        (a < t.scrollTop || a + e.offsetHeight > t.scrollTop + t.clientHeight) &&
           (t.scrollTop = Math.max(0, a - 120));
       }
     }

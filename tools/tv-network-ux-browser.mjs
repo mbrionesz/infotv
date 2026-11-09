@@ -4,7 +4,7 @@ import path from 'node:path';
 import {once} from 'node:events';
 import assert from 'node:assert/strict';
 import {browserHarness} from './browser-harness.mjs';
-const root=path.resolve('app'),shots='docs/ux-usability/0.10.5';mkdirSync(shots,{recursive:true});let browser;
+const root=path.resolve('app'),shots='docs/ux-usability/0.10.6';mkdirSync(shots,{recursive:true});let browser;
 const server=http.createServer((req,res)=>{
  if(req.url.includes('$WEBAPIS/')){res.end('');return;}
  if(req.url==='/channel-logo.svg'){res.setHeader('Content-Type','image/svg+xml');res.end('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="60"><rect width="160" height="60" rx="8" fill="#182e48"/><text x="80" y="43" text-anchor="middle" font-family="Arial" font-size="36" fill="#c7eeff">TV</text></svg>');return;}
@@ -44,7 +44,7 @@ try{
  for(let i=0;i<6;i++){await browser.evaluate('XuperShell.focusHeader(2)');await key(37);await key(37);await key(39);await key(39);}
  assert.equal(await browser.evaluate('document.querySelectorAll("#xt-catalog").length'),1);assert.equal(await browser.evaluate('document.querySelectorAll("#xt-guide").length'),0);
  await browser.evaluate('XuperStandalone.openDiagnostics();XuperStandalone.probeCdns=async()=>({results:[{host:"test.example",scheme:"https:",httpStatus:200,elapsedMs:48},{host:"other.example",scheme:"https:",httpStatus:404,elapsedMs:90}]});document.querySelector(".xt-diag-cdn").click();document.querySelector(".xt-diag-speed").click()');
- await browser.waitFor('document.querySelector(".xt-network-results .is-ok")');assert.equal(await browser.evaluate('speedRequests'),4);assert.equal(await browser.evaluate('document.querySelectorAll(".xt-cdn-row.is-ok").length'),1);assert.equal(await browser.evaluate('document.querySelectorAll(".xt-cdn-row.is-warning").length'),1);
+ await browser.waitFor('document.querySelector("[data-metric=speed].is-ok")');assert.equal(await browser.evaluate('document.querySelectorAll(".xt-diagnostics pre").length'),0);assert.ok(await browser.evaluate('(()=>{const b=document.querySelector(".xt-diag-body");return b.scrollWidth<=b.clientWidth})()'),'Diagnostic must not scroll sideways');assert.equal(await browser.evaluate('speedRequests'),4);assert.equal(await browser.evaluate('document.querySelectorAll(".xt-cdn-row.is-ok").length'),1);assert.equal(await browser.evaluate('document.querySelectorAll(".xt-cdn-row.is-warning").length'),1);
  for(const [width,height]of [[1280,720],[3840,2160]]){await browser.command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});await browser.waitFor('__xuperViewport.w==='+width);assert.ok(await browser.evaluate('Array.from(document.querySelectorAll(".xt-diag-actions button")).every(b=>{const r=b.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight})'));}
  await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});await browser.screenshot(shots+'/diagnostico.png');await key(10009);assert.equal(await browser.evaluate('!!document.querySelector(".xt-diagnostics")'),false);
  assert.deepEqual(browser.errors,[]);console.log('PASS movies startup; automatic tabs, gear OK; 100 channels down/up with focus visible; 35 categories; bounded 12 rows; logos without cropping; favorites; repeated section/settings return; measured 4 MiB HTTP fixture; green 200/amber404; diagnostic controls visible 720p/4K. Provider/network mocked.');
