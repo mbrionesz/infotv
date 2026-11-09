@@ -63,8 +63,9 @@ try {
       var core=api.core;
       var originalCall=core.call;
       core.call=function(method,payload,cb){
-        if(method==='catalogFullPage'||method==='catalogPage'||method==='catalogQuery'||method==='catalogSearch'){
+        if(method==='catalogDiscover'||method==='catalogFullPage'||method==='catalogPage'||method==='catalogQuery'||method==='catalogSearch'){
           var rows=Array.from({length:36},function(_,i){return {id:(payload.root==='series'?'series-test-':'test-')+i,title:'Título de prueba '+i,year:'2024',country:'Chile',poster:i<6?'assets/catalog/sintel.jpg':''}});
+          if(method==='catalogDiscover'){cb(null,{root:payload.root,period:payload.period||'recent',latestTitle:'Novedades recientes',latest:rows.slice(0,12),editorial:rows.slice(0,12),genres:['Drama'],countryOptions:{featured:[],all:[{id:'Chile',name:'Chile'}]},note:'Datos de prueba'});return;}
           cb(null,{items:rows,total:21000,loaded:21000,facets:{genres:['Drama'],years:['2024'],countries:['Chile'],resolutions:[]},hasMore:true});return;
         }
         return originalCall(method,payload,cb);
@@ -82,7 +83,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.1');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.2');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -95,6 +96,7 @@ try {
   await browser.evaluate('__xuper.focus(".live-focus");__xuper.key(40)');
   assert.equal(await browser.evaluate('__xuper.state.focus === document.querySelectorAll(".dashboard-action")[3]'),true);
   await browser.evaluate('__xuper.key(38);__xuper.key(39);__xuper.key(13)');
+  await browser.waitFor('document.querySelectorAll(".xt-discovery-card").length>0');await browser.evaluate('Array.from(document.querySelectorAll(".xt-discovery-actions button")).find(function(button){return button.textContent==="Catálogo completo"}).click()');
   await browser.waitFor('!!document.getElementById("xt-catalog") && document.querySelectorAll(".xt-catalog-card").length===36');
   await browser.screenshot('dist/browser-movies.png');
   await browser.evaluate('XuperCatalog.close()');
@@ -134,7 +136,7 @@ try {
   console.log('PASS: all six home posters open and decode their movie fixture.');
   const vodResults=[];
   for(const kind of ['movies','series']){
-    await browser.evaluate('XuperCatalog.open('+JSON.stringify(kind)+')');
+    await browser.evaluate('XuperCatalog.open('+JSON.stringify(kind)+',{browse:true})');
     await browser.waitFor('document.querySelectorAll(".xt-catalog-card").length===36');
     await browser.evaluate('for(var i=0;i<10&&!document.querySelector(".xt-catalog-card.selected");i++)XuperCatalog.handle({keyCode:40})');
     for(let row=0;row<6;row++){
@@ -144,7 +146,7 @@ try {
       }
       if(row<5)await browser.evaluate('XuperCatalog.handle({keyCode:40})');
     }
-    await browser.evaluate('XuperCatalog.close();XuperCatalog.open('+JSON.stringify(kind)+');for(var i=0;i<10&&!document.querySelector(".xt-catalog-card.selected");i++)XuperCatalog.handle({keyCode:40});XuperCatalog.handle({keyCode:13})');
+    await browser.evaluate('XuperCatalog.close();XuperCatalog.open('+JSON.stringify(kind)+',{browse:true});for(var i=0;i<10&&!document.querySelector(".xt-catalog-card.selected");i++)XuperCatalog.handle({keyCode:40});XuperCatalog.handle({keyCode:13})');
     await browser.waitFor('__xuper.state.screen==="detail"');
     await browser.evaluate('__xuper.focus(document.querySelector(".detail-btn"));__xuper.key(13)');
     await browser.waitFor('__xuper.state.screen==="player"&&document.querySelector("#player-video").currentTime>0.2',150);

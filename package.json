@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -21,6 +21,7 @@
     "test:ux": "node tools/ux-usability-browser.mjs",
     "test:native-wasm": "node tools/native-wasm-integration.mjs",
     "test:audio": "node tools/audio-subtitles-browser.mjs",
+    "test:discovery": "node tools/discovery-browser.mjs",
     "test:catalog": "node tools/catalog-browser.mjs",
     "test:timeline": "node tools/timeline-regression-browser.mjs"
   },

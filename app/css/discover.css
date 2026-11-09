@@ -1,0 +1,37 @@
+/* Discovery is a distinct entry screen, not a recolored all-titles grid. */
+#xt-catalog [hidden]{display:none!important}
+#xt-catalog[data-discovery=true]{padding:35px 58px;background:radial-gradient(ellipse at 82% 5%,#23364d,#080c14 72%)}
+#xt-catalog[data-discovery=true] header{height:94px;margin-bottom:12px;align-items:center}
+#xt-catalog[data-discovery=true] header h1{font-size:48px;margin:0}
+#xt-catalog[data-discovery=true] .xt-eyebrow{font-size:13px;letter-spacing:2px}
+#xt-catalog header button+button{margin-left:14px}
+#xt-catalog[data-discovery=true] .xt-catalog-search{min-width:260px;background:#e9f4ff;color:#102033;text-align:center;font-weight:600}
+#xt-catalog[data-discovery=true] .xt-catalog-destinations{margin-bottom:10px}
+#xt-catalog[data-discovery=true] .xt-catalog-destinations button{background:transparent;border:0;border-radius:0;min-width:125px;margin:0 24px 0 0;padding:9px 5px;min-height:44px;color:#aab8ca}
+#xt-catalog[data-discovery=true] .xt-catalog-destinations button.current{color:#fff;border-bottom:3px solid #c7eeff}
+#xt-catalog[data-discovery=true] .xt-catalog-destinations button.selected{background:#c7eeff;color:#102033;outline:2px solid #fff;border-radius:8px}
+#xt-catalog[data-discovery=true] .xt-catalog-status{font-size:17px;color:#95aac3;height:27px;margin-bottom:5px}
+.xt-discovery-grid{display:block;height:794px;overflow-y:auto;overflow-x:hidden;padding:8px 8px 60px;scroll-behavior:auto}
+.xt-discovery-hero{position:relative;min-height:320px;border-radius:24px;background:linear-gradient(105deg,#20334b,#111a28);overflow:hidden;margin-bottom:25px;border:1px solid #354b67}
+.xt-discovery-copy{position:relative;z-index:2;width:70%;padding:34px 38px;background:linear-gradient(90deg,rgba(17,26,40,.98) 55%,rgba(17,26,40,.1))}
+.xt-discovery-kicker{display:block;font-size:16px;letter-spacing:2px;text-transform:uppercase;color:#b2c7df;margin-bottom:12px}
+.xt-discovery-copy h2{font-size:48px;line-height:1.08;font-weight:600;letter-spacing:-1px;max-height:108px;overflow:hidden;margin:0 0 14px;max-width:980px}
+.xt-discovery-description{font-size:23px;color:#c2cede;line-height:30px;margin:0 0 22px;max-height:60px;overflow:hidden;max-width:940px}
+.xt-discovery-art{position:absolute;right:0;top:0;width:42%;height:100%;object-fit:cover;object-position:center 30%;opacity:.9}
+.xt-discovery-actions{display:flex;flex-wrap:wrap}.xt-discovery-actions button{font-size:22px;margin:0 14px 8px 0!important;min-height:58px;padding:12px 24px}
+.xt-discovery-actions .xt-discovery-primary{background:#e5f2ff;color:#102033;font-weight:600}
+.xt-discovery-periods{display:flex;margin-bottom:25px}.xt-discovery-periods button{font-size:22px;min-height:50px;padding:10px 24px;margin-right:14px;border-radius:25px;background:#142237;border-color:#304760}.xt-discovery-periods button.current{background:#2c4561;border-color:#a4bcd7;color:#fff}
+.xt-discovery-section{margin-bottom:32px}.xt-discovery-section>h2{font-size:31px;line-height:40px;margin:0 0 12px;font-weight:600;letter-spacing:-.4px}
+.xt-discovery-track{position:relative;display:flex;overflow-x:auto;overflow-y:hidden;scroll-behavior:auto;padding:7px 5px 12px;scrollbar-width:none}.xt-discovery-track::-webkit-scrollbar{height:4px;background:transparent}
+#xt-catalog .xt-discovery-card{flex:0 0 225px;width:225px;height:385px;background:transparent;border:1px solid transparent;border-radius:14px;padding:6px;margin-right:18px;overflow:hidden}
+.xt-discovery-card img{display:block;width:100%;height:286px;object-fit:cover;border-radius:12px;background:#1d2c40}.xt-discovery-card strong{display:block;font-size:23px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:12px 2px 6px}.xt-discovery-card small{display:block;font-size:17px;color:#9eb1ca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#xt-catalog .xt-discovery-card.selected{background:#21344e;border-color:#c7eeff;outline:3px solid #fff;color:#fff}
+#xt-catalog .xt-discovery-country{position:relative;flex:0 0 340px;width:340px;height:140px;margin:0 18px 0 0;padding:26px 24px;border-radius:17px;background:linear-gradient(120deg,#244c63,#182a43);border-color:#40617b}
+#xt-catalog .xt-discovery-country:nth-child(2){background:linear-gradient(120deg,#4c365c,#24263f)}#xt-catalog .xt-discovery-country:nth-child(3){background:linear-gradient(120deg,#4c4353,#1b2d47)}
+.xt-discovery-country strong{display:block;font-size:29px;font-weight:500;margin-bottom:14px}.xt-discovery-country small{display:block;font-size:18px;color:#c2cfdf}.xt-discovery-country:disabled{opacity:.5}
+#xt-catalog .xt-discovery-country.selected{background:#c7eeff;color:#102033}.xt-discovery-country.selected small{color:#2d435a}
+#xt-catalog .xt-discovery-link{font-size:21px;border:0;background:transparent;color:#b9d7f5;min-height:42px;padding:8px 10px;margin-top:5px}
+.xt-discovery-genres button{white-space:nowrap;flex:0 0 auto;margin-right:14px;min-width:160px;text-align:center;font-size:24px;border-radius:12px;padding:16px 25px}
+.xt-discovery-note,.xt-discovery-empty{font-size:19px;color:#9bb0ca;line-height:27px;margin:10px 5px 0}
+.xt-discovery-empty{padding:28px 22px;background:#142238;border:1px solid #30445f;border-radius:15px;color:#d1deee}
+#xt-catalog .xt-discovery-actions button.selected,#xt-catalog .xt-discovery-periods button.selected,#xt-catalog .xt-discovery-link.selected{background:#c7eeff;color:#102033;outline:3px solid #fff}
