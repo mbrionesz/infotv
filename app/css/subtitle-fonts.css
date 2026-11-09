@@ -13,3 +13,30 @@
 
 #dps-row-font{min-height:66px;margin-bottom:30px}
 #dps-row-font .dps-btn{width:270px;min-width:270px;padding:0 15px;font-size:24px}
+/* Keep every option inside the panel; only the body scrolls vertically. */
+#dialog-playsettings .dialog-playsettings-box{width:1280px;margin-left:-640px;top:80px;height:870px;border-radius:24px;background:#142033}
+#dialog-playsettings .dps-header{background:#142033;border-color:#354762}
+#dialog-playsettings .dps-body{padding:30px 42px 28px;overflow-x:hidden;overflow-y:auto;min-height:0}
+#dialog-playsettings .dps-row{height:auto;min-height:60px;align-items:flex-start;margin-bottom:22px}
+#dialog-playsettings .dps-label{width:180px;min-width:180px;padding-top:16px;font-size:24px}
+#dialog-playsettings .dps-options{flex-wrap:wrap;min-width:0;overflow:visible}
+#dialog-playsettings .dps-btn{height:62px;min-width:0;margin:0 12px 12px 0;padding:0 23px;border-radius:13px;font-size:24px;background:#20334d;color:#eef4fc;border-color:#506786}
+#dialog-playsettings #dps-size-options .dps-btn,#dialog-playsettings #dps-row-font .dps-btn{width:calc(50% - 12px);min-width:0}
+#dialog-playsettings #dps-audio-options .dps-btn,#dialog-playsettings #dps-lang-options .dps-btn{width:calc(33.333% - 12px);white-space:normal;line-height:27px}
+#dialog-playsettings #dps-style-options .dps-btn{width:calc(20% - 12px);padding:0 10px}
+#dialog-playsettings .dps-btn.is-selected{background:#314c70;border-color:#92b9e4;color:#fff}
+#dialog-playsettings .dps-btn.is-selected:after{background:#d2e8ff;width:8px;height:8px;right:9px;margin-top:-4px}
+#dialog-playsettings .dps-btn.is-focused{background:#f0f5fc;border-color:#fff;color:#101b2b;box-shadow:0 0 0 2px #fff}
+#dialog-playsettings .dps-btn.is-focused:after{background:#142033}
+#dialog-playsettings .dps-switch{margin-top:9px}
+#dialog-playsettings .dps-switch.is-on{background:#4f86bc}
+#dialog-playsettings .dps-footer{background:#142033;border-top:1px solid #354762;flex-shrink:0}
+#dialog-playsettings .dps-body::-webkit-scrollbar{display:block;width:8px}
+#dialog-playsettings .dps-body::-webkit-scrollbar-track{background:#142033}
+#dialog-playsettings .dps-body::-webkit-scrollbar-thumb{background:#607b9c;border-radius:6px}
+.dps-navigation-hint{font-size:20px;color:#b4c5da;margin-left:28px}
+#dialog-playsettings .dps-body{padding-top:16px;padding-bottom:16px}
+#dialog-playsettings .dps-row{min-height:52px;margin-bottom:10px}
+#dialog-playsettings .dps-btn{height:58px;margin-bottom:8px}
+#dialog-playsettings .dps-label{padding-top:14px}
+#dialog-playsettings .dps-switch{border-color:#4f86bc}
