@@ -82,7 +82,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.8.13');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.0');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -194,7 +194,7 @@ try {
   await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:39,bubbles:true}));document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:13,bubbles:true}))');
   await browser.waitFor('document.getElementById("player-video").currentTime>0.5',180);
   await browser.waitFor('document.querySelector(".xt-playback-info").textContent.includes("1280×720")');
-  assert.equal(await browser.evaluate('getComputedStyle(document.querySelector(".xt-guide-channels button")).fontSize'),'23px');
+  assert.equal(await browser.evaluate('getComputedStyle(document.querySelector(".xt-guide-channels button")).fontSize'),'24px');
   await browser.screenshot('dist/guide-v3.png');
   await browser.waitFor('!XuperGuide.active && document.getElementById("player-video").currentTime>0.5',180);
   await browser.evaluate('__xuper.show("home")');

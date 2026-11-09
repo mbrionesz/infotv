@@ -1006,7 +1006,7 @@ function search(e, r) {
   });
 }
 // Full catalog endpoints, distinct from the editorial getNextColumns feed.
-var CATALOG_ROOTS = {featured:76176,movies:76177,series:76178,kids:76783,anime:76180};
+var CATALOG_ROOTS = {featured:76176,movies:76177,series:76178,kids:76783,anime:76180,explore:76784,popular:76301};
 function catalogRequest(root, path, bean, callback) {
   if (!Object.prototype.hasOwnProperty.call(CATALOG_ROOTS,root))
     return callback(new Error("Sección de catálogo desconocida"));
@@ -1043,7 +1043,7 @@ function catalogFilters(root,callback){
 }
 function catalogBrowse(root,options,callback){
   options=options||{};var page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(60,parseInt(options.pageSize,10)||36)),filters=options.filters||{};
-  var filtered=!!(filters.genre||filters.year||filters.country);
+  var resolvedColumn="",filtered=!!(filters.genre||filters.year||filters.country);
   function fetch(column,alternative){
     var bean={columnId:column||CATALOG_ROOTS[root],pageNum:page,pageSize:size},path=column?"v3/getShelveData":"v3/filterByContent";
     if(column&&(alternative||filtered))path="v3/filterByContent";
@@ -1052,9 +1052,10 @@ function catalogBrowse(root,options,callback){
     catalogRequest(root,path,bean,function(error,result){
       if(error&&column&&!alternative&&!filtered)return fetch(column,true);
       if(error)return callback(error);result=result||{};var raw=result.assetList||[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative&&!filtered?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
-      callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,hasMore:known?page*size<declared:raw.length>=size});
+      callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,resolvedColumn:resolvedColumn||undefined,hasMore:known?page*size<declared:raw.length>=size});
     });
   }
+  if(!filters.column&&(root==="explore"||root==="popular"))return catalogColumns(root,function(error,result){if(error)return callback(error);resolvedColumn=result.columns.length?result.columns[0].id:"";fetch(resolvedColumn);});
   if(!filters.column)return fetch("");
   // Only categories actually exposed for this root may be opened.
   catalogColumns(root,function(error,result){if(error)return callback(error);for(var i=0;i<result.columns.length;i++)if(result.columns[i].id===String(filters.column))return fetch(result.columns[i].id);callback(new Error("Categoría no disponible"));});
@@ -1436,7 +1437,7 @@ function resolve(e, r, t, n) {
         o = r.tracks,
         i = parseInt(t.trackIndex, 10);
       (i >= 0 && i < o.length) || (i = 0);
-      if(t.preferredAudio&&!(i>0)){
+      if(t.preferredAudio&&!t.trackExplicit&&!(i>0)){
         var choices=[];for(var ci=0;ci<o.length;ci++){var names=trim(o[ci].audioInfo).split(/[,\/]/);for(var ai=0;ai<names.length;ai++)choices.push({language:names[ai],name:names[ai],variant:ci});}
         var selected=audioLanguage.chooseAudioTrack(choices,t.preferredAudio);if(selected>=0)i=choices[selected].variant;
       }

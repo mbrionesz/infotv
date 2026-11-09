@@ -57,3 +57,10 @@ test('a rejected category/filter combination never falls back to an unfiltered s
  await assert.rejects(invoke(f.core,'catalogBrowse','series',{filters:{column:'turkey',year:'2024',genre:'drama-code',country:'TR'}}),/Combination rejected/);
  assert.deepEqual(f.calls.map(c=>c.path),['v3/getColumnContents','v3/filterByContent']);assert.equal(f.calls.at(-1).bean.tags,'drama-code');
 });
+test('documented explore and popular roots use the same scoped category routes',async()=>{
+ for(const [root,id] of [['explore',76784],['popular',76301]]){
+  const f=fixture((path,bean,cb)=>cb(null,path.endsWith('getColumnContents')?{childColumnList:[{id:'documented-child',name:'Colección'}]}:{assetList:[{contentId:'title',name:'Title'}],totalSize:1}));
+  await invoke(f.core,'catalogColumns',root);assert.equal(f.calls[0].bean.columnId,id);
+  const result=await invoke(f.core,'catalogBrowse',root,{});assert.equal(f.calls.at(-1).bean.columnId,'documented-child');assert.equal(result.resolvedColumn,'documented-child');assert.ok(f.calls.some(call=>call.path==='v3/getColumnContents'&&call.bean.columnId===id));
+ }
+});

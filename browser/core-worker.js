@@ -31,7 +31,7 @@ function invoke(method,payload,done) {
   if (method==='search') return core.search(payload.value||'',done);
   if (method==='detail') return core.detail(payload.contentId,done);
   if (method==='mediaInfo') return core.mediaInfo(payload.contentId,payload.seriesContentId,done);
-  if (method==='resolve') return core.resolve(payload.contentId,payload.seriesContentId,{trackIndex:payload.trackIndex,preferredAudio:payload.preferredAudio},done);
+  if (method==='resolve') return core.resolve(payload.contentId,payload.seriesContentId,{trackIndex:payload.trackIndex,trackExplicit:payload.trackExplicit,preferredAudio:payload.preferredAudio},done);
   if (method==='resolveLive') return core.resolveLive(payload.channelCode,done,{force:!!payload.force});
   if (method==='parseM3u') return done(null,{channels:core.parseM3u(payload.text||'')});
   done(new Error('Método no disponible'));

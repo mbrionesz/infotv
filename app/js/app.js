@@ -3260,6 +3260,7 @@
   }
   function ba(e) {
     if (!e || !e.id) return;
+    if(ln&&String(ln.id)!==String(e.id))ln=null;
     zr();
     t("screen-detail").scrollTop = 0;
     t("screen-detail").classList.add("scrollable");
@@ -3309,11 +3310,15 @@
       a(oe),
       a(le),
       a(de));
+    var record=(Q.history||[]).filter(function(row){return String(row.id)===String(n.id)&&row.position>=3&&(!row.duration||row.position<row.duration-30);})[0];
+    if(record&&!ln){ln=record;dn(n);}
     var oldPoster = t("screen-detail").querySelector(".detail-artwork");
     if (oldPoster) oldPoster.remove();
     var artwork = e("img", "detail-artwork"); artwork.alt = "";
     if (n.poster && window.XuperStandalone) XuperStandalone.loadPoster(artwork, n.poster);
     t("screen-detail").appendChild(artwork);
+    var oldBackdrop=t("screen-detail").querySelector('.detail-backdrop');if(oldBackdrop)oldBackdrop.remove();
+    var backdrop=e('img','detail-backdrop');backdrop.alt='';if(n.backdrop||n.landscape)XuperStandalone.loadPoster(backdrop,n.backdrop||n.landscape);t('screen-detail').insertBefore(backdrop,t('screen-detail').firstChild);
     var r,
       o = e("div", "detail-titlewrap");
     if (
@@ -3356,6 +3361,7 @@
       f.appendChild(m);
     }
     oe.appendChild(f);
+    var badges=e('div','detail-media-badges');badges.setAttribute('aria-live','polite');oe.appendChild(badges);oe.appendChild(e('div','detail-quality-options'));
     var g = e("div", "detail-row");
     g.appendChild(document.createTextNode("Director : "));
     var y = e("span", "val", n.director);
@@ -3386,7 +3392,7 @@
     var T = [
       {
         icon: "icon_detail_fullscreen.png",
-        label: "Reproducir",
+        label: record?"Continuar"+(record.episodeNumber?" · E"+record.episodeNumber:"")+" · "+Math.floor(record.position/60)+" min":"Reproducir",
         kind: "fullscreen",
       },
       {
@@ -3394,8 +3400,9 @@
         label: "Idioma",
         kind: "language",
       },
-      { icon: "icon_detail_favorite.png", label: "Favorito", kind: "favorite" },
+      { icon: "icon_detail_favorite.png", label: "Mi lista", kind: "favorite" },
     ];
+    if(record)T.splice(1,0,{icon:'icon_detail_fullscreen.png',label:'Desde el principio',kind:'restart'});
     x(n) && !window.XuperStandalone &&
       T.push({
         icon: "icon_detail_subscribe.png",
@@ -3413,16 +3420,17 @@
         "favorite" === T[_].kind &&
           X.favs[String(n.id)] &&
           (k.classList.add("is-selected"),
-          (k.querySelector("span").textContent = "En favoritos")),
+          (k.querySelector("span").textContent = "En mi lista")),
         (k._activate = (function (e, t) {
           return function () {
             if ("fullscreen" === e) Kr(t, X.detailEpisode);
+            else if ("restart" === e){ln=null;Kr(t,X.detailEpisode);}
             else if ("language" === e) er(t);
             else if ("favorite" === e) {
               var a = Z(t);
               this.classList.toggle("is-selected", a);
               var i = this.querySelector("span");
-              i && (i.textContent = a ? "En favoritos" : "Favorito");
+              i && (i.textContent = a ? "En mi lista" : "Mi lista");
             } else if ("subscribe" === e) {
               var n = this.querySelector("img"),
                 r = -1 === n.src.indexOf("subscribed");
@@ -3593,6 +3601,7 @@
                 void 0 !== a.number && null !== a.number
                   ? String(a.number)
                   : String(v + 1);
+              var thumb=e('img','episode-thumbnail');thumb.alt='';if(a.picture){XuperStandalone.loadPoster(thumb,a.picture);r.appendChild(thumb);}else{r.appendChild(e('div','episode-thumbnail episode-placeholder',''));}
               (r.appendChild(e("span", "ep-num", "Episodio " + o)),
                 r.appendChild(e("span", "ep-title", (a.title || a.name) && (a.title || a.name) !== "Episodio " + o ? (a.title || a.name) : "Reproducir episodio")),
                 (r._ep = a),
@@ -3633,6 +3642,7 @@
         }
         de.appendChild(g);
       })(n));
+    if(X.detail===n){var info=un[Ln(n)];if(info)renderTitleMedia(info);else if(n._detailsLoaded)Mn(n);}
   }
   function wa(e) {
     for (var t = [], a = 0; a < e; a += 20)
@@ -5582,6 +5592,7 @@
       (Ki = !1),
       Yi++,
       (X.trackIndex = 0),
+      (X.trackExplicit = false),
       (subtitleLoadedUrl = ""),
       (subtitleFailureUrl = ""),
       (pn = []),
@@ -5605,7 +5616,7 @@
     if (((t = t || function () {}), !e)) return t(null);
     var a = Ln(e);
     if (!a) return t(null);
-    if (un[a]) return (An(un[a]), t(un[a]));
+    if (un[a]) return (renderTitleMedia(un[a]), An(un[a]), t(un[a]));
     if (vn[a]) vn[a].push(t);
     else {
       vn[a] = [t];
@@ -5617,7 +5628,7 @@
           var i = vn[a] || [];
           delete vn[a];
           var n = !e && t && !1 !== t.returnValue ? t : null;
-          n && ((un[a] = n), An(n));
+          n && ((un[a] = n), X.detail&&String(Ln(X.detail))===String(a)&&renderTitleMedia(n), X.playerItem&&String(Ln(X.playerItem))===String(a)&&An(n));
           for (var r = 0; r < i.length; r++)
             try {
               i[r](n);
@@ -5648,6 +5659,17 @@
       }),
       t
     );
+  }
+  function renderTitleMedia(info){
+    var box=document.querySelector('.detail-media-badges'),item=X.detail;if(!box||!item||!window.XuperStandalone||!XuperStandalone.titleBadges)return;
+    box.textContent='';XuperStandalone.titleBadges(info,item,item._trackExplicit?item._trackIndex:-1).forEach(function(label){box.appendChild(e('span','detail-badge',label));});
+    var options=document.querySelector('.detail-quality-options');if(!options)return;options.textContent='';
+    var tracks=info.tracks||[];if(tracks.length<2)return;
+    var title=e('span','detail-quality-label','Versión disponible');options.appendChild(title);
+    [{index:-1,label:'Automática'}].concat(tracks.slice(0,12).map(function(track,index){return {index:index,label:XuperStandalone.titleBadges({tracks:[track]},{}).join(' · ')||'Versión '+(index+1)};})).forEach(function(choice){
+      var button=e('button','detail-quality focusable',choice.label);button.classList.toggle('is-selected',choice.index<0?!item._trackExplicit:item._trackExplicit&&item._trackIndex===choice.index);
+      button._activate=function(){item._trackExplicit=choice.index>=0;item._trackIndex=Math.max(0,choice.index);renderTitleMedia(info);var selected=options.querySelector('.is-selected');if(selected)rt(selected);};options.appendChild(button);
+    });
   }
   function An(e) {
     if(X.screen!=='player'||X.playerMode!=='vod'||!window.XuperStandalone||!XuperStandalone.subtitleDecision)return;
@@ -6143,6 +6165,7 @@
     }
   }
   function Jn(e) {
+    if(un[Ln(e)])renderTitleMedia(un[Ln(e)]);
     if (de)
       for (
         var t = de.querySelectorAll(".detail-episode"), a = 0;
@@ -7557,7 +7580,7 @@
         var n = _r();
         i.container = n;
       }
-      i.trackIndex = X.trackIndex || 0;
+      i.trackIndex = e._trackExplicit?e._trackIndex:X.trackIndex||0;i.trackExplicit=!!e._trackExplicit;
       i.preferredAudio=preferredVodAudio();
       var r = X.playerEpisode,
         o = (r && r.id) || (e && e.id) || "",
