@@ -2,7 +2,7 @@
 
 ## TMDB opcional
 
-En Ajustes → Reproducción → Imágenes del carrusel · TMDB se configura una clave API v3 o Read Access Token propio. El teclado oculta la entrada y no la guarda en el historial de búsquedas. La clave queda en el almacenamiento local del TV y no se incluye en el WGT ni en GitHub. Puede eliminarse desde el mismo panel. Crédito y logotipo oficial en Acerca de.
+En Ajustes → Reproducción → Imágenes del carrusel · TMDB se configura una clave API v3 o Read Access Token propio. El teclado oculta la entrada y no la guarda en el historial de búsquedas. Las claves propias quedan en el almacenamiento local del TV. Desde 0.10.3, el WGT público incluye una clave predeterminada autorizada por el propietario, extraíble del paquete; no se guarda en los archivos fuente de GitHub. Puede desactivarse o sustituirse desde el mismo panel, y «Usar clave incluida» permite restaurarla. Crédito y logotipo oficial en Acerca de.
 
 Solo el destacado de Películas y Series consulta TMDB; las tarjetas del catálogo no lo hacen. El carrusel tiene tres títulos por sección. Las búsquedas se serializan y se espacian 350 ms; los resultados se guardan 90 días. Un 429 impone una espera mínima de un minuto o el Retry-After indicado, con límite de una hora. Las cifras de TMDB son un límite de velocidad aproximado, no una cuota de 40 consultas totales.
 

@@ -5,7 +5,7 @@ on:
       tag:
         description: Prepared release tag
         required: true
-        default: v0.10.2-beta.1
+        default: v0.10.3-beta.1
         type: choice
         options:
           - v0.2.0-alpha.1
@@ -62,6 +62,12 @@ on:
           - v0.10.0-beta.1
           - v0.10.1-beta.1
           - v0.10.2-beta.1
+          - v0.10.3-beta.1
+      publish_artifacts:
+        description: Publish built artifacts (false runs verification only)
+        required: true
+        default: true
+        type: boolean
 permissions:
   contents: write
 jobs:
@@ -79,8 +85,14 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y g++ pkg-config libcurl4-openssl-dev openssl
       - run: npm test
       - run: npm run test:native-wasm
-      - run: npm run package
+      - name: Package public widget with owner-authorized TMDB configuration
+        env:
+          XUPER_TMDB_PUBLIC_KEY: ${{ secrets.XUPER_TMDB_PUBLIC_KEY }}
+        run: |
+          if [ "${{ inputs.publish_artifacts }}" = "true" ] && [ -f tools/tmdb_provision.py ]; then test -n "$XUPER_TMDB_PUBLIC_KEY"; fi
+          npm run package
       - name: Upload verified build and publish the prepared prerelease
+        if: ${{ inputs.publish_artifacts }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}

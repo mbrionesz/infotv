@@ -3,6 +3,8 @@
 import argparse
 import hashlib
 import json
+import os
+from tmdb_provision import provision_widget
 from pathlib import Path
 import zipfile
 import xml.etree.ElementTree as ET
@@ -42,6 +44,11 @@ def build(output=None):
         for file in sorted(app.rglob('*')):
             if file.is_file() and not set(file.parts) & {'.buildResult', '__pycache__'}:
                 add(archive, file, file.relative_to(app))
+    tmdb_key = os.environ.get('XUPER_TMDB_PUBLIC_KEY', '').strip()
+    if tmdb_key:
+        provisioned = out / (widget.name + '.tmp')
+        provision_widget(widget, provisioned, tmdb_key, preserve_existing=True)
+        provisioned.replace(widget)
     kit = out / f'XuperTizen-{version}-source.zip'
     with zipfile.ZipFile(kit, 'w') as archive:
         for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github']:
@@ -55,8 +62,9 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
-        'hardwareValidation': '0.10.2-beta-pending-on-Samsung-TV', 'providerValidation': '0.10.2-beta-pending-with-live-provider',
+        'hardwareValidation': '0.10.3-beta-pending-on-Samsung-TV', 'providerValidation': '0.10.3-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
+        'tmdbConfigured': bool(tmdb_key), 'tmdbCredentialInPublicWidget': bool(tmdb_key),
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion'],
         'nativeTransport': {name: native_info[name] for name in ['curl', 'openssl', 'zlib', 'sourceSha256']}
     }, indent=2) + '\n')
