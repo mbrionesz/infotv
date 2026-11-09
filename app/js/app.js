@@ -1195,8 +1195,8 @@
         : a.bottom > i.bottom && (t.scrollTop += (a.bottom - i.bottom) / scale + 12),
         t.scrollWidth > t.clientWidth + 1 &&
           (a.left < i.left
-            ? (t.scrollLeft -= i.left - a.left + 12)
-            : a.right > i.right && (t.scrollLeft += a.right - i.right + 12)),
+            ? (t.scrollLeft -= (i.left - a.left) / scale + 12)
+            : a.right > i.right && (t.scrollLeft += (a.right - i.right) / scale + 12)),
         (t = n(t.parentNode, ".scrollable")));
     }
   }
@@ -1241,6 +1241,11 @@
         if (value < score) { score=value;best=control; }
       }
       if (best) rt(best); else if (e === "left") rt(ye.querySelector(".is-selected") || je[0]);
+      return;
+    }
+    if(X.screen==="detail"&&X.focus&&!ji&&!Ut&&!zi&&!xa&&window.XuperStandalone&&XuperStandalone.detailFocus){
+      var detail=document.getElementById("screen-detail"),nextDetail=XuperStandalone.detailFocus(it(),X.focus,e,(window.__xuperViewport||{}).scale||1);
+      if(nextDetail)rt(nextDetail);else if(e==="up")detail.scrollTop=0;else if(e==="down")detail.scrollTop+=180;
       return;
     }
     if (X.focus) {

@@ -7,6 +7,9 @@ export function countryChoices(values=[]){
  const featured=preferred.map(country=>{const match=all.find(value=>country.aliases.includes(fold(labelOf(value)))||country.aliases.includes(fold(keyOf(value))));return {id:match?keyOf(match):'',name:country.name,available:!!match};});
  return {featured,all:all.map(value=>({id:keyOf(value),name:preferred.find(country=>country.aliases.includes(fold(labelOf(value)))||country.aliases.includes(fold(keyOf(value))))?.name||labelOf(value)})).sort((a,b)=>a.name.localeCompare(b.name,'es'))};
 }
+export function discoveryCountries(values=[],items=[]){
+ const countries=values.slice();for(const preferredCountry of preferred){if(countries.some(value=>preferredCountry.aliases.includes(fold(keyOf(value)))||preferredCountry.aliases.includes(fold(labelOf(value)))))continue;const observed=items.find(item=>preferredCountry.aliases.includes(fold(item.country)));if(observed)countries.push(String(observed.country).trim());}return countryChoices(countries);
+}
 export function dateKey(now=Date.now()){const date=new Date(now);return [date.getFullYear(),('0'+(date.getMonth()+1)).slice(-2),('0'+date.getDate()).slice(-2)].join('-');}
 export function releaseDay(item){const value=String(item.releaseDate||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return '';const date=new Date(value+'T12:00:00Z');return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value?value:'';}
 export function recentReleases(items,period,now=Date.now()){
@@ -33,7 +36,7 @@ export function createDiscoveryQuery(request,now=Date.now){
   const latest=period==='recent'?(providerCollection?sample:releases):releases;
   const title=period==='week'?'Estrenos de los últimos 7 días':period==='month'?'Estrenos de los últimos 30 días':providerCollection?'Novedades recientes':'Estrenos recientes';
   const data={root,period,checkedAt:now(),day:dateKey(now()),latest:latest.slice(0,16),editorial:editorial.slice(0,12),portalEditorial:(composite?.items||[]).filter(item=>!(home?.items||[]).some(existing=>String(existing.id)===String(item.id))).slice(0,12),latestTitle:title,
-   countryOptions:countryChoices(facets?.countries||[]),genres:facets?.genres||[],columns:columns?.columns||[],shelves:composite?.shelves||[],sampled:sample.length,providerCollection,datesAvailable:dates>0,
+   countryOptions:discoveryCountries(facets?.countries||[],editorial),genres:facets?.genres||[],columns:columns?.columns||[],shelves:composite?.shelves||[],sampled:sample.length,providerCollection,datesAvailable:dates>0,
    note:period!=='recent'?'Fechas de estreno informadas · '+sample.length+' títulos consultados; no es todo el catálogo.':providerCollection?'Colección de novedades del portal.':'Estrenos según fechas disponibles en la selección consultada.',metadataIncomplete:errors.length>0};
   cache.set(key,{at:now(),data});while(cache.size>12)cache.delete(cache.keys().next().value);return data;
  };

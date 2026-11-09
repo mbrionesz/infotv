@@ -105,7 +105,7 @@ async function execute(method,payload){
   }
   // Filter option records now preserve id/label pairs; do not reuse v1 pages
   // whose category/filter selection may have been discarded.
-  const key=(/^(catalog|portal)/.test(method)?'catalog-v3:':'')+method+':'+JSON.stringify(payload);
+  const key=(/^(catalog|portal)/.test(method)?'catalog-v4:':'')+method+':'+JSON.stringify(payload);
   const cacheable=metadata.has(method)&&!(/^(catalog|portal)/.test(method)&&payload.fresh===true);
   let stale=null;
   if(cacheable){
@@ -147,5 +147,5 @@ self.onmessage=event=>{
   if(event.data&&event.data.nativeReply){const entry=nativePending.get(event.data.nativeReply);if(entry){nativePending.delete(event.data.nativeReply);clearTimeout(entry.timer);if(event.data.error)entry.reject(new Error(event.data.error));else entry.resolve(event.data.result);}return;}
 
   const {id,method,payload}=event.data||{};
-  execute(method,payload||{}).then(result=>self.postMessage({id,result}),error=>self.postMessage({id,error:String(error.message||error),code:error.portalCode||''}));
+  execute(method,payload||{}).then(result=>self.postMessage({id,result}),error=>self.postMessage({id,error:String(error.message||error),code:error.portalCode||'',categoryFailure:error.categoryFailure||null}));
 };

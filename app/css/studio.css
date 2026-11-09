@@ -35,3 +35,18 @@ body,#app{font-family:'Helvetica Neue','Segoe UI',Arial,sans-serif;color:var(--s
 .modern-wordmark:after{position:absolute;left:54px;top:45px;margin:0}.modern-name{font-size:29px}.modern-symbol{width:38px;height:38px}.dashboard-tv-favorites{right:25px;top:0}.dashboard-action:nth-child(2),.dashboard-action:nth-child(3){background:#162336}.dashboard-action:nth-child(2).is-focused,.dashboard-action:nth-child(3).is-focused{background:var(--studio-focus)}
 #screen-home .home-notify{display:none}.detail-backdrop:not([src]){display:none}.episode-placeholder{display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg,#28405f,#111f32);font-size:40px;color:#b8d5f6}.detail-quality-options:empty,.detail-media-badges:empty{display:none}
 .episode-placeholder:before{content:'';display:block;width:0;height:0;border-top:17px solid transparent;border-bottom:17px solid transparent;border-left:27px solid #c7eeff;margin-left:7px}
+/* Home uses one bounded flow inside the TV canvas, without legacy offsets. */
+.home-page[data-dashboard=true]{left:0;top:0;width:100%;height:100%;padding:0 20px 48px;transform:none;box-sizing:border-box}
+.home-page[data-dashboard=true] .dashboard-heading{position:relative;left:auto;top:auto;margin:0 0 22px;height:70px;padding:0}
+.dashboard-heading h1{margin:0;font-size:48px;line-height:65px}
+.home-page[data-dashboard=true] .dashboard-hero{top:auto;height:300px;margin:0 0 26px}
+.dashboard-hero-copy{padding:24px 32px;width:70%}.dashboard-hero h2{font-size:44px;line-height:1.12;max-height:100px;margin:12px 0}.dashboard-hero p{font-size:22px;margin:8px 0 16px}
+.dashboard-hero-art{object-fit:contain;object-position:right center;background:#101b2b}
+.home-tabs .tab-item{width:100%}.home-page[data-dashboard=true] .dashboard-actions{top:auto;left:auto;right:auto;margin-bottom:22px}
+.home-page[data-dashboard=true] .dashboard-action{height:108px!important;padding-top:21px}.dashboard-action strong{font-size:25px}.dashboard-action small{font-size:18px}
+/* Keep Home controls inside a 5% TV safe area at every canvas scale. */
+#screen-home .modern-wordmark{left:96px;top:54px}
+#screen-home .home-tabs,#screen-home .home-tabs.is-collapsed{left:96px;top:162px;width:230px;height:864px}
+#screen-home .home-tabs .tab-title{width:calc(100% - 57px)}
+#screen-home .home-tabs .tab-pill{width:100%}
+#screen-home .home-pages{left:364px;top:66px;width:1460px;height:948px}

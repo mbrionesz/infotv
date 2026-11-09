@@ -17,7 +17,7 @@ export function createCoreClient() {
         }
         const entry=pending.get(message.id);
         if(!entry)return;pending.delete(message.id);clearTimeout(entry.timer);
-        const error=message.error?new Error(message.error):null;if(error)error.portalCode=message.code;
+        const error=message.error?new Error(message.error):null;if(error){error.portalCode=message.code;if(message.categoryFailure)error.categoryFailure=message.categoryFailure;}
         entry.callback(error,message.result);
       };
       target.onerror=()=>{

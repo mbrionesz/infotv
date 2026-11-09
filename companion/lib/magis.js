@@ -1028,7 +1028,7 @@ function catalogColumns(root,callback){
     if(error)return callback(error);
     var list=(result&&result.childColumnList)||[],items=[];
     for(var i=0;i<list.length;i++)if(list[i]&&list[i].id&&String(list[i].restricted)!=="1"&&list[i].restricted!==true)
-      items.push({id:trim(list[i].id),name:text(list[i].name),sequence:parseInt(list[i].sequence,10)||0});
+      items.push({id:trim(list[i].id),name:text(list[i].name),code:portalIdentifier(list[i].code),sequence:parseInt(list[i].sequence,10)||0});
     items.sort(function(a,b){return a.sequence-b.sequence;});callback(null,{columns:items});
   });
 }
@@ -1044,25 +1044,49 @@ function catalogFilters(root,callback){
     callback(null,{genres:values(result.tags),years:values(result.year),countries:values(result.originalCountry)});
   });
 }
+function columnRequestId(value){var string=String(value);return /^(0|[1-9][0-9]{0,14})$/.test(string)?Number(string):value;}
+function countryAlias(value){return trim(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/^(turkey|turkiye|turquia|tr|tur)$/,'turkey');}
 function catalogBrowse(root,options,callback){
   options=options||{};var page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(60,parseInt(options.pageSize,10)||36)),filters=options.filters||{};
-  var resolvedColumn="",filtered=!!(filters.genre||filters.year||filters.country);
-  function fetch(column,alternative){
-    var bean={columnId:column||CATALOG_ROOTS[root],pageNum:page,pageSize:size},path=column?"v3/getShelveData":"v3/filterByContent";
+  var resolvedColumn="",selectedColumn=null,filtered=!!(filters.genre||filters.year||filters.country),requestedCountry=filters.country||'';
+  function fetch(column,alternative,categoryFailure,countryOverride,countryRetried){
+    var bean={columnId:columnRequestId(column||CATALOG_ROOTS[root]),pageNum:page,pageSize:size},path=column?"v3/getShelveData":"v3/filterByContent";
     if(column&&(alternative||filtered))path="v3/filterByContent";
     if(column&&!alternative&&!filtered)bean.columnType="2";
-    else{if(filters.genre)bean.tags=text(filters.genre);if(filters.year)bean.year=text(filters.year);if(filters.country)bean.originalCountry=text(filters.country);}
+    else{if(filters.genre)bean.tags=text(filters.genre);if(filters.year)bean.year=text(filters.year);if(requestedCountry)bean.originalCountry=countryOverride||text(requestedCountry);}
     catalogRequest(root,path,bean,function(error,result){
-      if(error&&column&&!alternative&&!filtered)return fetch(column,true);
-      if(error)return callback(error);result=result||{};var raw=result.assetList||[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative&&!filtered?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
-      callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,resolvedColumn:resolvedColumn||undefined,source:path,totalField:column&&!alternative&&!filtered?"assetListTotalSize":"totalSize",hasMore:raw.length>0&&(known?page*size<declared:raw.length>=size)});
+      if(error&&column&&!alternative&&!filtered&&!options.strict)return fetch(column,true,{path:path,code:error.portalCode||null,message:String(error.message||error).slice(0,300)});
+      if(error){if(categoryFailure&&!filtered)return legacyCategory(categoryFailure,error);return callback(error);}result=result||{};var raw=Array.isArray(result.assetList)?result.assetList:[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative&&!filtered?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
+      // Retry an empty country result only with an alternative actually supplied
+      // by filterGenre or a title, never a guessed translation or an unfiltered request.
+      if(!raw.length&&requestedCountry&&!countryRetried)return catalogFilters(root,function(metadataError,metadata){
+        var countries=metadata&&metadata.countries||[],candidate='';
+        for(var c=0;c<countries.length;c++){var entry=countries[c],id=typeof entry==='object'?entry.id:entry,name=typeof entry==='object'?entry.name:entry;if(countryAlias(id)===countryAlias(requestedCountry)||countryAlias(name)===countryAlias(requestedCountry)){if(String(id)!==String(bean.originalCountry))candidate=id;else if(String(name)!==String(bean.originalCountry))candidate=name;break;}}
+        var countrySource='filter-metadata';
+        if(!candidate){var remembered=Object.keys(itemCache);for(var ci=0;ci<remembered.length;ci++){var observed=itemCache[remembered[ci]]&&itemCache[remembered[ci]].country;if(observed&&countryAlias(observed)===countryAlias(requestedCountry)&&String(observed)!==String(bean.originalCountry)){candidate=observed;countrySource='title-metadata';break;}}}
+        if(candidate&&(!metadataError||countrySource==='title-metadata'))return fetch(column,alternative,categoryFailure,candidate,countrySource);
+        finish();
+      });
+      finish();
+      function finish(){
+        if(categoryFailure&&!raw.length)return legacyCategory(categoryFailure);
+        callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,resolvedColumn:resolvedColumn||undefined,source:path,totalField:column&&!alternative&&!filtered?"assetListTotalSize":"totalSize",categoryFallback:categoryFailure||null,countryRequested:requestedCountry||null,countryUsed:bean.originalCountry||null,countryAlternativeSource:countryRetried||null,hasMore:raw.length>0&&(known?page*size<declared:raw.length>=size)});
+      }
     });
   }
-  if(!filters.column&&(root==="explore"||root==="popular"))return catalogColumns(root,function(error,result){if(error)return callback(error);resolvedColumn=result.columns.length?result.columns[0].id:"";fetch(resolvedColumn);});
+  function legacyCategory(failure,lastError){
+    function unavailable(){var error=lastError||new Error('No se pudo consultar esta categoría'+(failure.code?' ('+failure.code+')':'')+'. Puedes reintentar.');error.portalCode=error.portalCode||failure.code;error.categoryFailure=failure;return callback(error);}
+    if(options.strict||filtered||!selectedColumn||!selectedColumn.code)return unavailable();
+    catalogRequest(root,'getNextColumns',{columnCode:selectedColumn.code,pageNum:page,pageSize:size,version:''},function(error,result){
+      if(error)return unavailable();var rows=result&&result.recommendList||[],assets=[];for(var i=0;i<rows.length;i++)if(rows[i]&&Array.isArray(rows[i].assetList))assets=assets.concat(rows[i].assetList);if(!assets.length)return unavailable();
+      callback(null,{items:catalogAssets(assets.slice(0,size),root),total:null,pageNum:page,pageSize:size,source:'getNextColumns',totalField:null,categoryFallback:failure,hasMore:assets.length>=size});
+    });
+  }
+  if(!filters.column&&(root==="explore"||root==="popular"))return catalogColumns(root,function(error,result){if(error)return callback(error);selectedColumn=result.columns[0]||null;resolvedColumn=selectedColumn?selectedColumn.id:"";fetch(resolvedColumn);});
   if(!filters.column)return fetch("");
-  // Only categories actually exposed for this root may be opened.
-  catalogColumns(root,function(error,result){if(error)return callback(error);for(var i=0;i<result.columns.length;i++)if(result.columns[i].id===String(filters.column))return fetch(result.columns[i].id);callback(new Error("Categoría no disponible"));});
+  catalogColumns(root,function(error,result){if(error)return callback(error);for(var i=0;i<result.columns.length;i++)if(result.columns[i].id===String(filters.column)){selectedColumn=result.columns[i];return fetch(result.columns[i].id);}callback(new Error("Categoría no disponible"));});
 }
+
 function catalogSearchPage(root,options,callback){
   options=options||{};var value=trim(options.text),page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(60,parseInt(options.pageSize,10)||36));
   if(!value)return callback(null,{items:[],total:0,hasMore:false,pageNum:page,pageSize:size});

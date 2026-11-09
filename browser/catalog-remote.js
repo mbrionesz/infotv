@@ -14,7 +14,7 @@ export function createRemoteCatalog(request){
   const index=createCatalogIndex();index.add(root,result.items||[]);
   const localFilters={resolution:filters.resolution||'',text:search?'':filters.text||''};
   const current=index.query(root,{limit:60,filters:localFilters});
-  return {fullCatalog:true,remoteSearch:search,collectionName:result.collectionName||(filters.person?'Filmografía':''),externalCollection:!!(filters.person||filters.shelve),resolvedColumn:result.resolvedColumn||null,source:result.source||null,totalField:result.totalField||null,items:current.items,total:result.total,totalKnown:result.total!==null&&result.total!==undefined,
+  return {fullCatalog:true,remoteSearch:search,collectionName:result.collectionName||(filters.person?'Filmografía':''),externalCollection:!!(filters.person||filters.shelve),categoryFallback:result.categoryFallback||null,countryRequested:result.countryRequested||null,countryUsed:result.countryUsed||null,countryAlternativeSource:result.countryAlternativeSource||null,resolvedColumn:result.resolvedColumn||null,source:result.source||null,totalField:result.totalField||null,items:current.items,total:result.total,totalKnown:result.total!==null&&result.total!==undefined,
    loaded:(result.items||[]).length,pageNum:page,hasMore:!!result.hasMore&&!repeatedPage&&(result.items||[]).length>0,repeatedPage,
    localFilter:!!(localFilters.resolution||localFilters.text||result.typeFiltered),
    facets:Object.assign({},current.facets,metadata[1]||{},{columns:metadata[0]&&metadata[0].columns||[]}),
