@@ -14,7 +14,7 @@ export function renderDiscovery(panel,data,{browse,openItem,search,poster=(image
  const action=(text,row,callback,cls='')=>{const button=node('button',cls,text);button.dataset.navrow=String(row);button.onclick=callback;return button;};
  const editorial=(data.editorial||[]).filter(allowContent),featured=editorial[0];
  const hero=node('section','xt-discovery-hero'),copy=node('div','xt-discovery-copy');hero.appendChild(copy);
- copy.appendChild(node('span','xt-discovery-kicker',data.root==='series'?'SERIES':'PELÍCULAS'));
+ copy.appendChild(node('span','xt-discovery-kicker',data.root==='series'?'SERIES':data.root==='all'?'PELÍCULAS Y SERIES':'PELÍCULAS'));
  copy.appendChild(node('h2','',featured?.title||'Encuentra tu próxima historia'));
  copy.appendChild(node('p','xt-discovery-description',featured?.synopsis?String(featured.synopsis).slice(0,150):[featured?.year,...(featured?.genres||[]).slice(0,2).map(genreLabel)].filter(Boolean).join(' · ')));
  const actions=node('div','xt-discovery-actions');if(featured)actions.appendChild(action('Más información',0,()=>openItem(featured),'xt-discovery-primary'));actions.appendChild(action('Explorar catálogo',0,()=>browse({})));copy.appendChild(actions);

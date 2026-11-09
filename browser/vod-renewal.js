@@ -12,3 +12,6 @@ export function knownVodDuration({engine='',declared=0,media=0,ended=false,posit
  if(engine==='mpegts.js')return Number.isFinite(declared)&&declared>0?declared:ended&&Number.isFinite(position)?Math.max(0,position):0;
  return Number.isFinite(media)&&media>0?media:Number.isFinite(declared)&&declared>0?declared:0;
 }
+
+// History uses whole seconds; the TS bookmark can be just after that boundary.
+export function resumeClock(record){const position=Math.max(0,Number(record&&record.position)||0),precise=Number(record&&record.seek&&record.seek.position);return Number.isFinite(precise)&&precise>=position&&precise-position<1?precise:position;}

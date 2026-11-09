@@ -3317,7 +3317,14 @@
       }
     });
   }
+  function updateSimilar(item){
+    var grid=de&&de.querySelector('.detail-grid'),heading=de&&de.querySelector('.detail-related');if(!grid)return;
+    var focused=grid.contains(X.focus),focusedId=focused&&X.focus._item&&String(X.focus._item.id);var related=XuperStandalone.similarTitles(item,(item._similarItems||[]).concat(l));grid.textContent='';if(heading)heading.style.display=related.length?'':'none';
+    related.forEach(function(title){var cell=e('div','cell'),poster=xt(title,0,0,210,308,{gold:true}),old=poster._onFocus;poster._onFocus=function(){if(old)old.call(poster);nt(cell);};cell.appendChild(poster);cell.appendChild(e('div','d-name',title.title));grid.appendChild(cell);});if(focused){var next=Array.from(grid.querySelectorAll('.poster')).filter(function(poster){return poster._item&&String(poster._item.id)===focusedId;})[0]||grid.querySelector('.poster')||le.querySelector('.focusable');rt(next);}
+  }
   function Ca(n) {
+    if(n._detailsLoaded&&!n._similarRequested&&(n.genres||[]).length&&window.XuperStandalone){n._similarRequested=true;XuperStandalone.core.call('catalogFullPage',{root:x(n)?'series':'movies',pageNum:1,filters:{genre:n.genres[0]}},function(error,result){if(!error&&result){n._similarItems=result.items||[];if(X.detail===n&&X.screen==='detail')setTimeout(function(){if(X.detail===n&&X.screen==='detail')updateSimilar(n);},0);}});}
+
     ((oe = t("detail-left")),
       (se = t("detail-player")),
       (le = t("detail-buttons")),
@@ -3631,7 +3638,7 @@
         }
         var f = n ? 240 : 25,
           h = n ? 290 : 91,
-          m = e("div", "detail-related", "Quizás te guste");
+          m = e("div", "detail-related", "Similares");
         (i(m, 80, f, 400, 44), de.appendChild(m));
         var g = e("div", "detail-grid scrollable");
         i(g, 80, h, 1750, n ? 180 : 380);
@@ -3644,7 +3651,7 @@
               break;
             }
         }
-        var related = l.filter(function (item) { return item.id !== t.id; }).slice(0, 8);
+        var related = window.XuperStandalone&&XuperStandalone.similarTitles?XuperStandalone.similarTitles(t,(t._similarItems||[]).concat(l)):[];
         if (!related.length) m.style.display = "none";
         for (var w = 0; w < related.length; w++) {
           var S = related[w];
@@ -4662,7 +4669,9 @@
       t
     );
   }
+  function removeHistory(id){var all=id===undefined||id===null;Q.history=all?[]:(Q.history||[]).filter(function(item){return String(item.id)!==String(id);});if(ln&&(all||String(ln.id)===String(id)))ln=null;K($,Q);window.dispatchEvent(new Event('xuper:home'));}
   var libraryPage=0;
+
   function ja() {
     for (
       var t = e("div", "settings-panel history-panel"),
@@ -4691,6 +4700,10 @@
     var r = [];
     if ("history" === We) r = Q.history || [];
     else if ("favs" === We) r=savedLibrary().favorites;
+    if(We==='history'){
+      t.appendChild(e('p','history-help','Quita un título de Seguir viendo o borra el historial de este televisor. Tus favoritos se conservan.'));
+      if(r.length){var clear=e('button','focusable history-clear','Borrar historial');clear._activate=function(){if(clear.dataset.confirm!=='yes'){clear.dataset.confirm='yes';clear.textContent='Confirmar borrado · OK';return;}removeHistory();Ua('history',!1);rt(ze.history.querySelector('.history-tab'));};t.appendChild(clear);}
+    }
     var s = e("div", "history-total", "Total ");
     (s.appendChild(e("span", null, String(r.length))), t.appendChild(s));
     var pageSize=15,pages=Math.max(1,Math.ceil(r.length/pageSize));libraryPage=Math.max(0,Math.min(libraryPage,pages-1));
@@ -4722,6 +4735,8 @@
               cn(t);
             }),
             d.appendChild(a));
+          if(We==='history'){var remove=e('button','focusable history-remove','Quitar de Seguir viendo');remove.setAttribute('aria-label','Quitar '+(t.title||'título')+' del historial');remove._activate=function(){removeHistory(t.id);Ua('history',!1);rt(ze.history.querySelector('.history-card')||ze.history.querySelector('.history-tab'));};a.appendChild(remove);}
+
         })(r[c]);
     else
       d.appendChild(
@@ -5393,6 +5408,7 @@
                 seek:window.XuperPlayer&&XuperPlayer.bookmark?XuperPlayer.bookmark(e):null,
                 duration: Math.floor(trustedVodDuration()),
                 durationKnown:trustedVodDuration()>0,
+                durationEstimated:!!(window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated),
                 completed:!!(xe&&xe.ended),
                 updatedAt: n,
               },
@@ -7487,7 +7503,7 @@
         var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
         var checkpointContext=X.playerMode==="vod"?{item:Object.assign({},X.playerItem),episode:X.playerEpisode&&Object.assign({},X.playerEpisode)}:null;
         window.XuperPlayer.open(xe, e, { onCheckpoint:function(){if(checkpointContext)checkpointVod(checkpointContext);}, mime: s, live: "live" === X.playerMode,
-          startTime:resumeRecord?Math.max(0,Number(resumeRecord.position)||0):0,
+          startTime:resumeRecord?XuperStandalone.resumeClock(resumeRecord):0,
           preferredAudio: preferredVodAudio(),
           audioIndex: $i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
@@ -8065,6 +8081,7 @@
         },
         resumeContent: cn,
         library: savedLibrary,
+        removeHistory: removeHistory,
         openCollection: function(kind){We=kind==="favs"?"favs":"history";libraryPage=0;Ha();Ua("history",!0);},
         openDetail: function (e) {
           ba(l[e] || l[0]);

@@ -2,6 +2,7 @@ const fold=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,
 export function createShowcaseQuery(request){
  const cache=new Map();
  return async function({root='movies',fresh=false}={}){
+  if(root==='all'){const values=await Promise.all(['movies','series'].map(kind=>createShowcaseQuery(request)({root:kind,fresh}).then(value=>({value}),error=>({error}))));const good=values.filter(value=>value.value).map(value=>value.value);if(!good.length)throw values[0].error;return {root,rows:[].concat(...good.map(value=>value.rows.map(row=>Object.assign({},row,{column:null})))),editorial:[].concat(...good.map(value=>value.editorial)).slice(0,12),columns:[],metadataIncomplete:good.length<2};}
   if(!['movies','series'].includes(root))throw Error('Sección no disponible');const hit=cache.get(root);if(!fresh&&hit&&Date.now()-hit.at<600000)return hit.value;
   const results=await Promise.all([request('home',{root,pageNum:1,fresh}),request('catalogColumns',{root,fresh}),request('catalogBrowse',{root,pageNum:1,pageSize:24,fresh,filters:{}})].map(promise=>promise.then(value=>({status:'fulfilled',value}),reason=>({status:'rejected',reason}))));
   const home=results[0].status==='fulfilled'?results[0].value:null,columns=results[1].status==='fulfilled'?results[1].value.columns||[]:[];

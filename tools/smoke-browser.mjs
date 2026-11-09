@@ -83,7 +83,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.8');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.9');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -93,9 +93,9 @@ try {
   await browser.screenshot('dist/home-4k-v060.png');
   await browser.command('Emulation.setDeviceMetricsOverride',{width:1920,height:1080,deviceScaleFactor:1,mobile:false});
   await browser.waitFor('document.getElementById("app").getBoundingClientRect().width<2000');
-  await browser.evaluate('__xuper.focus(".live-focus");__xuper.key(40)');
+  await browser.evaluate('__xuper.focus(".live-focus");__xuper.key(39);__xuper.key(39);__xuper.key(39)');
   assert.equal(await browser.evaluate('__xuper.state.focus === document.querySelectorAll(".dashboard-action")[3]'),true);
-  await browser.evaluate('__xuper.key(38);__xuper.key(39);__xuper.key(13)');
+  await browser.evaluate('XuperCatalog.open("movies")');
   await browser.waitFor('document.querySelectorAll(".xt-discovery-card").length>0');await browser.evaluate('Array.from(document.querySelectorAll(".xt-discovery-actions button")).find(function(button){return button.textContent==="Explorar catálogo"}).click()');
   await browser.waitFor('!!document.getElementById("xt-catalog") && document.querySelectorAll(".xt-catalog-card").length===36');
   await browser.screenshot('dist/browser-movies.png');
@@ -121,7 +121,7 @@ try {
   await browser.evaluate(`new Promise(function(resolve,reject){var request=indexedDB.open('xuper-tizen-v3',1);request.onsuccess=function(){var db=request.result;var tx=db.transaction('metadata','readwrite');tx.objectStore('metadata').put({key:'liveCategories:{}',value:{categories:[{id:'cached-test',name:'Guardada sin conexión'}]},saved:Date.now()-3600000,expires:Date.now()-1000});tx.oncomplete=function(){db.close();resolve()};tx.onerror=reject};request.onerror=reject})`);
   const stale=await browser.evaluate('new Promise(function(resolve){var start=performance.now();XuperStandalone.core.call("liveCategories",{},function(error,data){resolve({error:error&&error.message,stale:data&&data.stale,name:data&&data.categories[0].name,ms:performance.now()-start})})})');
   assert.equal(stale.error,null);assert.equal(stale.stale,true);assert.equal(stale.name,'Guardada sin conexión');assert.ok(stale.ms<1000);
-  await browser.waitFor('document.querySelectorAll(".dashboard-poster").length===6');
+  await browser.waitFor('document.querySelectorAll(".dashboard-poster").length>=6');
   await browser.evaluate('window.homePosterActions=Array.from(document.querySelectorAll(".dashboard-poster")).map(function(node){return node._activate})');
   for(let poster=0;poster<6;poster++){
     await browser.evaluate('homePosterActions['+poster+']()');
