@@ -1430,6 +1430,7 @@ function mediaInfo(e, r, t) {
 function resolve(e, r, t, n) {
   ("function" == typeof t && ((n = t), (t = {})),
     (t = t || {}),
+    t.force && (delete playCache[trim(e)+":"+trim(r)], slbCache=null),
     loadPlay(e, r, function (e, r) {
       if (e) return n(e);
       var s = r.play,

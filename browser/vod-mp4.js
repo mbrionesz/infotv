@@ -1,8 +1,8 @@
 import MP4Box from 'mp4box';
 import {createVodReader} from './vod-range.js';
 import language from '../companion/lib/audio-language.js';
-export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio,audioIndex,audioLabels,onAudioTracks}={}){
- const reader=createVodReader(url,headers,onRead),file=MP4Box.createFile(),media=new MediaSource(),objectURL=URL.createObjectURL(media);
+export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio,audioIndex,audioLabels,onAudioTracks,refreshSource}={}){
+ const reader=createVodReader(url,headers,onRead,refreshSource),file=MP4Box.createFile(),media=new MediaSource(),objectURL=URL.createObjectURL(media);
  let closed=false,generation=0,offset=0,total=Infinity,ready=false,eof=false,pumping=false,tracks=[],timer,queuedBytes=0,seekTime=null,aheadLimit=25,backKeep=15;
  const fail=error=>{if(!closed){onError(error.message||String(error));}};
  function ahead(){for(let i=0;i<video.buffered.length;i++)if(video.currentTime>=video.buffered.start(i)&&video.currentTime<=video.buffered.end(i))return video.buffered.end(i)-video.currentTime;return 0;}

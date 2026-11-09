@@ -987,7 +987,9 @@
     $ = "xuper_local_profile_v1",
     G = "xuper_global_playback_v1",
     Q = { id: "", createdAt: 0, history: [] };
+  var profileStore=window.XuperStandalone&&XuperStandalone.profileStore,storageWarning=false,storedProfileAtStartup=false;
   function J(e, t) {
+    if(e===$&&profileStore)return profileStore.read()||t;
     try {
       var a = localStorage.getItem(e);
       return a ? JSON.parse(a) : t;
@@ -996,6 +998,7 @@
     }
   }
   function K(e, t) {
+    if(e===$&&profileStore){profileStore.save(t).then(function(ok){if(!ok&&!storageWarning){storageWarning=true;Yt('No se pudo guardar la biblioteca. Revisa el almacenamiento del TV.');}});return;}
     try {
       localStorage.setItem(e, JSON.stringify(t));
     } catch (e) {}
@@ -1030,7 +1033,7 @@
       if(item&&String(item.id)===key)favorites.push(librarySnapshot(item));
     }
     var history=Array.isArray(Q.history)?Q.history:[];
-    return {favorites:favorites,continueWatching:history.filter(function(item){return item&&item.id&&item.position>=3&&(!item.duration||item.position<item.duration-30);}).slice(0,30)};
+    return {favorites:favorites,continueWatching:history.filter(function(item){return item&&item.id&&item.position>=3&&!item.completed&&(!item.durationKnown||!item.duration||item.position<item.duration-30);}).slice(0,30).map(function(item){return item.durationKnown?item:Object.assign({},item,{duration:0});})};
   }
   function liveChannelKey(e) {
     return e
@@ -1076,12 +1079,12 @@
           void 0 !== e[t] &&
           (X.playback[t] = e[t]);
     if(!e||e.preferenceVersion!==2){X.playback.subtitlePolicy=0;X.playback.subtitle=false;X.playback.preferenceVersion=2;Y();}
-    var a = J($, null);
+    var a = J($, null);storedProfileAtStartup=!!a;
     (a && a.id
       ? ((Q = a).history && Q.history.length) || (Q.history = [])
       : ((Q.id = "TV-" + String(Date.now()).slice(-8)),
         (Q.createdAt = Date.now()),
-        K($, Q)),
+        !profileStore&&K($, Q)),
       Q.favs || (Q.favs = {}),
       Q.liveFavorites || (Q.liveFavorites = {}),
       Q.uiScaleMode || (Q.uiScaleMode = "auto"),
@@ -1089,6 +1092,11 @@
       (X.liveFavorites = Q.liveFavorites),
       (X.adultEnabled = !0 === Q.adultEnabled));
   })();
+  if(profileStore)profileStore.restore().then(function(profile){
+    if(profile&&!storedProfileAtStartup){Q=profile;Q.history=Array.isArray(Q.history)?Q.history:[];Q.favs=Q.favs||{};Q.liveFavorites=Q.liveFavorites||{};X.favs=Q.favs;X.liveFavorites=Q.liveFavorites;X.adultEnabled=Q.adultEnabled===true;window.dispatchEvent(new Event('xuper:home'));}
+    if(!profile)K($,Q);
+  });
+
   var ee,
     te,
     ae,
@@ -3310,7 +3318,7 @@
       a(oe),
       a(le),
       a(de));
-    var record=(Q.history||[]).filter(function(row){return String(row.id)===String(n.id)&&row.position>=3&&(!row.duration||row.position<row.duration-30);})[0];
+    var record=(Q.history||[]).filter(function(row){return String(row.id)===String(n.id)&&row.position>=3&&!row.completed&&(!row.durationKnown||!row.duration||row.position<row.duration-30);})[0];
     if(record&&!ln){ln=record;dn(n);}
     var oldPoster = t("screen-detail").querySelector(".detail-artwork");
     if (oldPoster) oldPoster.remove();
@@ -5192,45 +5200,16 @@
   function ri() {
     ni && (clearInterval(ni), (ni = null));
   }
-  function oi(e, t) {
-    if (Ae && De && Oe) {
-      Ye && (e = Ze);
-      var a = ii(t);
-      if (
-        (!a &&
-          X.playerEpisode &&
-          X.playerEpisode.duration &&
-          (a = ii(X.playerEpisode.duration)),
-        !a &&
-          X.playerItem &&
-          X.playerItem.duration &&
-          (a = ii(X.playerItem.duration)),
-        !a &&
-          xe &&
-          isFinite(xe.duration) &&
-          xe.duration > 0 &&
-          (a = xe.duration),
-        !a && pn && pn.length)
-      ) {
-        var i = pn[pn.length - 1];
-        i && i.end > 0 && (a = Math.round(i.end + 60));
-      }
-      if (((e = Number(e) || 0), (Ae.textContent = ai(e)), !a || a <= 0))
-        e > (a = x(X.playerItem) ? 2700 : 6300) && (a = Math.round(1.15 * e));
-      De.textContent = ai(a);
-      var n = Math.min(100, Math.max(0, (e / a) * 100));
-      if (
-        ((Oe.style.width = n.toFixed(2) + "%"),
-        Ne && (Ne.style.left = n.toFixed(2) + "%"),
-        xe && xe.buffered && xe.buffered.length > 0)
-      )
-        try {
-          var r = xe.buffered.end(xe.buffered.length - 1);
-          br && (r += Cr);
-          var o = Math.min(100, Math.max(0, (r / a) * 100));
-          qe && (qe.style.width = o.toFixed(2) + "%");
-        } catch (e) {}
-    }
+  function trustedVodDuration(){
+    var diagnostic=window.XuperPlayer&&XuperPlayer.diagnostics||{};
+    if(window.XuperStandalone&&XuperStandalone.knownVodDuration)return XuperStandalone.knownVodDuration({engine:diagnostic.engine,declared:diagnostic.sourceDuration,media:xe&&xe.duration,ended:xe&&xe.ended,position:xe&&xe.currentTime});
+    return ii(X.playerEpisode&&X.playerEpisode.duration||X.playerItem&&X.playerItem.duration||0);
+  }
+  function checkpointVod(context){if((context&&context.item||X.playerMode==='vod')&&xe)sn(xe.currentTime||0,trustedVodDuration(),true,context);}
+  function oi(position,total){
+    if(!Ae||!De||!Oe)return;if(Ye)position=Ze;position=Math.max(0,Number(position)||0);var duration=trustedVodDuration();Ae.textContent=ai(position);De.textContent=duration>0?ai(duration):'--:--';
+    var percent=duration>0?Math.min(100,position/duration*100):0;Oe.style.width=percent.toFixed(2)+'%';if(Ne)Ne.style.left=percent.toFixed(2)+'%';
+    if(qe){var buffered=xe&&xe.buffered;qe.style.width=duration>0&&buffered&&buffered.length?Math.min(100,buffered.end(buffered.length-1)/duration*100).toFixed(2)+'%':'0%';}
   }
   function si(e) {
     (Re || (Re = t("player-osd-icon")),
@@ -5383,14 +5362,14 @@
   }
   function preferredVodAudio(){return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
   function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn()});}
-  function sn(e, t, a) {
-    var i = X.playerItem;
-    if (i && i.id && !(e < 3)) {
+  function sn(e, t, a, context) {
+    var i = context?context.item:X.playerItem;
+    if (i && i.id && isFinite(e) && !(e < 3)) {
       var n = Date.now();
-      if (a || !(n - an < 15e3)) {
+      if (a || !(n - an < 5e3)) {
         an = n;
         for (
-          var r = X.playerEpisode,
+          var r = context?context.episode:X.playerEpisode,
             o = String(i.id),
             s = [
               {
@@ -5403,7 +5382,9 @@
                 seasonId: i.seasonId||i.id,
                 position: Math.floor(e),
                 seek:window.XuperPlayer&&XuperPlayer.bookmark?XuperPlayer.bookmark(e):null,
-                duration: window.XuperPlayer&&XuperPlayer.diagnostics.engine==="mpegts.js"&&!XuperPlayer.diagnostics.sourceDuration&&!(xe&&xe.ended)?0:Math.floor(t || i.duration || 0),
+                duration: Math.floor(trustedVodDuration()),
+                durationKnown:trustedVodDuration()>0,
+                completed:!!(xe&&xe.ended),
                 updatedAt: n,
               },
             ],
@@ -7125,20 +7106,8 @@
   function Vr() {
     return xe ? (br ? Cr + (xe.currentTime || 0) : xe.currentTime || 0) : 0;
   }
-  function Hr() {
-    var e = xe && isFinite(xe.duration) && xe.duration > 0 ? xe.duration : 0;
-    return (
-      !e &&
-        X.playerEpisode &&
-        X.playerEpisode.duration &&
-        (e = ii(X.playerEpisode.duration)),
-      !e &&
-        X.playerItem &&
-        X.playerItem.duration &&
-        (e = ii(X.playerItem.duration)),
-      e || 0
-    );
-  }
+  function Hr() {return trustedVodDuration()||xe&&xe.buffered&&xe.buffered.length&&xe.buffered.end(xe.buffered.length-1)||0;}
+
   function Ur(e) {
     if (Ye) {
       var t = Ze,
@@ -7505,7 +7474,8 @@
         xe.classList.add("is-active");
         Te && (Te.style.display = "none");
         var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
-        window.XuperPlayer.open(xe, e, { mime: s, live: "live" === X.playerMode,
+        var checkpointContext=X.playerMode==="vod"?{item:Object.assign({},X.playerItem),episode:X.playerEpisode&&Object.assign({},X.playerEpisode)}:null;
+        window.XuperPlayer.open(xe, e, { onCheckpoint:function(){if(checkpointContext)checkpointVod(checkpointContext);}, mime: s, live: "live" === X.playerMode,
           startTime:resumeRecord?Math.max(0,Number(resumeRecord.position)||0):0,
           preferredAudio: preferredVodAudio(),
           audioIndex: $i ? Xi : undefined,
@@ -7712,7 +7682,7 @@
         !X.playerEpisode ||
         X.playerEpisode === a ||
         X.playerEpisode.id === a.id,
-      n = "detail" === X.screen && xe && !!xe.src && X.playerItem === e && i;
+      n = "detail" === X.screen && !X.streamError && xe && !!xe.src && X.playerItem === e && i && (!window.XuperPlayer||XuperPlayer.diagnostics.stage!=="idle");
     ((X.playerMode = "vod"),
       e && X.playerItem !== e && _n(),
       e && (X.playerItem = e),
@@ -8148,11 +8118,12 @@
   function lo() {
     (zr(), Da());
   }
-  (window.addEventListener("beforeunload", lo),
+  (window.addEventListener("pagehide", function(){checkpointVod();if(profileStore)profileStore.flush();}),
+    window.addEventListener("beforeunload", lo),
     window.addEventListener("unload", lo),
     document.addEventListener("visibilitychange", function () {
       // The Samsung player owns pause/resume; unloading it here loses the session.
-      document.hidden && !window.XuperStandalone && lo();
+      if(document.hidden){checkpointVod();if(profileStore)profileStore.flush();if(!window.XuperStandalone)lo();}
     }),
     (window.onerror = function (e, t, a, i, n) {
       try {

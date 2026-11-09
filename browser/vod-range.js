@@ -8,8 +8,8 @@ export function validateRange(status,headers,body,start,limit){
  if(status===200&&start===0&&data.byteLength<=limit)return {data,total:data.byteLength};
  throw Object.assign(new Error(status===200?'El servidor no admite lectura de vídeo por bloques':'Error HTTP '+status+' al leer vídeo'),{status});
 }
-export function createVodReader(url,headers={},onRead=()=>{}){
- let signal=null,xhr=null,closed=false,epoch=0;
+export function createVodReader(url,headers={},onRead=()=>{},refreshSource){
+ let signal=null,xhr=null,closed=false,epoch=0,fileTotal=null;
  function abort(){epoch++;if(signal)signal.abort();if(xhr)xhr.abort();signal=xhr=null;}
  async function readOnce(start,length=VOD_CHUNK){
   if(closed)throw new DOMException('Closed','AbortError');
@@ -24,8 +24,12 @@ export function createVodReader(url,headers={},onRead=()=>{}){
   let value;
   try{value=validateRange(result.status,result.headers,result.body,start,length);}
   catch(error){onRead({status:result.status,bytes:0});throw error;}
+  if(fileTotal!==null&&fileTotal!==value.total)throw Object.assign(new Error('El archivo cambió durante la reproducción'),{permanent:true});fileTotal=value.total;
   onRead({status:result.status,bytes:value.data.byteLength,total:value.total});return value;
  }
- async function read(start,length=VOD_CHUNK){const run=epoch;for(let attempt=0;attempt<2;attempt++){try{if(run!==epoch)throw new DOMException("Cancelled","AbortError");return await readOnce(start,length);}catch(error){if(closed||error.name==='AbortError'||attempt||error.status&&error.status<500&&error.status!==408&&error.status!==429)throw error;onRead({status:error.status||0,bytes:0,retry:1});await new Promise(resolve=>setTimeout(resolve,150));}}}
+ async function read(start,length=VOD_CHUNK){const run=epoch;let renewed=false;for(let attempt=0;attempt<3;attempt++){try{if(run!==epoch)throw new DOMException('Cancelled','AbortError');return await readOnce(start,length);}catch(error){if(closed||error.name==='AbortError'||error.permanent)throw error;
+  if(!renewed&&typeof refreshSource==='function'&&[401,403,404,410].includes(error.status)){renewed=true;const fresh=await refreshSource();if(closed||run!==epoch)throw new DOMException('Cancelled','AbortError');if(!fresh||new URL(fresh.url).pathname!==new URL(url).pathname)throw new Error('El archivo cambió al renovar el vídeo');url=fresh.url;headers=fresh.headers||{};onRead({status:error.status,bytes:0,renewed:true});continue;}
+  if(attempt>=1||error.status&&error.status<500&&error.status!==408&&error.status!==429)throw error;onRead({status:error.status||0,bytes:0,retry:1});await new Promise(resolve=>setTimeout(resolve,150));}}}
+
  return {read,abort,close(){closed=true;abort();}};
 }

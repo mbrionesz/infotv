@@ -29,3 +29,7 @@ test('VOD reports an unsuccessful HTTP status before range validation fails',asy
  try{await assert.rejects(reader.read(0),{status:404});assert.equal(reads.at(-1).status,404);assert.equal(reads.at(-1).bytes,0);}finally{reader.close();delete globalThis.window;}
  assert.throws(()=>validateRange(206,'',new Uint8Array([1]).buffer,0,3),/sin Content-Range/);
 });
+test('expired VOD authorization renews and retries the exact byte range without resetting playback',async()=>{
+ const calls=[];globalThis.window={XuperNativeTransport:{snapshot:()=>({available:true}),request:async options=>{calls.push(options);return options.headers.Token==='fresh'?{status:206,headers:'Content-Range: bytes 100-102/200',body:new Uint8Array([1,2,3]).buffer}:{status:403,headers:'',body:new ArrayBuffer(0)};}}};
+ const reader=createVodReader('https://cdn.test/movie.ts',{Token:'expired'},()=>{},async()=>({url:'https://backup.test/movie.ts',headers:{Token:'fresh'}}));try{const result=await reader.read(100,3);assert.equal(result.total,200);assert.equal(calls.length,2);assert.equal(calls[1].headers.Range,'bytes=100-102');assert.equal(calls[1].url,'https://backup.test/movie.ts');}finally{reader.close();delete globalThis.window;}
+});

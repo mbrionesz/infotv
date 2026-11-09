@@ -1,12 +1,13 @@
 import mpegts from 'mpegts.js';
 import {createVodReader} from './vod-range.js';
 import {createTsSeekState} from './ts-seek.js';
-export function openTs(video,url,headers,{onError,onRead,duration=0,onReady,onNotice,preferredAudio,audioIndex,audioLabels,onAudioTracks,resumeHint,onSeekIndex}={}){
+export function openTs(video,url,headers,{onError,onRead,duration=0,onReady,onNotice,preferredAudio,audioIndex,audioLabels,onAudioTracks,refreshSource,resumeHint,onSeekIndex}={}){
+ const source={url,headers};const renew=refreshSource?async()=>{const fresh=await refreshSource();source.url=fresh.url;source.headers=fresh.headers||{};return fresh;}:null;
  const seekState=createTsSeekState(resumeHint,onSeekIndex,new URL(url).pathname);
  class Loader{
   constructor(){this.type='authorized-range';this.status=0;this.needStashBuffer=true;this.reader=null;this.run=0;}
   isWorking(){return this.status===1||this.status===2;}
-  open(data,range){this.abort();const run=++this.run;this.status=1;this.reader=createVodReader(url,headers,onRead);const reader=this.reader;let offset=range.from||0,received=0;const start=offset;
+  open(data,range){this.abort();const run=++this.run;this.status=1;this.reader=createVodReader(source.url,source.headers,onRead,renew);const reader=this.reader;let offset=range.from||0,received=0;const start=offset;
    const loop=async()=>{try{while(run===this.run){const result=await reader.read(offset);if(run!==this.run)return;if(offset===0)seekState.identify(result.data,result.total);this.status=2;if(this.onContentLengthKnown)this.onContentLengthKnown(result.total-start);received+=result.data.byteLength;if(this.onDataArrival)this.onDataArrival(result.data,offset,received);if(run!==this.run)return;offset+=result.data.byteLength;if(offset>=result.total||range.to>=0&&offset>range.to){this.status=4;if(this.onComplete)this.onComplete(start,offset-1);return;}await new Promise(resolve=>setTimeout(resolve,0));}}catch(error){if(run!==this.run)return;this.status=3;if(this.onError)this.onError('Exception',{code:error.status||0,msg:error.message});}};loop();
   }
   abort(){this.run++;if(this.reader)this.reader.close();this.reader=null;this.status=0;}
