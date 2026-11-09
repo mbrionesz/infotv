@@ -1,4 +1,4 @@
-import {createDiscoveryQuery} from './discovery-data.js';
+import {createShowcaseQuery} from './showcase-data.js';
 import {fetchPlaylist} from './addon-fetch.js';
 import {createDnsDiagnostic} from './dns-diagnostic.js';
 import core from '../companion/lib/magis.js';
@@ -13,7 +13,7 @@ const pageProgress=new Map();
 const inflight = new Map();
 const metadata = new Set(['home','liveCategories','liveChannels','search','catalogBrowse','catalogColumns','catalogFilters','catalogSearchPage','portalHome','portalShelve','portalShortVideos','portalPersons','portalPersonItems','portalCatchup']);
 const remoteCatalog=createRemoteCatalog(execute);
-const discoveryQuery=createDiscoveryQuery(execute);
+const discoveryQuery=createShowcaseQuery(execute);
 const stats = { requests:0,cacheHits:0,staleHits:0,errors:0 };
 let cryptoVerified=false;
 try{

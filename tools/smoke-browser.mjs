@@ -83,7 +83,7 @@ try {
   await browser.waitFor('!!window.__xuper && __xuper.state.screen === "home"');
   assert.equal(await browser.evaluate('!!document.getElementById("infotv-connection")'),false);
   if (!(await browser.evaluate('!!window.XuperStandalone'))) throw new Error('Standalone startup: '+browser.errors.join('\n'));
-  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.6');
+  assert.equal(await browser.evaluate('XuperStandalone.version'),'0.9.7');
   assert.equal(await browser.evaluate('__xuper.channels.length'),2);
   mkdirSync('dist',{recursive:true});
   await browser.screenshot('dist/browser-home.png');
@@ -96,7 +96,7 @@ try {
   await browser.evaluate('__xuper.focus(".live-focus");__xuper.key(40)');
   assert.equal(await browser.evaluate('__xuper.state.focus === document.querySelectorAll(".dashboard-action")[3]'),true);
   await browser.evaluate('__xuper.key(38);__xuper.key(39);__xuper.key(13)');
-  await browser.waitFor('document.querySelectorAll(".xt-discovery-card").length>0');await browser.evaluate('Array.from(document.querySelectorAll(".xt-discovery-actions button")).find(function(button){return button.textContent==="Catálogo completo"}).click()');
+  await browser.waitFor('document.querySelectorAll(".xt-discovery-card").length>0');await browser.evaluate('Array.from(document.querySelectorAll(".xt-discovery-actions button")).find(function(button){return button.textContent==="Explorar catálogo"}).click()');
   await browser.waitFor('!!document.getElementById("xt-catalog") && document.querySelectorAll(".xt-catalog-card").length===36');
   await browser.screenshot('dist/browser-movies.png');
   await browser.evaluate('XuperCatalog.close()');

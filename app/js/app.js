@@ -1201,6 +1201,7 @@
     }
   }
   function rt(e, a) {
+    if(e&&X.screen==="home"){var homeRail=document.getElementById("screen-home");if(homeRail)homeRail.classList.toggle("is-rail-open",!!n(e,".home-tabs"));}
     if (e)
       if (X.focus !== e) {
         (X.focus && X.focus.classList.remove("is-focused"),
