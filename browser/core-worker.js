@@ -11,7 +11,7 @@ const cache = createCache(self.indexedDB);
 const catalog = createCatalogIndex();
 const pageProgress=new Map();
 const inflight = new Map();
-const metadata = new Set(['home','liveCategories','liveChannels','search','catalogBrowse','catalogColumns','catalogFilters','catalogSearchPage']);
+const metadata = new Set(['home','liveCategories','liveChannels','search','catalogBrowse','catalogColumns','catalogFilters','catalogSearchPage','portalHome','portalShelve','portalShortVideos','portalPersons','portalPersonItems','portalCatchup']);
 const remoteCatalog=createRemoteCatalog(execute);
 const discoveryQuery=createDiscoveryQuery(execute);
 const stats = { requests:0,cacheHits:0,staleHits:0,errors:0 };
@@ -21,6 +21,11 @@ try{
   cryptoVerified=Buffer.concat([decipher.update(Buffer.from('c8c781f3c07c806c304a26ac5327083541155b5cfcbfed46','hex')),decipher.final()]).toString('utf8')==='XuperTizen worker';
 }catch(_){}
 function invoke(method,payload,done) {
+  if(method==='portalRoutes')return done(null,core.portalRoutes());
+  if(method==='portalHome')return core.portalHome(payload.root||'movies',done);
+  if(method==='portalShelve')return core.portalShelve(payload.root||'movies',payload,done);
+  if(method==='portalPersons')return core.portalPersons(payload.contentId,done);
+  if(['portalShortVideos','portalPersonItems','portalCatchup','portalResolveCatchup'].includes(method))return core[method](payload,done);
   if(method==='catalogBrowse')return core.catalogBrowse(payload.root,payload,done);
   if(method==='catalogColumns')return core.catalogColumns(payload.root,done);
   if(method==='catalogFilters')return core.catalogFilters(payload.root,done);
@@ -100,8 +105,8 @@ async function execute(method,payload){
   }
   // Filter option records now preserve id/label pairs; do not reuse v1 pages
   // whose category/filter selection may have been discarded.
-  const key=(/^catalog/.test(method)?'catalog-v2:':'')+method+':'+JSON.stringify(payload);
-  const cacheable=metadata.has(method)&&!(/^catalog/.test(method)&&payload.fresh===true);
+  const key=(/^(catalog|portal)/.test(method)?'catalog-v3:':'')+method+':'+JSON.stringify(payload);
+  const cacheable=metadata.has(method)&&!(/^(catalog|portal)/.test(method)&&payload.fresh===true);
   let stale=null;
   if(cacheable){
     const hit=await cache.get('metadata',key);

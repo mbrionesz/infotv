@@ -1,3 +1,4 @@
+import {createPeoplePanel} from './portal-people.js';
 import {compareCatalogTotals} from './catalog-totals.js';
 import {installPosterLoader} from './poster-art.js';
 import {createProfileStore} from './profile-store.js';
@@ -35,6 +36,7 @@ function remember(stream) {
 window.XuperPlayer = createPlayer(url => streams.get(url));
 window.XuperGuide=createGuide(core);
 window.XuperCatalog=createCatalog(core);
+const peoplePanel=createPeoplePanel(core);
 function request(method, payload, callback) {
   payload = payload || {};
   let finished = false;
@@ -45,8 +47,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.9.4', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.9.4' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.9.5', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.9.5' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -79,7 +81,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.9.4', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.9.5', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -92,7 +94,7 @@ function request(method, payload, callback) {
 }
 let profileStorage;try{profileStorage=window.localStorage;}catch(_){}
 const profileStore=createProfileStore(profileStorage,window.indexedDB);
-window.XuperStandalone = { compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.9.4', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.9.5', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 window.XuperStandalone.auditCatalog=root=>catalogAudit.run({root:root||'series',onProgress:entry=>console.log('XT_CATALOG_OPTION '+JSON.stringify(entry))}).then(result=>{console.log('XT_CATALOG_AUDIT '+JSON.stringify(result));return result;});
 window.XuperStandalone.cancelCatalogAudit=()=>catalogAudit.cancel();
 window.XuperStandalone.catalogAudit=()=>catalogAudit.snapshot();
@@ -108,7 +110,7 @@ window.XuperStandalone.probeCdns=async function(options={}){
 window.XuperStandalone.openDiagnostics=function(playback){
   closeDiagnostics();diagnosticSignal=requestSignal();
   diagnosticPanel=document.createElement('section');diagnosticPanel.className='xt-diagnostics';
-  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.9.4</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
+  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.9.5</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
   const panel=diagnosticPanel,signal=diagnosticSignal;
   const environment={version:window.XuperStandalone.version,viewport:[innerWidth,innerHeight],panel:[screen.width,screen.height],scale:document.getElementById('app').getBoundingClientRect().width/1920};
   const safe=Object.assign({},playback||window.XuperPlayer.diagnostics);
@@ -124,7 +126,7 @@ window.XuperStandalone.openDiagnostics=function(playback){
 function handleRemote(event){
   const code=event.keyCode;
   if(diagnosticPanel){if(code===37||code===39){const buttons=diagnosticPanel.querySelectorAll('button');let index=Number(diagnosticPanel.dataset.action)||0;buttons[index].classList.remove('is-focused');index=(index+(code===39?1:buttons.length-1))%buttons.length;diagnosticPanel.dataset.action=String(index);buttons[index].classList.add('is-focused');}if(code===13){const buttons=diagnosticPanel.querySelectorAll('button');buttons[Number(diagnosticPanel.dataset.action)||0].click();return true;}if(code===405)diagnosticPanel.querySelector('.xt-diag-network').click();if(code===38||code===40){const step=code===40?180:-180;diagnosticPanel.querySelector('pre').scrollTop+=step;diagnosticPanel.querySelector('.xt-cdn-results').scrollTop+=step;}if([10009,461,27,406].includes(code)){closeDiagnostics();}return ![447,448,449].includes(code);}
-  if(window.XuperGuide.handle(event)||window.XuperCatalog.handle(event))return true;
+  if(peoplePanel.handle(event)||window.XuperGuide.handle(event)||window.XuperCatalog.handle(event))return true;
   if(code===406){window.XuperStandalone.openDiagnostics();return true;}
   if((code===427||code===428)&&window.__xuper&&__xuper.state.screen==='player'&&__xuper.state.playerMode==='live'){__xuper.key(code===427?38:40);return true;}
   return false;
@@ -134,4 +136,4 @@ window.XuperStandalone.handleRemote=event=>remoteMetrics.measure(()=>handleRemot
 
 const posterLoader=installPosterLoader(core,window);
 window.XuperStandalone.loadPoster=posterLoader.load;
-window.addEventListener('pagehide',()=>{closeDiagnostics();window.XuperGuide.close();window.XuperCatalog.close();core.dispose();nativeTransport.dispose();posterLoader.dispose();});
+window.addEventListener('pagehide',()=>{closeDiagnostics();peoplePanel.close();window.XuperGuide.close();window.XuperCatalog.close();core.dispose();nativeTransport.dispose();posterLoader.dispose();});

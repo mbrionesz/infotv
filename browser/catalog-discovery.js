@@ -31,7 +31,9 @@ export function renderDiscovery(panel,data,{browse,period,openItem,search,poster
  (data.genres||[]).slice(0,16).forEach(genre=>{const value=typeof genre==='object'?genre.id:genre,label=typeof genre==='object'?genre.name:genre;genreTrack.appendChild(action(String(label),5,()=>browse({genre:String(value)})));});genres.appendChild(action('Todos los géneros',5,()=>browse({},'genre'),'xt-discovery-link'));grid.appendChild(genres);
  const collections=(data.columns||[]).slice().sort((a,b)=>Number(/netflix|hbo|disney|prime|apple|hulu|paramount/i.test(b.name))-Number(/netflix|hbo|disney|prime|apple|hulu|paramount/i.test(a.name)));
  if(collections.length){const section=node('section','xt-discovery-section');section.appendChild(node('h2','','Colecciones del portal'));const track=node('div','xt-discovery-track xt-discovery-genres');collections.slice(0,16).forEach(column=>track.appendChild(action(column.name,6,()=>browse({column:String(column.id)}),'xt-discovery-collection')));section.appendChild(track);section.appendChild(action('Todas las colecciones',6,()=>browse({},'column'),'xt-discovery-link'));grid.appendChild(section);}
- if(editorial.length)shelf('Para descubrir',editorial,7);
+ const shelves=data.shelves||[];if(shelves.length){const section=node('section','xt-discovery-section');section.appendChild(node('h2','','Selecciones del portal'));const track=node('div','xt-discovery-track xt-discovery-genres');shelves.slice(0,100).forEach(entry=>track.appendChild(action(entry.name,7,()=>browse({shelve:String(entry.id)}),'xt-discovery-shelve')));section.appendChild(track);grid.appendChild(section);}
+ if(editorial.length)shelf('Para descubrir',editorial,8);
+ const extra=(data.portalEditorial||[]).filter(allowContent);if(extra.length)shelf('Más del portal',extra,9);
 }
 export function scrollDiscovery(panel,element){
  const grid=panel.querySelector('.xt-discovery-grid');if(!grid||!grid.contains(element))return;

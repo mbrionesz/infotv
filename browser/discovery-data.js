@@ -19,21 +19,21 @@ export function createDiscoveryQuery(request,now=Date.now){
   if(!['movies','series'].includes(root))throw new Error('Sección de descubrimiento no disponible');
   if(!['recent','week','month'].includes(period))period='recent';
   const key=[root,period,dateKey(now())].join(':');const hit=cache.get(key);if(!fresh&&hit&&now()-hit.at<600000)return Object.assign({},hit.data,{cached:true});
-  const begun=now(),errors=[];const safe=async(method,payload)=>{let timer;try{return await Promise.race([request(method,payload),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('discovery-timeout')),Math.max(1,Math.min(9000,begun+21000-now())));})]);}catch(_){errors.push(method);return null;}finally{clearTimeout(timer);}};
-  const [columns,facets,home]=await Promise.all([safe('catalogColumns',{root,fresh:true}),safe('catalogFilters',{root,fresh:true}),safe('home',{root,pageNum:1})]);
-  if(!columns&&!facets&&!home)throw new Error('No se pudo consultar el catálogo del portal.');
+  const begun=now(),errors=[];const safe=async(method,payload,maxMs=9000,optional=false)=>{let timer;try{return await Promise.race([request(method,payload),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('discovery-timeout')),Math.max(1,Math.min(maxMs,begun+21000-now())));})]);}catch(_){if(!optional)errors.push(method);return null;}finally{clearTimeout(timer);}};
+  const [columns,facets,home,composite]=await Promise.all([safe('catalogColumns',{root,fresh:true}),safe('catalogFilters',{root,fresh:true}),safe('home',{root,pageNum:1}),safe('portalHome',{root},3000,true)]);
+  if(!columns&&!facets&&!home&&!composite)throw new Error('No se pudo consultar el catálogo del portal.');
   const novelty=(columns?.columns||[]).find(column=>/novedad|estreno|reciente|recent|new.?release|new.?arrival|ultim/.test(fold(column.name)));
   let sample=[],providerCollection=false;
   if(novelty){for(let pageNum=1;pageNum<=(period==='recent'?1:3);pageNum++){if(now()-begun>=18000)break;const page=await safe('catalogBrowse',{root,filters:{column:String(novelty.id)},pageNum,pageSize:24});if(!page)break;sample.push(...(page.items||[]));providerCollection=true;if(!page.hasMore)break;}}
-  const editorial=home?.items||[];
+  const editorialSeen=new Set();const editorial=[...(home?.items||[]),...(composite?.items||[])].filter(item=>item&&item.id&&!editorialSeen.has(String(item.id))&&editorialSeen.add(String(item.id)));
   if(!sample.length&&!providerCollection)sample=editorial.slice();
   const seen=new Set();sample=sample.filter(item=>item&&item.id&&!seen.has(String(item.id))&&seen.add(String(item.id)));
   const releases=recentReleases(sample,period==='recent'?'month':period,now());
   const dates=sample.filter(releaseDay).length;
   const latest=period==='recent'?(providerCollection?sample:releases):releases;
   const title=period==='week'?'Estrenos de los últimos 7 días':period==='month'?'Estrenos de los últimos 30 días':providerCollection?'Novedades recientes':'Estrenos recientes';
-  const data={root,period,checkedAt:now(),day:dateKey(now()),latest:latest.slice(0,16),editorial:editorial.slice(0,12),latestTitle:title,
-   countryOptions:countryChoices(facets?.countries||[]),genres:facets?.genres||[],columns:columns?.columns||[],sampled:sample.length,providerCollection,datesAvailable:dates>0,
+  const data={root,period,checkedAt:now(),day:dateKey(now()),latest:latest.slice(0,16),editorial:editorial.slice(0,12),portalEditorial:(composite?.items||[]).filter(item=>!(home?.items||[]).some(existing=>String(existing.id)===String(item.id))).slice(0,12),latestTitle:title,
+   countryOptions:countryChoices(facets?.countries||[]),genres:facets?.genres||[],columns:columns?.columns||[],shelves:composite?.shelves||[],sampled:sample.length,providerCollection,datesAvailable:dates>0,
    note:period!=='recent'?'Fechas de estreno informadas · '+sample.length+' títulos consultados; no es todo el catálogo.':providerCollection?'Colección de novedades del portal.':'Estrenos según fechas disponibles en la selección consultada.',metadataIncomplete:errors.length>0};
   cache.set(key,{at:now(),data});while(cache.size>12)cache.delete(cache.keys().next().value);return data;
  };

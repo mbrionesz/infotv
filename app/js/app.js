@@ -3410,6 +3410,7 @@
       },
       { icon: "icon_detail_favorite.png", label: "Mi lista", kind: "favorite" },
     ];
+    if(window.XuperStandalone&&XuperStandalone.openPeople&&(n.portal||n._portal))T.push({icon:"icon_detail_subtitle_audio.png",label:"Reparto",kind:"people"});
     if(record)T.splice(1,0,{icon:'icon_detail_fullscreen.png',label:'Desde el principio',kind:'restart'});
     x(n) && !window.XuperStandalone &&
       T.push({
@@ -3434,6 +3435,7 @@
             if ("fullscreen" === e) Kr(t, X.detailEpisode);
             else if ("restart" === e){ln=null;Kr(t,X.detailEpisode);}
             else if ("language" === e) er(t);
+            else if ("people" === e) XuperStandalone.openPeople(t.id);
             else if ("favorite" === e) {
               var a = Z(t);
               this.classList.toggle("is-selected", a);

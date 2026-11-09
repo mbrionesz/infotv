@@ -1609,8 +1609,7 @@ function getLiveChannels(e, r, t, n) {
       if (s) return n(s);
       var a = [],
         o = {};
-      call(
-        "v6/getLiveData",
+      portalLiveData(
         {
           columnId: e || 76182,
           dataVersion: "",
@@ -1829,6 +1828,7 @@ function resolveLive(e, r, options) {
             path: "v4/startPlayLive",
             bean: { channelCode: e, columnId: 0, type: "1" },
           },
+          { path: "v5/startPlayLive", bean: { channelCode: e, type: "1" } },
         ],
         function (e, s) {
           if (e)
@@ -1918,7 +1918,47 @@ function resolveLive(e, r, options) {
     });
   });
 }
+// Documented portal routes only. New server collections use these same endpoints.
+var PORTAL_ROUTES = ['v3/snToken','v8/active','getNextColumns','v3/getColumnContents','v3/getShelveData','v3/filterByContent','v3/filterGenre','v3/searchByName','v4/getItemData','v10/startPlayVOD','v15/getSlbInfo','v14/getSlbInfo','v6/getLiveData','v4/startPlayLive','getHome','getShortVideo','getPerson','getItemByPerson','getAllbackProgram','v6/startPlayBTV','v7/getLiveData','v5/startPlayLive'];
+var portalHomeCache=null;
+function portalRequest(path,bean,callback){ensureSession(function(error){if(error)return callback(error);call(path,bean,function(error,result){if(error)return callback(error);callback(null,result&&result.data||result||{});});});}
+function portalIdentifier(value){var id=trim(value);return /^[a-zA-Z0-9_.:-]{1,180}$/.test(id)?id:'';}
+function portalRestricted(item){return !!item&&(String(item.restricted)==='1'||item.restricted===true||String(item.specialFlag)==='1'||item.isAdult===true||String(item.isAdult)==='1');}
+function portalItems(list,root){var rows=(Array.isArray(list)?list:[]).filter(function(item){return item&&!portalRestricted(item);}).slice(0,60).map(function(item){if(!item.programType&&/^(movie|teleplay|series)$/.test(item.type))return Object.assign({},item,{programType:item.type});return item;});return catalogAssets(rows,root||'').filter(function(item){var series=item.type==='teleplay';return root==='series'?series:root==='movies'?!series:true;});}
+function portalPage(result,root,page,size,list,field){var raw=list||result.assetList||result.list||[];if(!Array.isArray(raw))raw=[];var declared=result[field||'totalSize'];if(declared===undefined)declared=result.total!==undefined?result.total:result.assetListTotalSize;var total=declared===null||declared===undefined||declared===''?NaN:Number(declared);return {items:portalItems(raw.slice(0,size),root),total:isFinite(total)&&total>=0?total:null,pageNum:page,hasMore:raw.length>0&&(isFinite(total)&&total>=0?page*size<total:raw.length>=size)};}
+
+function portalGetHome(root,callback){
+ if(!Object.prototype.hasOwnProperty.call(CATALOG_ROOTS,root))return callback(new Error('Sección de catálogo desconocida'));
+ portalRequest('getHome',{homePageCode:'home'},function(error,result){if(error)return callback(error);var blocks=result.homeBlockList||result.blockBeanList||result.shelveList||[],shelves=[],items=[],seen={},shelfSeen={};if(!Array.isArray(blocks))blocks=[];
+  for(var i=0;i<Math.min(blocks.length,100);i++){var block=blocks[i];if(!block||portalRestricted(block))continue;var nested=block.shelveList||block.blockBeanList||[];if(Array.isArray(nested)&&blocks.length<200)blocks=blocks.concat(nested.slice(0,200-blocks.length));var id=portalIdentifier(block.shelveId||block.id),rows=portalItems(block.shelveAssetList||block.assetList||block.dataList||[],root);
+   if(id&&!shelfSeen[id]){shelfSeen[id]=true;shelves.push({id:id,name:text(block.name||block.title||block.shelveName)||'Colección',items:rows.slice(0,12)});}
+   for(var j=0;j<rows.length&&items.length<120;j++)if(!seen[rows[j].id]){seen[rows[j].id]=true;items.push(rows[j]);}
+  }
+  portalHomeCache={at:Date.now(),shelves:shelves};callback(null,{items:items,shelves:shelves,source:'getHome'});
+ });
+}
+function portalShelve(root,options,callback){if(!Object.prototype.hasOwnProperty.call(CATALOG_ROOTS,root))return callback(new Error('Sección de catálogo desconocida'));options=options||{};var id=portalIdentifier(options.shelveId),page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(60,parseInt(options.pageSize,10)||36));
+ function fetch(error,home){if(error)return callback(error);var shelves=home&&home.shelves||portalHomeCache&&portalHomeCache.shelves||[];if(!id||!shelves.some(function(s){return s.id===id;}))return callback(new Error('Estantería no anunciada por el portal'));
+  portalRequest('v3/getShelveData',{shelveId:id,pageNum:page,pageSize:size},function(error,result){if(error)return callback(error);callback(null,Object.assign(portalPage(result,root,page,size,null,'assetListTotalSize'),{source:'v3/getShelveData',totalField:'assetListTotalSize',typeFiltered:root==='movies'||root==='series',shelveId:id,collectionName:shelves.filter(function(s){return s.id===id;})[0].name}));});
+ }
+ if(portalHomeCache&&Date.now()-portalHomeCache.at<600000)return fetch();portalGetHome(root,fetch);
+}
+function portalShortVideos(options,callback){options=options||{};var page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(50,parseInt(options.pageSize,10)||24));portalRequest('getShortVideo',{homePageCode:'home',pageNum:page,pageSize:size},function(error,result){if(error)return callback(error);callback(null,Object.assign(portalPage(result,'',page,size,result.assetList||result.shortVideoList||result.list||[]),{source:'getShortVideo'}));});}
+function portalPersons(contentId,callback){var id=portalIdentifier(contentId);if(!id)return callback(new Error('Título requerido'));portalRequest('getPerson',{contentId:id,imdb:'',type:'0',macAddr:FIXED_MAC},function(error,result){if(error)return callback(error);function people(list){return (Array.isArray(list)?list:[]).slice(0,60).map(function(person){return {id:portalIdentifier(person.puId),name:text(person.name),image:text(person.icon),biography:text(person.introduction).slice(0,3000)};}).filter(function(person){return person.id&&person.name;});}callback(null,{directors:people(result.directorList||result.directors),actors:people(result.actorDisplayList||result.actors),source:'getPerson'});});}
+function portalPersonItems(options,callback){options=options||{};var id=portalIdentifier(options.personId),page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(50,parseInt(options.pageSize,10)||36));if(!id)return callback(new Error('Persona requerida'));portalRequest('getItemByPerson',{puId:id,type:'0',pageNum:page,pageSize:size},function(error,result){if(error)return callback(error);callback(null,Object.assign(portalPage(result,'',page,size),{source:'getItemByPerson'}));});}
+function portalCatchup(options,callback){options=options||{};var code=portalIdentifier(options.channelCode),page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(100,parseInt(options.pageSize,10)||36));if(!code)return callback(new Error('Canal requerido'));portalRequest('getAllbackProgram',{channelCode:code,columnId:parseInt(options.columnId,10)||0,pageNum:page,pageSize:size},function(error,result){if(error)return callback(error);var list=result.programList||result.channelList||result.list||[];callback(null,{programs:(Array.isArray(list)?list:[]).slice(0,size).filter(function(item){return !portalRestricted(item);}).map(function(item){return {id:portalIdentifier(item.contentId||item.programId||item.id),title:text(item.name||item.title),startTime:text(item.startTime),endTime:text(item.endTime)};}),total:result.totalSize!==undefined?result.totalSize:result.total!==undefined?result.total:null,source:'getAllbackProgram'});});}
+function portalResolveCatchup(options,callback){options=options||{};var code=portalIdentifier(options.channelCode),id=portalIdentifier(options.contentId);if(!code||!id)return callback(new Error('Canal y programa requeridos'));portalRequest('v6/startPlayBTV',{channelCode:code,contentId:id,columnId:parseInt(options.columnId,10)||0,type:'0'},function(error,result){if(error)return callback(error);var urls=result.totalPlayUrlList||[],first=urls[0],url=trim(first&&(first.playUrl||first.url)||(typeof first==='string'?first:'')||result.playUrl);if(!/^https?:\/\//i.test(url)||/[\r\n]/.test(url))return callback(new Error('El portal no devolvió un vídeo recuperable'));callback(null,{url:url,mime:/\.m3u8(?:[?#]|$)/i.test(url)?'application/vnd.apple.mpegurl':/\.mp4(?:[?#]|$)/i.test(url)?'video/mp4':'video/mp2t',headers:{},source:'v6/startPlayBTV'});});}
+function portalLiveData(bean,callback){firstCall([{path:'v6/getLiveData',bean:bean},{path:'v7/getLiveData',bean:bean}],callback);}
+
 module.exports = {
+  portalRoutes:function(){return {routes:PORTAL_ROUTES.slice(),count:PORTAL_ROUTES.length,validation:"implemented-not-provider-verified"};},
+  portalHome:portalGetHome,
+  portalShelve:portalShelve,
+  portalShortVideos:portalShortVideos,
+  portalPersons:portalPersons,
+  portalPersonItems:portalPersonItems,
+  portalCatchup:portalCatchup,
+  portalResolveCatchup:portalResolveCatchup,
   catalogBrowse:catalogBrowse,
   catalogColumns:catalogColumns,
   catalogFilters:catalogFilters,
