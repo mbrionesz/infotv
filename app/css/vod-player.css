@@ -1,0 +1,28 @@
+/* Native Samsung video is below the HTML surface; restore normal surfaces on exit. */
+html.xt-avplay,html.xt-avplay body,html.xt-avplay #app,html.xt-avplay #screen-player{background:transparent!important}
+html.xt-avplay #screen-player .player-frame{visibility:hidden}
+.player-vod-infobar{height:310px;background:linear-gradient(to top,rgba(0,0,0,.96),rgba(0,0,0,.62) 65%,transparent)}
+.vod-infobar-poster{display:none!important}
+.vod-infobar-content{left:96px;right:96px;bottom:52px;height:170px;display:flex;flex-direction:column;justify-content:flex-end}
+.vod-bottom-row{display:block;order:-1;margin-bottom:26px}
+.vod-infobar-title{font-size:34px;line-height:44px;font-weight:500;width:100%;max-width:1500px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vod-seekbar-row{margin-bottom:22px}
+.vod-time-current{font-size:23px;line-height:30px;width:120px;font-weight:400}
+.vod-time-total{font-size:21px;line-height:30px;width:240px;color:#c0ccdb;font-weight:400}
+.vod-seekbar,.vod-seekbar.is-focused,.vod-seekbar.is-scrubbing{height:7px;margin:0 24px;border:0;box-shadow:none;background:rgba(255,255,255,.22);border-radius:6px}
+.vod-seek-progress{background:#f5f8fc}
+.vod-seek-buffered{background:rgba(255,255,255,.2)}
+.vod-seek-thumb,.vod-seekbar.is-focused .vod-seek-thumb,.vod-seekbar.is-scrubbing .vod-seek-thumb{width:18px;height:18px;margin-left:-9px;margin-top:-9px;background:#f5f8fc;box-shadow:0 0 0 3px rgba(255,255,255,.16)}
+.vod-seekbar.duration-unknown{background:rgba(255,255,255,.13)}
+.vod-infobar-tips{display:flex;justify-content:flex-start;margin-top:16px}
+.vod-tip{margin:0 28px 0 0}.vod-tip img{display:none}.vod-tip span{font-size:19px;color:#bac9db;margin:0}
+.vod-tip:nth-child(2) span:before{content:'OK · '}.vod-tip:nth-child(3) span:before{content:'← '}.vod-tip:nth-child(4) span:before{content:'→ '}.vod-tip:last-child span:before{content:'↓ '}
+#player-status.is-error:before{content:'!';border:1px solid #9daec4;border-radius:50%;width:46px;height:46px;line-height:46px;font-size:30px;animation:none;-webkit-animation:none}
+.player-playsetting-view{left:90px;right:90px;top:auto;bottom:45px;height:720px;padding:32px 38px;background:#111d2d;border:1px solid #425874;border-radius:24px;justify-content:flex-start}
+.psv-header{margin:0 0 22px;padding-bottom:18px;border-color:#3a4c63}
+.psv-header-title{font-size:36px;font-weight:500;text-shadow:none}
+.psv-header-sub{font-size:21px;color:#b4c5d9}
+.psv-scroll{flex:1;min-height:0;overflow-y:auto}
+.psv-title{font-size:24px;color:#c3d2e4;font-weight:500}
+.psv-btn,.psv-season-btn,.psv-ep-btn{background:#20314a;border:1px solid #47607e;border-radius:13px;color:#edf3fa}
+.psv-btn.is-focused,.psv-season-btn.is-focused,.psv-ep-btn.is-focused{background:#e8f2fd;color:#101b29;border-color:#fff;box-shadow:0 0 0 2px #e8f2fd}

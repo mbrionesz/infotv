@@ -1,0 +1,6 @@
+// A bounded PTS span is an estimate, not a seek index or a bitrate guess.
+function ptsByPid(buffer){const bytes=new Uint8Array(buffer),values=new Map();let alignment=-1;for(let i=0;i<Math.min(188,bytes.length-376);i++)if(bytes[i]===0x47&&bytes[i+188]===0x47&&bytes[i+376]===0x47){alignment=i;break;}if(alignment<0)return values;
+ for(let i=alignment;i+188<=bytes.length;i+=188){if(bytes[i]!==0x47||!(bytes[i+1]&0x40)||bytes[i+1]&0x80||bytes[i+3]&0xc0)continue;const pid=((bytes[i+1]&31)<<8)|bytes[i+2],adapt=(bytes[i+3]>>4)&3;if(adapt!==1&&adapt!==3)continue;let p=i+4;if(adapt===3)p+=1+bytes[p];if(p+14>i+188||bytes[p]!==0||bytes[p+1]!==0||bytes[p+2]!==1||bytes[p+3]<0xe0||bytes[p+3]>0xef||!(bytes[p+7]&0x80))continue;const q=p+9;if(!(bytes[q]&1)||!(bytes[q+2]&1)||!(bytes[q+4]&1))continue;const pts=((bytes[q]>>1)&7)*1073741824+bytes[q+1]*4194304+(bytes[q+2]>>1)*32768+bytes[q+3]*128+(bytes[q+4]>>1);if(!values.has(pid))values.set(pid,[]);values.get(pid).push(pts);}
+ return values;
+}
+export function estimateTsDuration(first,last){const begin=ptsByPid(first),end=ptsByPid(last);for(const [pid,head]of begin){const tail=end.get(pid);if(!tail?.length)continue;const start=Math.min(...head),finish=Math.max(...tail),ticks=(finish-start+8589934592)%8589934592,seconds=ticks/90000;if(seconds>=1&&seconds<=43200)return {seconds,source:'ts-pts-span',estimated:true};}return null;}

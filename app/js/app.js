@@ -1707,6 +1707,7 @@
       else if (40 === t) st("down");
       else if (13 === t || 32 === t) {
         if (X.episodeBrowserOpen) return void pt();
+        if(X.screen==="player"&&X.playerMode==="vod"&&X.streamError){checkpointVod();var retryRecord=(Q.history||[]).filter(function(row){return X.playerItem&&String(row.id)===String(X.playerItem.id)&&(!X.playerEpisode||String(row.episodeId)===String(X.playerEpisode.id));})[0];if(retryRecord)ln=retryRecord;Jr(X.playerItem,X.playerEpisode);return;}
         ji
           ? pt()
           : zi
@@ -5210,12 +5211,12 @@
   }
   function trustedVodDuration(){
     var diagnostic=window.XuperPlayer&&XuperPlayer.diagnostics||{};
-    if(window.XuperStandalone&&XuperStandalone.knownVodDuration)return XuperStandalone.knownVodDuration({engine:diagnostic.engine,declared:diagnostic.sourceDuration,media:xe&&xe.duration,ended:xe&&xe.ended,position:xe&&xe.currentTime});
+    if(window.XuperStandalone&&XuperStandalone.knownVodDuration)return XuperStandalone.knownVodDuration({engine:diagnostic.engine,declared:diagnostic.sourceDuration||(function(){var hint=ii(X.playerEpisode&&X.playerEpisode.duration||(!x(X.playerItem)&&X.playerItem&&X.playerItem.duration)||0);return hint<=43200?hint:0;})(),media:xe&&xe.duration,ended:xe&&xe.ended,position:xe&&xe.currentTime});
     return ii(X.playerEpisode&&X.playerEpisode.duration||X.playerItem&&X.playerItem.duration||0);
   }
   function checkpointVod(context){if((context&&context.item||X.playerMode==='vod')&&xe)sn(xe.currentTime||0,trustedVodDuration(),true,context);}
   function oi(position,total){
-    if(!Ae||!De||!Oe)return;if(Ye)position=Ze;position=Math.max(0,Number(position)||0);var duration=trustedVodDuration();Ae.textContent=ai(position);De.textContent=duration>0?ai(duration):'--:--';
+    if(!Ae||!De||!Oe)return;if(Ye)position=Ze;position=Math.max(0,Number(position)||0);var duration=trustedVodDuration();Ae.textContent=ai(position);De.textContent=duration>0?((window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated?'≈ ':'')+ai(duration)):'Duración sin informar';if(Pe)Pe.classList.toggle('duration-unknown',!duration);
     var percent=duration>0?Math.min(100,position/duration*100):0;Oe.style.width=percent.toFixed(2)+'%';if(Ne)Ne.style.left=percent.toFixed(2)+'%';
     if(qe){var buffered=xe&&xe.buffered;qe.style.width=duration>0&&buffered&&buffered.length?Math.min(100,buffered.end(buffered.length-1)/duration*100).toFixed(2)+'%':'0%';}
   }
@@ -6201,6 +6202,7 @@
           "aspect-4-3",
         ),
         xe.classList.add("aspect-" + tn)),
+      window.XuperPlayer && window.XuperPlayer.setAspect && window.XuperPlayer.setAspect(tn),
       Yn());
   }
   function er(e) {
@@ -7219,6 +7221,7 @@
     }
   }
   function jr(e) {
+    var status=document.getElementById("player-status");if(status)status.classList.toggle("is-error",!!e&&/no pudo|no disponible|sigue detenido|error|fall|agotado|rechaz/i.test(e));
     (_e || (_e = t("player-status")),
       _e &&
         (e
@@ -7835,7 +7838,7 @@
           var v = X.playerEpisode.title || X.playerEpisode.name,
             f = X.playerEpisode.number || X.playerEpisode.seriesNumber,
             h = v || (f ? "Capítulo " + f : "");
-          Ee.textContent = h ? u.title + " - " + h : u.title;
+          Ee.textContent = u.title+(f?" · Episodio "+f:h&&h!==u.title?" · "+h:"");
         } else Ee.textContent = u.title;
       (Ie &&
         (Ie.src =

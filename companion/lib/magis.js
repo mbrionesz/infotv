@@ -1048,13 +1048,14 @@ function columnRequestId(value){var string=String(value);return /^(0|[1-9][0-9]{
 function countryAlias(value){return trim(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/^(turkey|turkiye|turquia|tr|tur)$/,'turkey');}
 function catalogBrowse(root,options,callback){
   options=options||{};var page=Math.max(1,parseInt(options.pageNum,10)||1),size=Math.max(1,Math.min(60,parseInt(options.pageSize,10)||36)),filters=options.filters||{};
-  var resolvedColumn="",selectedColumn=null,filtered=!!(filters.genre||filters.year||filters.country),requestedCountry=filters.country||'';
+  var resolvedColumn="",selectedColumn=null,implicitAll=false,filtered=!!(filters.genre||filters.year||filters.country),requestedCountry=filters.country||'';
   function fetch(column,alternative,categoryFailure,countryOverride,countryRetried){
     var bean={columnId:columnRequestId(column||CATALOG_ROOTS[root]),pageNum:page,pageSize:size},path=column?"v3/getShelveData":"v3/filterByContent";
     if(column&&(alternative||filtered))path="v3/filterByContent";
     if(column&&!alternative&&!filtered)bean.columnType="2";
     else{if(filters.genre)bean.tags=text(filters.genre);if(filters.year)bean.year=text(filters.year);if(requestedCountry)bean.originalCountry=countryOverride||text(requestedCountry);}
     catalogRequest(root,path,bean,function(error,result){
+      if(error&&implicitAll&&column)return fetch("",false,{path:path,code:error.portalCode||null,message:String(error.message||error).slice(0,300)});
       if(error&&column&&!alternative&&!filtered&&!options.strict)return fetch(column,true,{path:path,code:error.portalCode||null,message:String(error.message||error).slice(0,300)});
       if(error){if(categoryFailure&&!filtered)return legacyCategory(categoryFailure,error);return callback(error);}result=result||{};var raw=Array.isArray(result.assetList)?result.assetList:[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative&&!filtered?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
       // Retry an empty country result only with an alternative actually supplied
@@ -1069,7 +1070,7 @@ function catalogBrowse(root,options,callback){
       });
       finish();
       function finish(){
-        if(categoryFailure&&!raw.length)return legacyCategory(categoryFailure);
+        if(categoryFailure&&!raw.length&&!implicitAll)return legacyCategory(categoryFailure);
         callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,resolvedColumn:resolvedColumn||undefined,source:path,totalField:column&&!alternative&&!filtered?"assetListTotalSize":"totalSize",categoryFallback:categoryFailure||null,countryRequested:requestedCountry||null,countryUsed:bean.originalCountry||null,countryAlternativeSource:countryRetried||null,hasMore:raw.length>0&&(known?page*size<declared:raw.length>=size)});
       }
     });
@@ -1083,6 +1084,7 @@ function catalogBrowse(root,options,callback){
     });
   }
   if(!filters.column&&(root==="explore"||root==="popular"))return catalogColumns(root,function(error,result){if(error)return callback(error);selectedColumn=result.columns[0]||null;resolvedColumn=selectedColumn?selectedColumn.id:"";fetch(resolvedColumn);});
+  if(!filters.column&&!filtered&&(root==='movies'||root==='series'))return catalogColumns(root,function(error,result){if(!error)for(var a=0;a<result.columns.length;a++)if(/^(all|todos?|todas?|ver todo)$/i.test(result.columns[a].name)){selectedColumn=result.columns[a];implicitAll=true;return fetch(selectedColumn.id);}fetch("");});
   if(!filters.column)return fetch("");
   catalogColumns(root,function(error,result){if(error)return callback(error);for(var i=0;i<result.columns.length;i++)if(result.columns[i].id===String(filters.column)){selectedColumn=result.columns[i];return fetch(result.columns[i].id);}callback(new Error("Categoría no disponible"));});
 }
@@ -1332,18 +1334,8 @@ function trackSummary(e) {
     frameRate: trackFrameRate(e),
   };
 }
-function durationSeconds(e) {
-  var r = trim(e);
-  if (!r) return 0;
-  if (/^\d{1,2}:\d{2}:\d{2}$/.test(r)) {
-    var t = r.split(":");
-    return (
-      3600 * parseInt(t[0], 10) + 60 * parseInt(t[1], 10) + parseInt(t[2], 10)
-    );
-  }
-  var n = fieldNumber(r);
-  return n > 1e5 ? n / 1e3 : n;
-}
+function durationSeconds(value){var text=trim(value),clock=/^(?:(\d{1,3}):)?(\d{1,3}):(\d{2})$/.exec(text);if(clock){var seconds=Number(clock[3]),minutes=Number(clock[2]);if(seconds>=60||clock[1]&&minutes>=60)return 0;return Number(clock[1]||0)*3600+minutes*60+seconds;}var hours=/([0-9.]+)\s*(?:h|horas?|hours?)/i.exec(text),mins=/([0-9.]+)\s*(?:min|minutes?|minutos?)/i.exec(text);if(hours||mins)return Number(hours&&hours[1]||0)*3600+Number(mins&&mins[1]||0)*60;var number=fieldNumber(text);return number>86400?number/1000:number;}
+
 function mediaScore(e) {
   var r = trim(e && e.encodeFormat)
       .toLowerCase()
@@ -1975,6 +1967,7 @@ function portalResolveCatchup(options,callback){options=options||{};var code=por
 function portalLiveData(bean,callback){firstCall([{path:'v6/getLiveData',bean:bean},{path:'v7/getLiveData',bean:bean}],callback);}
 
 module.exports = {
+  durationSeconds:durationSeconds,
   portalRoutes:function(){return {routes:PORTAL_ROUTES.slice(),count:PORTAL_ROUTES.length,validation:"implemented-not-provider-verified"};},
   portalHome:portalGetHome,
   portalShelve:portalShelve,
