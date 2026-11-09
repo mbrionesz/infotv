@@ -1,6 +1,6 @@
 export function posterCandidates(item={},wide=false){
  const extra=Array.isArray(item.posterAlternates)?item.posterAlternates:[];
- const values=wide?[item.landscape,item.backdrop,item.poster,...extra]:[item.poster,...extra,item.landscape,item.backdrop];
+ const values=wide?[item.backdrop,item.landscape,item.poster,...extra]:[item.poster,...extra,item.landscape,item.backdrop];
  const result=[];for(const value of values){const url=String(value||'').trim();if(!url||url.length>4000||/[\r\n\0]/.test(url)||/placeholder|placehoder/i.test(url)||result.includes(url))continue;
   if(/^assets\/[a-z0-9_./% -]+$/i.test(url)&&!url.includes('..'))result.push(url);
   else try{const parsed=new URL(url);if(/^https?:$/.test(parsed.protocol)&&!parsed.username&&!parsed.password)result.push(url);}catch(_){}

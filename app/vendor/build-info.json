@@ -4,7 +4,7 @@
   "target": "chrome56",
   "hlsVersion": "1.7.4",
   "hlsWorkerVersion": "1.7.4",
-  "vodSha256": "aa527aeee89e191549ed6e6415bcbd698a09c26f5746c54137b35591720cd038",
+  "vodSha256": "3a448c429e5d4da89201dae1d33d44698eb8101cd953a1552b27ac583ae303dd",
   "hlsWorkerSha256": "d2abaf948030a86a4cd9b4a2a66e7c0694f53c7aa3c698f1772d098bdcbc7d89",
-  "sourceSha256": "80c51e3455a0ea0e52770601302d5991813807189e7f52b92011eb70f90efe09"
+  "sourceSha256": "ae8e16239681cbece7f320864f4068cd83421fef4c7b051de37aaba43a6c05bf"
 }

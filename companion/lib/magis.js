@@ -872,7 +872,7 @@ function itemFromAsset(e, r, t) {
     synopsis: text(e.description || e.synopsis),
     poster: imageOf(e, "icon") || imageOf(e, "poster"),
     posterAlternates: (function(){var urls=[],list=e.posterList||[];for(var i=0;i<list.length&&urls.length<6;i++){var url=trim(list[i]&&list[i].fileUrl);if(url&&urls.indexOf(url)<0)urls.push(url);}return urls;})(),
-    landscape: imageOf(e, "poster") || imageOf(e, "stage"),
+    landscape: imageOf(e, "stage") || imageOf(e, "poster"),
     backdrop: imageOf(e, "stage") || imageOf(e, "poster"),
     type: s ? "teleplay" : n,
     alias: text(e.alias),
