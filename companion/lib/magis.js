@@ -871,6 +871,7 @@ function itemFromAsset(e, r, t) {
     actors: text(e.actorDisplay || e.actors),
     synopsis: text(e.description || e.synopsis),
     poster: imageOf(e, "icon") || imageOf(e, "poster"),
+    posterAlternates: (function(){var urls=[],list=e.posterList||[];for(var i=0;i<list.length&&urls.length<6;i++){var url=trim(list[i]&&list[i].fileUrl);if(url&&urls.indexOf(url)<0)urls.push(url);}return urls;})(),
     landscape: imageOf(e, "poster") || imageOf(e, "stage"),
     backdrop: imageOf(e, "stage") || imageOf(e, "poster"),
     type: s ? "teleplay" : n,
@@ -1054,7 +1055,7 @@ function catalogBrowse(root,options,callback){
     catalogRequest(root,path,bean,function(error,result){
       if(error&&column&&!alternative&&!filtered)return fetch(column,true);
       if(error)return callback(error);result=result||{};var raw=result.assetList||[],items=catalogAssets(raw.slice(0,size),root),declared=parseInt(column&&!alternative&&!filtered?result.assetListTotalSize:result.totalSize,10),known=isFinite(declared)&&declared>=0;
-      callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,resolvedColumn:resolvedColumn||undefined,hasMore:known?page*size<declared:raw.length>=size});
+      callback(null,{items:items,total:known?declared:null,pageNum:page,pageSize:size,resolvedColumn:resolvedColumn||undefined,source:path,totalField:column&&!alternative&&!filtered?"assetListTotalSize":"totalSize",hasMore:raw.length>0&&(known?page*size<declared:raw.length>=size)});
     });
   }
   if(!filters.column&&(root==="explore"||root==="popular"))return catalogColumns(root,function(error,result){if(error)return callback(error);resolvedColumn=result.columns.length?result.columns[0].id:"";fetch(resolvedColumn);});

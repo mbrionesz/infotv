@@ -1,3 +1,4 @@
+import {createPosterFrame} from './poster-art.js';
 import {countryChoices,dateKey} from './discovery-data.js';
 import {renderDiscovery,discoveryFocus,scrollDiscovery} from './catalog-discovery.js';
 import {catalogFocus} from './catalog-navigation.js';
@@ -26,7 +27,7 @@ export function createCatalog(core){
       if(result.resolvedColumn&&!filters.column)filters.column=result.resolvedColumn;
       items=(result.items||[]).filter(allowContent);total=result.total||0;loaded=result.loaded||0;if(fetchPage||fullCatalog)hasMore=!!result.hasMore;
       totalKnown=!!result.totalKnown;localFilter=!!result.localFilter;
-      render(result.facets||{});status(fullCatalog?((searchMode?'Búsqueda del proveedor':'Catálogo completo')+' · Página '+(Math.floor(offset/36)+1)+' · '+(totalKnown?total+' títulos según el portal':'Total no informado')+(localFilter?' · Filtro sobre esta página':'')+(result.metadataUnavailable?' · Algunos filtros no están disponibles':'')+(result.repeatedPage?' · El servidor repitió la página; no hay avance':'')):('Vista de portada · '+total+' resultados · '+loaded+' títulos cargados'+(hasMore&&!searchMode?' · puedes cargar más':'')));
+      render(result.facets||{});status(fullCatalog?((searchMode?'Búsqueda del proveedor':filters.column?((result.facets&&result.facets.columns||[]).find(column=>String(column.id)===String(filters.column))||{}).name||'Colección del portal':'Catálogo general')+' · Página '+(Math.floor(offset/36)+1)+' · '+(totalKnown?total+' títulos según el portal':'Total no informado')+(localFilter?' · Filtro sobre esta página':'')+(result.metadataUnavailable?' · Algunos filtros no están disponibles':'')+(result.repeatedPage?' · El servidor repitió la página; no hay avance':'')):('Vista de portada · '+total+' resultados · '+loaded+' títulos cargados'+(hasMore&&!searchMode?' · puedes cargar más':'')));
     });
   }
   function search(){if(discoveryMode){const kind=root;open(kind,{browse:true});}if(keyboard)return;keyboard=openKeyboard({title:'Buscar en '+({movies:'Películas',series:'Series',kids:'Infantil',anime:'Anime',featured:'Destacados'}[root]||'Catálogo'),value:filters.text,onChange:value=>{if(!active)return;filters.text=value;searchMode=value.trim().length>=2;if(searchMode)filters.column=filters.genre=filters.year=filters.country=filters.resolution='';offset=0;clearTimeout(filterTimer);filterTimer=setTimeout(()=>query(),400);},onSubmit:()=>{if(active&&filters.text.trim().length>=2){clearTimeout(filterTimer);searchMode=true;filters.column=filters.genre=filters.year=filters.country=filters.resolution='';offset=0;query();}},onClose:()=>{keyboard=null;}});}
@@ -56,11 +57,11 @@ export function createCatalog(core){
     const grid=panel.querySelector('.xt-catalog-grid');if(posterObserver)posterObserver.disconnect();grid.textContent='';
     for(const item of items){
       const card=document.createElement('button');card.setAttribute('aria-label',item.title||'Ver detalle');card.className='xt-catalog-card';card.dataset.row=String(Math.floor(grid.children.length/6));
-      const image=document.createElement('img');image.alt='';image.decoding='async';
+      const {frame,image}=createPosterFrame(item);
       const title=document.createElement('strong');title.textContent=item.title;
       const meta=document.createElement('small');meta.textContent=[item.year,item.country,item.resolution||item.quality].filter(Boolean).join(' · ');
-      card.appendChild(image);card.appendChild(title);card.appendChild(meta);grid.appendChild(card);
-      if(item.poster){image.dataset.poster=item.poster;if(posterObserver)posterObserver.observe(image);else window.XuperStandalone.loadPoster(image,item.poster);}
+      card.appendChild(frame);card.appendChild(title);card.appendChild(meta);grid.appendChild(card);
+      if(image.dataset.poster){if(posterObserver)posterObserver.observe(image);else window.XuperStandalone.loadPoster(image,image.dataset.poster);}
       card.onclick=()=>{if(root==='series'&&!item.type&&!item.kind)item.kind='serie';suspend();if(window.__xuper){const index=__xuper.vod.findIndex(row=>row.id===item.id);if(index<0){item._portal=!item.streamUrl;__xuper.vod.push(item);__xuper.openDetail(__xuper.vod.length-1);}else __xuper.openDetail(index);}};
     }
     if(!items.length){const empty=document.createElement('div');empty.className='xt-catalog-empty';empty.innerHTML=fullCatalog&&localFilter?'<h2>Sin coincidencias en esta página</h2><p>Prueba Siguiente o selecciona Quitar filtros.</p>':'<h2>No encontramos títulos</h2><p>Prueba otra búsqueda o selecciona Quitar filtros.</p>';grid.appendChild(empty);}

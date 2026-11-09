@@ -10,3 +10,4 @@ test('a provider repeating a full page cannot create an endless next-page loop',
  const query=createRemoteCatalog(async(method)=>method==='catalogBrowse'?{items:Array.from({length:36},(_,i)=>({id:String(i),title:'Repeated '+i})),total:21000,hasMore:true}:{});
  assert.equal((await query({root:'movies',pageNum:1})).hasMore,true);const next=await query({root:'movies',pageNum:2});assert.equal(next.repeatedPage,true);assert.equal(next.hasMore,false);
 });
+test('empty page ends pagination even when a provider total remains larger',async()=>{const query=createRemoteCatalog(async method=>method==='catalogBrowse'?{items:[],total:21804,hasMore:true,source:'v3/getShelveData',totalField:'assetListTotalSize'}:{});const result=await query({root:'series',pageNum:2});assert.equal(result.total,21804);assert.equal(result.hasMore,false);assert.equal(result.totalField,'assetListTotalSize');});

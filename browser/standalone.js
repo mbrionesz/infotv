@@ -1,3 +1,5 @@
+import {compareCatalogTotals} from './catalog-totals.js';
+import {installPosterLoader} from './poster-art.js';
 import {createProfileStore} from './profile-store.js';
 import {createVodRenewal,knownVodDuration} from './vod-renewal.js';
 import {titleBadges,qualityLabel} from './title-info.js';
@@ -43,8 +45,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.9.2', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.9.2' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.9.3', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.9.3' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -77,7 +79,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.9.2', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.9.3', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -90,7 +92,7 @@ function request(method, payload, callback) {
 }
 let profileStorage;try{profileStorage=window.localStorage;}catch(_){}
 const profileStore=createProfileStore(profileStorage,window.indexedDB);
-window.XuperStandalone = { profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.9.2', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.9.3', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 window.XuperStandalone.auditCatalog=root=>catalogAudit.run({root:root||'series',onProgress:entry=>console.log('XT_CATALOG_OPTION '+JSON.stringify(entry))}).then(result=>{console.log('XT_CATALOG_AUDIT '+JSON.stringify(result));return result;});
 window.XuperStandalone.cancelCatalogAudit=()=>catalogAudit.cancel();
 window.XuperStandalone.catalogAudit=()=>catalogAudit.snapshot();
@@ -106,7 +108,7 @@ window.XuperStandalone.probeCdns=async function(options={}){
 window.XuperStandalone.openDiagnostics=function(playback){
   closeDiagnostics();diagnosticSignal=requestSignal();
   diagnosticPanel=document.createElement('section');diagnosticPanel.className='xt-diagnostics';
-  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.9.2</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
+  diagnosticPanel.innerHTML='<h1>Diagnóstico XuperTizen 0.9.3</h1><p>Estado del reproductor y conexión desde tu Samsung</p><div class="xt-diag-summary"></div><div class="xt-cdn-results" aria-live="polite"></div><pre></pre><button class="xt-diag-close">Cerrar · Return</button><button class="xt-diag-network">Comprobar DNS · Amarillo</button><button class="xt-diag-cdn">Medir conexión CDN</button>';
   const panel=diagnosticPanel,signal=diagnosticSignal;
   const environment={version:window.XuperStandalone.version,viewport:[innerWidth,innerHeight],panel:[screen.width,screen.height],scale:document.getElementById('app').getBoundingClientRect().width/1920};
   const safe=Object.assign({},playback||window.XuperPlayer.diagnostics);
@@ -130,16 +132,6 @@ function handleRemote(event){
 
 window.XuperStandalone.handleRemote=event=>remoteMetrics.measure(()=>handleRemote(event),true);
 
-const posterURLs=[];
-window.XuperStandalone.loadPoster=function(image,url){
-  if(image.getAttribute('src') || image.dataset.posterPending)return;
-  image.dataset.posterPending='1';
-  core.poster(url,function(error,result){
-    delete image.dataset.posterPending;
-    if(!image.isConnected)return;
-    if(error || !result || !result.blob){image.src=url;return;}
-    const local=URL.createObjectURL(result.blob);posterURLs.push(local);image.src=local;
-    if(posterURLs.length>80)URL.revokeObjectURL(posterURLs.shift());
-  });
-};
-window.addEventListener('pagehide',()=>{closeDiagnostics();window.XuperGuide.close();window.XuperCatalog.close();core.dispose();nativeTransport.dispose();posterURLs.forEach(url=>URL.revokeObjectURL(url));});
+const posterLoader=installPosterLoader(core,window);
+window.XuperStandalone.loadPoster=posterLoader.load;
+window.addEventListener('pagehide',()=>{closeDiagnostics();window.XuperGuide.close();window.XuperCatalog.close();core.dispose();nativeTransport.dispose();posterLoader.dispose();});

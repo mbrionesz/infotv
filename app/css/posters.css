@@ -1,0 +1,13 @@
+/* Portrait art keeps its full image, with equal 2:3 frames on Tizen 4+. */
+.xt-poster-frame{position:relative;width:100%;height:0;padding-bottom:150%;border-radius:12px;overflow:hidden;background:linear-gradient(145deg,#243952,#101c2c)}
+.xt-poster-placeholder{position:absolute;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:68px;font-weight:300;color:#8ba5c3}
+.xt-poster-frame.has-art .xt-poster-placeholder{display:none}
+#xt-catalog .xt-poster-frame img{position:absolute;left:0;top:0;display:block;width:100%;height:100%;max-height:none;object-fit:contain;object-position:center;border-radius:0;background:transparent;opacity:0}
+#xt-catalog .xt-poster-frame img.is-loaded{opacity:1}
+#xt-catalog .xt-catalog-card{height:auto;min-height:0;padding:8px!important}
+#xt-catalog .xt-discovery-card{height:438px;min-height:438px;padding:6px}
+#xt-catalog .xt-catalog-card strong,#xt-catalog .xt-discovery-card strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow:hidden;height:54px;line-height:27px;font-size:23px;margin:12px 2px 5px;font-weight:500}
+#xt-catalog .xt-catalog-card small,#xt-catalog .xt-discovery-card small{display:block;height:24px;line-height:24px;font-size:18px;color:#a8bbd2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 2px}
+#xt-catalog .xt-catalog-card.selected,#xt-catalog .xt-discovery-card.selected{background:#1e3149!important;color:#f5f8ff!important;border-color:#c7eeff!important;outline:3px solid #c7eeff!important}
+
+#xt-catalog .xt-discovery-art-portrait{object-fit:contain;object-position:right center;background:#101b2b}

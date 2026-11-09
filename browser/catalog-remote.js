@@ -14,8 +14,8 @@ export function createRemoteCatalog(request){
   const index=createCatalogIndex();index.add(root,result.items||[]);
   const localFilters={resolution:filters.resolution||'',text:search?'':filters.text||''};
   const current=index.query(root,{limit:60,filters:localFilters});
-  return {fullCatalog:true,remoteSearch:search,resolvedColumn:result.resolvedColumn||null,items:current.items,total:result.total,totalKnown:result.total!==null&&result.total!==undefined,
-   loaded:(result.items||[]).length,pageNum:page,hasMore:!!result.hasMore&&!repeatedPage,repeatedPage,
+  return {fullCatalog:true,remoteSearch:search,resolvedColumn:result.resolvedColumn||null,source:result.source||null,totalField:result.totalField||null,items:current.items,total:result.total,totalKnown:result.total!==null&&result.total!==undefined,
+   loaded:(result.items||[]).length,pageNum:page,hasMore:!!result.hasMore&&!repeatedPage&&(result.items||[]).length>0,repeatedPage,
    localFilter:!!(localFilters.resolution||localFilters.text),
    facets:Object.assign({},current.facets,metadata[1]||{},{columns:metadata[0]&&metadata[0].columns||[]}),
    metadataUnavailable:metadata.some(value=>!value)};
