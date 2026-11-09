@@ -49,3 +49,17 @@
 .xt-topnav[hidden]{display:none!important}
 #app.tv-shell-ready #xt-catalog .xt-catalog-status:empty{display:none}
 #app.tv-shell-ready #xt-catalog .xt-discovery-card strong{height:30px;line-height:30px;margin:10px 2px 5px}
+#xt-catalog .xt-carousel-added{font-size:19px;line-height:24px;color:#aac0d9;margin:6px 0}
+/* Reserve space for the date and remote actions even with two-line titles. */
+#app.tv-shell-ready #xt-catalog .xt-discovery-copy{padding:24px 34px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-kicker{line-height:18px;margin-bottom:6px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-copy h2{font-size:48px;line-height:52px;max-height:104px;margin:0 0 8px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-description{font-size:22px;line-height:26px;max-height:26px;margin:0 0 8px}
+#app.tv-shell-ready #xt-catalog .xt-carousel-added{font-size:18px;line-height:22px;margin:0}
+#app.tv-shell-ready #xt-catalog .xt-discovery-actions{margin-top:14px}
+#app.tv-shell-ready #xt-catalog .xt-discovery-actions button{font-size:22px;min-height:52px;padding:10px 24px}
+#app.tv-shell-ready #xt-catalog .is-compact .xt-discovery-copy{padding:16px 26px}
+#app.tv-shell-ready #xt-catalog .is-compact .xt-discovery-copy h2{font-size:38px;line-height:42px;max-height:84px}
+#app.tv-shell-ready #xt-catalog .is-compact .xt-discovery-description{font-size:20px;line-height:24px;max-height:24px;margin-bottom:6px}
+#app.tv-shell-ready #xt-catalog .is-compact .xt-discovery-actions{margin-top:10px}
+#app.tv-shell-ready #xt-catalog .is-compact .xt-discovery-actions button{font-size:21px;min-height:46px;padding:9px 22px}

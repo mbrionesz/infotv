@@ -4,7 +4,7 @@
 
 En Ajustes → Reproducción → Imágenes del carrusel · TMDB se configura una clave API v3 o Read Access Token propio. El teclado oculta la entrada y no la guarda en el historial de búsquedas. La clave queda en el almacenamiento local del TV y no se incluye en el WGT ni en GitHub. Puede eliminarse desde el mismo panel. Crédito y logotipo oficial en Acerca de.
 
-Solo el destacado de Películas y Series consulta TMDB; las tarjetas del catálogo no lo hacen. El carrusel tiene hasta ocho títulos por sección. Las búsquedas se serializan y se espacian 350 ms; los resultados se guardan 14 días (sin coincidencia: un día). Un 429 impone una espera mínima de un minuto o el Retry-After indicado, con límite de una hora. Las cifras de TMDB son un límite de velocidad aproximado, no una cuota de 40 consultas totales.
+Solo el destacado de Películas y Series consulta TMDB; las tarjetas del catálogo no lo hacen. El carrusel tiene tres títulos por sección. Las búsquedas se serializan y se espacian 350 ms; los resultados se guardan 90 días. Un 429 impone una espera mínima de un minuto o el Retry-After indicado, con límite de una hora. Las cifras de TMDB son un límite de velocidad aproximado, no una cuota de 40 consultas totales.
 
 Se exige coincidencia única de título y año. En series con sufijo de temporada se busca el nombre base y se omite el año de temporada para no confundirlo con el estreno de la serie; se sigue exigiendo un resultado único. Solo se sustituye el fondo, nunca el título, los episodios o las fuentes de reproducción. Al fallar se conserva la imagen del portal. Las pruebas de red TMDB usan respuestas propias de prueba; no acreditan una cuenta ni disponibilidad real de todas las imágenes.
 

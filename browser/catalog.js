@@ -1,3 +1,6 @@
+import {createCarouselCache} from './carousel-cache.js';
+import {updateCarousel} from './carousel-history.js';
+import {carouselItems} from './carousel.js';
 import {createCarouselAuto} from './carousel-auto.js';
 import {qualityLabel} from './title-info.js';
 import {genreLabel} from './category-filter.js';
@@ -9,6 +12,7 @@ import {allowContent} from './content-filter.js';
 import {openKeyboard} from './keyboard.js';
 export function createCatalog(core){
   let carouselAuto=null;function stopCarousel(){if(carouselAuto)carouselAuto.stop();carouselAuto=null;}
+  const carouselDisk=createCarouselCache(window.indexedDB),carouselStates=new Map();
   const showcases=new Map();let latestFacets={},lastResult=null;
   let scanPending=false,collectionFiltered=false,scanned=0,matched=0,missingMetadata=0,filterPanelOpen=false,draftFilters=null,focusResults=false;
   let panel=null,active=false,root='movies',remotePage=1,offset=0,items=[],total=0,loaded=0,hasMore=true,loading=false,run=0,keyboard=null,filterTimer=null;
@@ -20,7 +24,7 @@ export function createCatalog(core){
     if(panel.dataset.customTitle&&!filters.person){panel.querySelector('h1').textContent=root==='series'?'Series':root==='movies'?'Películas':'Catálogo';delete panel.dataset.customTitle;}
     const token=++run;loading=true;status(fetchPage?'Consultando catálogo…':'Filtrando…');
     panel.querySelectorAll('footer button').forEach(button=>button.disabled=true);
-    core.call(discoveryMode?'catalogDiscover':fullCatalog?'catalogFullPage':searchMode?'catalogSearch':fetchPage?'catalogPage':'catalogQuery',{root,period:discoveryPeriod,fresh:force,search:searchMode,pageNum:fullCatalog?Math.floor(offset/36)+1:remotePage,offset,limit:36,filters:Object.assign({},filters)},(error,result)=>{
+    core.call(discoveryMode?'catalogDiscover':fullCatalog?'catalogFullPage':searchMode?'catalogSearch':fetchPage?'catalogPage':'catalogQuery',{root,period:discoveryPeriod,fresh:force,search:searchMode,pageNum:fullCatalog?Math.floor(offset/36)+1:remotePage,offset,limit:36,filters:Object.assign({},filters)},async(error,result)=>{
       if(!active||run!==token)return;loading=false;
       // A failed category/filter must never silently become an editorial feed.
       if(error&&!discoveryMode&&root!=='all'&&!['explore','popular'].includes(root)&&fullCatalog&&offset===0&&!searchMode&&!Object.keys(filters).some(key=>!!filters[key])){fullCatalog=false;query(true);return;}
@@ -28,6 +32,7 @@ export function createCatalog(core){
       if(discoveryMode){
         const initial=discoveryCheckedAt===0,old=controls()[focus],oldId=old&&old.dataset.itemId,oldText=old&&old.textContent;discoveryCheckedAt=Date.now();discoveryDay=result.day||dateKey();
         if(posterObserver)posterObserver.disconnect();
+        const kind=root,prior=carouselStates.get(kind)||await carouselDisk.getState(kind);if(!active||run!==token)return;const state=updateCarousel(prior,Object.assign({},result,{preferred:carouselItems(result).items}));carouselStates.set(kind,state);await carouselDisk.setState(kind,state);if(!active||run!==token)return;result=Object.assign({},result,{carouselSelection:state.slots});
         showcases.set(root,result);drawShowcase(result);
         status(result.metadataIncomplete?'Algunas colecciones no están disponibles.':'');refreshControls();const restored=controls().findIndex(node=>oldId?node.dataset.itemId===oldId:node.textContent===oldText);if(initial){panel.querySelector('.xt-catalog-grid').scrollTop=0;const first=controls().findIndex(node=>node.dataset.navrow==='0');if(first>=0)focus=first;}else if(restored>=0)focus=restored;mark();return;
       }
@@ -126,6 +131,6 @@ export function createCatalog(core){
     focus=panel.dataset.cinematic==='true'?discoveryFocus(nodes,focus,code):catalogFocus(nodes,focus,code);
     mark();return true;
   }
-  function auditDates(){const data=showcases.get(root)||{};return {root,source:data.catalogSource||'catalogDiscover',basis:panel&&panel.querySelector('.xt-discovery-hero')?.dataset.carouselBasis||'',items:(data.editorial||[]).map(item=>({title:item.title,releaseDate:item.releaseDate||'',portalDates:item.portalDates||{}})),note:'releaseDate es estreno; no se afirma que createTime/updateTime signifiquen incorporación al catálogo.'};}
+  function auditDates(){const data=showcases.get(root)||{};return {root,source:data.catalogSource||'catalogDiscover',basis:panel&&panel.querySelector('.xt-discovery-hero')?.dataset.carouselBasis||'',selection:(data.carouselSelection||[]).map(item=>({id:item.id,title:item.title,detectedOnThisTvAt:item.carouselDetectedAt||null})),items:(data.editorial||[]).map(item=>({title:item.title,releaseDate:item.releaseDate||'',portalDates:item.portalDates||{}})),note:'releaseDate es estreno; no se afirma que createTime/updateTime signifiquen incorporación al catálogo.'};}
   return {auditDates,open,close,suspend,resume,focusContent:()=>{mark();},setHeaderFocus:()=>{},search,chooseSearch,handle,get root(){return root;},get active(){return active;}};
 }
