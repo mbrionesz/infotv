@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -24,7 +24,8 @@
     "test:discovery": "node tools/discovery-browser.mjs",
     "test:catalog": "node tools/catalog-browser.mjs",
     "test:timeline": "node tools/timeline-regression-browser.mjs",
-    "test:cinematic": "node tools/cinematic-browser.mjs"
+    "test:cinematic": "node tools/cinematic-browser.mjs",
+    "test:live-tracks": "node tools/live-tracks-browser.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",

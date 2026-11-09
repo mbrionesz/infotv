@@ -126,5 +126,6 @@ export function createCatalog(core){
     focus=panel.dataset.cinematic==='true'?discoveryFocus(nodes,focus,code):catalogFocus(nodes,focus,code);
     mark();return true;
   }
-  return {open,close,suspend,resume,focusContent:()=>{mark();},setHeaderFocus:()=>{},search,chooseSearch,handle,get root(){return root;},get active(){return active;}};
+  function auditDates(){const data=showcases.get(root)||{};return {root,source:data.catalogSource||'catalogDiscover',basis:panel&&panel.querySelector('.xt-discovery-hero')?.dataset.carouselBasis||'',items:(data.editorial||[]).map(item=>({title:item.title,releaseDate:item.releaseDate||'',portalDates:item.portalDates||{}})),note:'releaseDate es estreno; no se afirma que createTime/updateTime signifiquen incorporación al catálogo.'};}
+  return {auditDates,open,close,suspend,resume,focusContent:()=>{mark();},setHeaderFocus:()=>{},search,chooseSearch,handle,get root(){return root;},get active(){return active;}};
 }

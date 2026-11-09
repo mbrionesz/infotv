@@ -1,22 +1,23 @@
 import {readSearchHistory} from './stored-ui.js';
 export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()=>{},mode='search',onSubmit=()=>{}}={}){
   const panel=document.createElement('section');panel.className='xt-keyboard';
-  const rows=mode==='url'?['qwertyuiop','asdfghjkl','zxcvbnm','1234567890','./:-_?=&%+#@~']:['QWERTYUIOP','ASDFGHJKL','ZXCVBNM','1234567890'];
-  let text=String(value||'').slice(0,mode==='url'?2048:100),row=0,column=0;
-  let history=mode==='url'?[]:readSearchHistory();
+  const privateInput=mode==='url'||mode==='secret';
+  const rows=privateInput?['qwertyuiop','asdfghjkl','zxcvbnm','1234567890','./:-_?=&%+#@~']:['QWERTYUIOP','ASDFGHJKL','ZXCVBNM','1234567890'];
+  let text=String(value||'').slice(0,privateInput?2048:100),row=0,column=0;
+  let history=privateInput?[]:readSearchHistory();
   panel.innerHTML='<h2></h2><div class="xt-keyboard-value"></div><div class="xt-keyboard-grid"></div><div class="xt-keyboard-history"></div><p>Flechas · OK escribir · Return volver</p>';
   panel.querySelector('h2').textContent=title;
   const grid=panel.querySelector('.xt-keyboard-grid');
-  const keys=rows.map(line=>line.split(''));keys.push(['Espacio','Borrar','Limpiar',mode==='url'?'Guardar':'Buscar']);if(mode==='url')keys[keys.length-1].push('Mayús');const historyRow=keys.length;
+  const keys=rows.map(line=>line.split(''));keys.push(['Espacio','Borrar','Limpiar',privateInput?'Guardar':'Buscar']);if(privateInput)keys[keys.length-1].push('Mayús');const historyRow=keys.length;
   if(history.length)keys.push(history.slice(0,4));
   const buttons=keys.map((line,r)=>{
     const group=document.createElement('div');group.className='xt-keyboard-row';grid.appendChild(group);
     return line.map((key,c)=>{const b=document.createElement('button');b.textContent=key;group.appendChild(b);b.onclick=()=>{row=r;column=c;activate();};return b;});
   });
   let selected=null;
-  function render(){panel.querySelector('.xt-keyboard-value').textContent=text||(mode==='url'?'https://…':'Escribe el nombre…');const next=buttons[row][column];if(next!==selected){if(selected)selected.classList.remove('selected');next.classList.add('selected');selected=next;}}
-  function remember(){if(mode==='url'||!text.trim())return;history=[text.trim(),...history.filter(item=>item!==text.trim())].slice(0,8);try{localStorage.setItem('xuper.searchHistory',JSON.stringify(history));}catch(_){}}
-  function update(){text=text.slice(0,mode==='url'?2048:100);render();onChange(text);}
+  function render(){panel.querySelector('.xt-keyboard-value').textContent=mode==='secret'?'•'.repeat(text.length):text||(privateInput?'https://…':'Escribe el nombre…');const next=buttons[row][column];if(next!==selected){if(selected)selected.classList.remove('selected');next.classList.add('selected');selected=next;}}
+  function remember(){if(privateInput||!text.trim())return;history=[text.trim(),...history.filter(item=>item!==text.trim())].slice(0,8);try{localStorage.setItem('xuper.searchHistory',JSON.stringify(history));}catch(_){}}
+  function update(){text=text.slice(0,privateInput?2048:100);render();onChange(text);}
   function activate(){
     const key=keys[row][column];
     if(key==='Mayús'){for(let r=0;r<3;r++)for(let c=0;c<keys[r].length;c++){const value=keys[r][c];keys[r][c]=value===value.toLowerCase()?value.toUpperCase():value.toLowerCase();buttons[r][c].textContent=keys[r][c];}return;}

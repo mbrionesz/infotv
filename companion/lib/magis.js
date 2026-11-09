@@ -880,6 +880,7 @@ function itemFromAsset(e, r, t) {
     quality: trim(e.quality),
     resolution: trim(e.resolution || e.videoResolution),
     releaseDate: trim(e.releaseTime || e.releaseDate),
+    portalDates: (function(){var dates={};['releaseTime','releaseDate','createTime','createdAt','updateTime','updatedAt','publishTime','onlineTime'].forEach(function(key){if((typeof e[key]==='string'||typeof e[key]==='number')&&String(e[key]).length<100)dates[key]=e[key];});return dates;})(),
     tagline: trim(e.viewPoint || e.tagline),
     volumeCount:
       void 0 === e.volumnCount || null === e.volumnCount

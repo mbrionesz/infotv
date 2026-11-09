@@ -106,7 +106,7 @@ async function execute(method,payload){
   }
   // Filter option records now preserve id/label pairs; do not reuse v1 pages
   // whose category/filter selection may have been discarded.
-  const key=(/^(catalog|portal)/.test(method)?'catalog-v5:':'')+method+':'+JSON.stringify(payload);
+  const key='art-dates-v1:'+(/^(catalog|portal)/.test(method)?'catalog-v5:':'')+method+':'+JSON.stringify(payload);
   const cacheable=metadata.has(method)&&!(/^(catalog|portal)/.test(method)&&payload.fresh===true);
   let stale=null;
   if(cacheable){

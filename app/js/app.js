@@ -4094,6 +4094,7 @@
         function latencyLabel(){var on=false;try{on=localStorage.getItem("xt.lowDelay720")==="on";}catch(_){}lowDelay.textContent="Menor retraso en 720p · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
         lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="on"?"off":"on");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
         panel.appendChild(e("p","xt-setting-footnote","Audio e idioma de subtítulos son preferencias para el próximo título y requieren pistas disponibles. Tamaño y estilo afectan a los subtítulos externos; los integrados dependen del reproductor. Estas opciones no añaden pistas ni traducen contenido."));
+        var art=e('button','xt-setting-action focusable','Imágenes del carrusel · TMDB');art._activate=function(){if(window.XuperArtwork)XuperArtwork.open();};art.onclick=art._activate;panel.appendChild(art);
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
         var subtitleModes=["Automáticos · solo sin audio español","Siempre desactivados","Activados si están disponibles"];var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+subtitleModes[X.playback.subtitlePolicy||0]);subtitles._activate=function(){X.playback.subtitlePolicy=((X.playback.subtitlePolicy||0)+1)%3;X.playback.subtitle=X.playback.subtitlePolicy===2;subtitles.textContent="Subtítulos · "+subtitleModes[X.playback.subtitlePolicy];nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);panel.appendChild(e("p","xt-setting-footnote","Por defecto: español latino y subtítulos apagados. Si no hay audio español identificado, se usan subtítulos en español disponibles. Los cambios dentro de un título se recuerdan para esa película o serie y tienen prioridad."));
         Ba(panel,700,"Fuente de subtítulos",["Sistema","Cine · Open Sans","Serif","Monoespaciada"],"font",X.playback.font||0);
@@ -4472,7 +4473,7 @@
       return ((i._activate = function () {}), t.appendChild(i), t);
     })()),
     (ze.about = (function () {
-      if(window.XuperStandalone)return samsungSettingsCard("XuperTizen by Matias","By MatiasB · Una aplicación para Samsung Tizen. Versión "+window.XuperStandalone.version+". Interfaz adaptable a Full HD y 4K, reproducción HLS.js y diagnóstico desde el televisor. Licencias y avisos de terceros incluidos en el paquete.");
+      if(window.XuperStandalone){var about=samsungSettingsCard("XuperTizen by Matias","By MatiasB · Una aplicación para Samsung Tizen. Versión "+window.XuperStandalone.version+". Interfaz adaptable a Full HD y 4K. Licencias y avisos de terceros incluidos en el paquete.");var logo=e('img','tmdb-credit-logo');logo.src='assets/tmdb-logo.svg';logo.alt='TMDB';about.appendChild(logo);about.appendChild(e('p','xt-setting-footnote','This product uses the TMDB API but is not endorsed or certified by TMDB. Integración opcional para imágenes del carrusel.'));return about;}
       var t = e("div", "settings-panel");
       (t.appendChild(e("div", "sp-title plain", "Sobre nosotros")),
         t.appendChild(i(e("div", "sp-hr soft"), 0, 165, 1498, 1)),
@@ -5387,7 +5388,7 @@
     var keys=Object.keys(prefs).sort(function(a,b){return (prefs[b].updatedAt||0)-(prefs[a].updatedAt||0);});for(var i=200;i<keys.length;i++)delete prefs[keys[i]];
     K($,Q);
   }
-  function preferredVodAudio(){return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
+  function preferredVodAudio(){if(X.playerMode==='live')return window.XuperLiveTracks?XuperLiveTracks.preferredAudio():'es';return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
   function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn()});}
   function sn(e, t, a, context) {
     var i = context?context.item:X.playerItem;
@@ -7511,15 +7512,15 @@
         Te && (Te.style.display = "none");
         var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
         var checkpointContext=X.playerMode==="vod"?{item:Object.assign({},X.playerItem),episode:X.playerEpisode&&Object.assign({},X.playerEpisode)}:null;
-        gn();
-        var formatInfo=document.getElementById("vod-format-info");if(formatInfo)formatInfo.textContent="Formato pendiente";
+        gn();if(X.playerMode==='live'){mn(null);Ji=false;Qi=null;Ki=true;if(window.XuperLiveTracks)XuperLiveTracks.reset();}
+        var formatInfo=document.getElementById("vod-format-info");if(formatInfo)formatInfo.textContent="";
         window.XuperPlayer.open(xe, e, { onCheckpoint:function(){if(checkpointContext)checkpointVod(checkpointContext);}, mime: s, live: "live" === X.playerMode,
           startTime:resumeRecord?XuperStandalone.resumeClock(resumeRecord):0,
           preferredAudio: preferredVodAudio(),
-          audioIndex: $i ? Xi : undefined,
+          audioIndex: X.playerMode==="vod"&&$i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
           onNotice: function (message) { Yt(message); },
-          onInfo: function (data) { if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod")format.textContent=window.XuperStandalone.formatMediaInfo(data); },
+          onInfo: function (data) { if(X.playerMode==='live'&&window.XuperLiveTracks)XuperLiveTracks.sync();if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod")format.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
           onError: function (message) { X.streamError = message; jr(message); } });
         ln=null;
@@ -8112,6 +8113,7 @@
         search: function (e) {
           (La(), Aa(e));
         },
+        hidePlayerControls:ui, showPlayerControls:pi, touchPlayerControls:function(){if(X.infobar)ci();},
         settingsPanel: function (e) {
           (Ha(), Ua(e, !0));
         },

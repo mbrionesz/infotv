@@ -1,0 +1,15 @@
+/* Compact controls. Visibility remains controlled by the five-second timer. */
+#screen-player .player-vod-infobar{height:260px;background:linear-gradient(transparent,rgba(5,9,17,.94))}
+#screen-player .vod-infobar-content{left:96px;right:96px;bottom:44px;height:170px}
+#screen-player .vod-infobar-title{font:500 32px/1.2 'Segoe UI',Arial,sans-serif;max-width:1120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#screen-player .vod-infobar-tips{opacity:.85;font-size:19px;gap:22px}
+#screen-player #vod-format-info{font-size:19px;color:#becbdb}
+#screen-player .vod-seekbar{height:7px;border-radius:9px;background:#ffffff45}
+#screen-player .vod-seek-progress{background:#f2f6ff;border-radius:9px}
+.xt-live-tracks{position:absolute;z-index:700;right:96px;top:110px;width:670px;max-height:860px;padding:32px;background:#111b2bf5;border:1px solid #3c4e66;border-radius:24px;color:#f3f7fc;font:24px 'Segoe UI',Arial,sans-serif}
+.xt-live-tracks h2{font-size:34px;margin:0 0 20px}.xt-live-tracks h3{font-size:23px;color:#b5c8e0;margin:20px 0 12px}.xt-live-tracks-body{max-height:640px;overflow-y:auto;padding:5px 8px}
+.xt-live-tracks button{display:block;width:100%;text-align:left;padding:17px 20px;margin:9px 0;border:1px solid #3e526e;border-radius:15px;background:#203149;color:#f4f8ff;font:23px 'Segoe UI',Arial,sans-serif}.xt-live-tracks button.selected{background:#f0f6ff;color:#142136;outline:3px solid white}.xt-live-tracks p{font-size:21px;color:#b6c3d4;line-height:1.4}
+.xt-tmdb-settings{width:850px;max-height:880px;overflow-y:auto}.xt-tmdb-credit{margin-top:22px;border-top:1px solid #3e526e;padding-top:18px}.xt-tmdb-credit img{width:135px;height:auto}.xt-tmdb-credit p{font-size:17px;max-width:760px}
+.xt-keyboard{z-index:810!important}.tmdb-credit-logo{display:block;width:140px;height:auto;margin:26px 0 16px}
+#dialog-playsettings .dps-dialog{background:#111b2bf5;border:1px solid #3c4e66;border-radius:24px}#dialog-playsettings .dps-btn{border-radius:14px}#dialog-playsettings .dps-footer{background:#111b2b}
+.player-playsetting-view{background:#101a2bf5;border:1px solid #3c4e66;border-radius:24px 24px 0 0}

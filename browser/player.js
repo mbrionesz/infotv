@@ -25,13 +25,14 @@ export function createPlayer(getStream) {
   let progressive=null,lifecycle=null,selectProgressiveAudio=null;const journal=createPlaybackJournal();
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
-  let manualAudio=null,checkpoint=null;
+  let manualAudio=null,manualSubtitle=-1,textTrackCleanup=null,checkpoint=null;
   let restored = null, playingListener = null, canPlayListener=null,resumePlayback=null,healthTimer=null,recoveryTimer=null,sourceRefreshTimer=null,bufferGate=null,frameMeter=null;
   const diagnostics = { engine: '', stage:'idle',error: '', recoveries: 0, hlsVersion: Hls.version, httpStatus:0, detail:'',worker:false };
   function emit(name) { if (video) video.dispatchEvent(new Event(name)); }
   function stop() {
+    if(textTrackCleanup){textTrackCleanup();textTrackCleanup=null;}
     if(checkpoint){const save=checkpoint;checkpoint=null;try{save();}catch(_){}}
-    selectProgressiveAudio=null;manualAudio=null;
+    selectProgressiveAudio=null;manualAudio=null;manualSubtitle=-1;
     if(lifecycle)lifecycle.cancel();
     if(frameMeter){frameMeter.destroy();frameMeter=null;}
     if(bufferGate){bufferGate.destroy();bufferGate=null;}diagnostics.bufferGate=null;
@@ -58,6 +59,7 @@ export function createPlayer(getStream) {
   }
   function open(element, source, options) {
     stop(); currentTime=0;video = element; url = source;checkpoint=options.onCheckpoint||null;
+    if(options.live&&video.textTracks&&video.textTracks.addEventListener){const target=video.textTracks,added=event=>{if(manualSubtitle<0&&event.track)event.track.mode='disabled';};target.addEventListener('addtrack',added);textTrackCleanup=()=>target.removeEventListener('addtrack',added);}
     const run = serial;let playbackSource=source,vodRecovery=null,vodLastClock=0,vodLastProgress=performance.now();
     let lowDelay=false;try{lowDelay=localStorage.getItem('xt.lowDelay720')==='on';}catch(_){}
     const latencyPolicy=createLiveLatency(lowDelay);diagnostics.liveLatency=latencyPolicy.state;
@@ -254,9 +256,10 @@ export function createPlayer(getStream) {
       });
       hls.on(Hls.Events.BUFFER_APPENDED,()=>{if(serial===run&&generation===attempt&&hls){latencyPolicy.update(hls,video,options.live,performance.now()>=alignmentReadyAt);if(bufferGate)bufferGate.check();}});
       hls.on(Hls.Events.MEDIA_ATTACHED, () => { if (hls && serial === run&&generation===attempt) hls.loadSource(playbackSource); });
+      if(options.live){hls.subtitleDisplay=false;hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED,()=>{if(hls){hls.subtitleTrack=manualSubtitle;hls.subtitleDisplay=manualSubtitle>=0;}});}
       hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
         if(serial!==run||generation!==attempt||!hls||!options.preferredAudio)return;
-        const index=audioLanguage.chooseAudioTrack(data.audioTracks||[],manualAudio||options.preferredAudio);diagnostics.audioPreferenceMatched=index>=0;
+        diagnostics.audioTracks=(data.audioTracks||[]).map(audioLanguage.describe);const index=audioLanguage.chooseAudioTrack(data.audioTracks||[],manualAudio||options.preferredAudio);diagnostics.audioPreferenceMatched=index>=0;
         if(index>=0)hls.audioTrack=index;
       });
       hls.on(Hls.Events.AUDIO_TRACK_SWITCHED,(_event,data)=>{if(serial===run&&hls){diagnostics.selectedAudio=data.id;diagnostics.selectedAudioLanguage=audioLanguage.languageOf(hls.audioTracks[data.id]);}});
@@ -374,6 +377,7 @@ export function createPlayer(getStream) {
           try{const duration=av.getDuration()/1000;if(Number.isFinite(duration)&&duration>0){diagnostics.sourceDuration=duration;diagnostics.durationSource='avplay';}}catch(_){}
           vodRecovery=()=>fallback('native-clock-stalled');
           try{const tracks=av.getTotalTrackInfo().filter(track=>track.type==='AUDIO').map(track=>{let extra={};try{extra=JSON.parse(track.extra_info||'{}');}catch(_){}return {index:track.index,language:extra.language||extra.lang||'',name:extra.language||extra.lang||''};});const index=Number.isInteger(options.audioIndex)&&options.audioIndex>=0&&options.audioIndex<tracks.length?options.audioIndex:audioLanguage.chooseAudioTrack(tracks,options.preferredAudio||'es');if(index>=0)av.setSelectTrack('AUDIO',tracks[index].index);diagnostics.audioTracks=tracks.map(audioLanguage.describe);diagnostics.selectedAudio=index;diagnostics.selectedAudioLanguage=index>=0?audioLanguage.languageOf(tracks[index]):'';}catch(_){}
+          if(options.live)try{av.setSilentSubtitle(true);}catch(_){}
           emit('loadedmetadata'); emit('loadeddata');
           let nativeStarted=false;const startNative=()=>{if(!active()||nativeStarted)return;nativeStarted=true;clearTimeout(nativeTimer);try{av.play();paused=false;emit('play');emit('playing');}catch(error){fallback(error.message);}};
           if(startAt>0){nativeTimer=setTimeout(()=>fallback('native-resume-timeout'),5000);try{av.seekTo(Math.floor(startAt*1000),startNative,()=>fallback('native-resume-failed'));}catch(error){fallback(error.message);}}else startNative();
@@ -456,7 +460,9 @@ export function createPlayer(getStream) {
     }
     return false;
   }
+  function subtitleTracks(){if(hls&&hls.subtitleTracks.length)return hls.subtitleTracks.map((t,i)=>Object.assign(audioLanguage.describe(t,i),{selected:i===hls.subtitleTrack&&hls.subtitleDisplay}));if(av&&ready)try{return av.getTotalTrackInfo().filter(t=>t.type==='TEXT').map((t,i)=>{let extra={};try{extra=JSON.parse(t.extra_info||'{}');}catch(_){}return Object.assign(audioLanguage.describe({language:extra.language||extra.lang||'',name:extra.name||''},i),{selected:i===manualSubtitle});});}catch(_){}if(video&&video.textTracks)return Array.from(video.textTracks).map((t,i)=>Object.assign(audioLanguage.describe({language:t.language,name:t.label},i),{selected:t.mode==='showing'}));return [];}
+  function selectSubtitle(index){if(!Number.isInteger(index)||index< -1)return false;if(hls&&hls.subtitleTracks.length){if(index>=hls.subtitleTracks.length)return false;manualSubtitle=index;hls.subtitleTrack=index;hls.subtitleDisplay=index>=0;return true;}if(av&&ready)try{const tracks=av.getTotalTrackInfo().filter(t=>t.type==='TEXT');if(index>=0){if(!tracks[index])return false;av.setSelectTrack('TEXT',tracks[index].index);}av.setSilentSubtitle(index<0);manualSubtitle=index;return true;}catch(_){}if(video&&video.textTracks){if(index>=video.textTracks.length)return false;manualSubtitle=index;for(let i=0;i<video.textTracks.length;i++)video.textTracks[i].mode=i===index?'showing':'disabled';return true;}return index===-1;}
   lifecycle=createPlaybackLifecycle();
   if(window.addEventListener)window.addEventListener('pagehide',()=>journal.flush());
-  return { open, stop, setAspect, bookmark:position=>progressive&&progressive.bookmark?progressive.bookmark(position):null, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, audioTracks:()=>{if(hls)return hls.audioTracks.map((track,index)=>Object.assign(audioLanguage.describe(track,index),{selected:index===hls.audioTrack}));return (diagnostics.audioTracks||[]).map((track,index)=>Object.assign({},track,{index,selected:index===diagnostics.selectedAudio}));}, capabilities, diagnostics };
+  return { open, stop, setAspect, bookmark:position=>progressive&&progressive.bookmark?progressive.bookmark(position):null, history:limit=>journal.entries(limit), playFromGesture:()=>{if(resumePlayback)resumePlayback();}, selectAudio, selectSubtitle, subtitleTracks, audioTracks:()=>{if(hls)return hls.audioTracks.map((track,index)=>Object.assign(audioLanguage.describe(track,index),{selected:index===hls.audioTrack}));return (diagnostics.audioTracks||[]).map((track,index)=>Object.assign({},track,{index,selected:index===diagnostics.selectedAudio}));}, capabilities, diagnostics };
 }
