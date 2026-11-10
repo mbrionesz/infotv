@@ -1,7 +1,7 @@
 # Instalar con Apps2Samsung
 
 1. Descarga `XuperTizen-0.10.14-beta-Tizen4plus-UNSIGNED.wgt` de
-   [la release](https://github.com/mbrionesz/infotv/releases/tag/v0.10.14-beta.1).
+   [la release](https://github.com/mbrionesz/infotv/releases/tag/v0.10.14-beta.2).
 2. Conecta el PC y el televisor a la misma red. Mantén Developer Mode activo
    y configurado con la IP del PC, como en tu instalación anterior.
 3. Importa el WGT en [Apps2Samsung](https://github.com/Apps2Samsung/Apps2Samsung).
