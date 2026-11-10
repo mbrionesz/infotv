@@ -124,7 +124,7 @@ export function createPlayer(getStream) {
     function recoverDecoder(){resuming=bufferGate?!bufferGate.userPaused:!video.paused;autoAttempts=0;playPending=false;diagnostics.recoveries++;hls.recoverMediaError();}
     healthTimer=setInterval(()=>{
       if(serial!==run||!video)return;
-      if(hls)latencyPolicy.update(hls,video,options.live,performance.now()>=alignmentReadyAt);if(hls&&!options.live)hls.config.maxMaxBufferLength=started&&video.paused?90:45;
+      if(hls)latencyPolicy.update(hls,video,options.live,performance.now()>=alignmentReadyAt);if(hls&&!options.live){hls.config.maxMaxBufferLength=started&&video.paused?180:45;hls.config.maxBufferSize=started&&video.paused?32*1024*1024:24*1000*1000;}
       const sample=mediaHealth(video);if(av&&ready)try{const nativeDimensions=nativeVideoDimensions(av.getTotalTrackInfo());if(nativeDimensions)Object.assign(sample,nativeDimensions);}catch(_){}
       if(!options.live&&started&&!document.hidden&&!video.paused&&!video.seeking&&vodRecovery){
         if(video.currentTime>vodLastClock+0.05){vodLastClock=video.currentTime;vodLastProgress=performance.now();}

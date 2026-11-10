@@ -14,7 +14,7 @@ export function discoveryFocus(nodes,index,code){
  return index;
 }
 export function renderDiscovery(panel,data,options){
- const {browse,openItem,search,poster=(image,url)=>window.XuperStandalone.loadPoster(image,url),chooseFacet=()=>{},applyFilters=()=>{},filters={},facets=data.facets||{},results,scanPending=false,missingMetadata=0}=options;
+ const {browse,openItem,search,poster=(image,url)=>window.XuperStandalone.loadPoster(image,url),chooseFacet=()=>{},applyFilters=()=>{},filters={},facets=data.facets||{genres:data.genres||[],countries:data.countryOptions&&data.countryOptions.all||[]},results,scanPending=false,missingMetadata=0}=options;
  const filtered=Array.isArray(results),grid=panel.querySelector('.xt-catalog-grid');grid.className='xt-catalog-grid xt-discovery-grid';grid.textContent='';panel.dataset.discovery='true';panel.dataset.cinematic='true';panel.dataset.filtered=String(filtered);panel.querySelector('.xt-catalog-filters').hidden=true;panel.querySelector('footer').hidden=!filtered;
  panel.querySelectorAll('header button').forEach(button=>button.dataset.navrow='-1');panel.querySelectorAll('footer button').forEach(button=>button.dataset.navrow='100');
  const action=(text,row,callback,cls='')=>{const button=node('button',cls,text);button.dataset.navrow=String(row);button.onclick=callback;return button;};

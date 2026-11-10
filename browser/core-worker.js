@@ -78,6 +78,7 @@ function pump(){
 }
 async function execute(method,payload){
   stats.requests++;
+  if(method==='clearMetadata')return {cleared:await cache.clearMetadata()};
   if(method==='catalogDiscover')return discoveryQuery(payload);
   if(method==='catalogFullPage')return remoteCatalog(payload);
   if(method==='catalogQuery')return catalog.query(payload.root||'movies',payload);

@@ -153,5 +153,5 @@ export function createGuide(core){
     else if(key===427||key===428){channel=(channel+(key===427?1:-1)+visible.length)%Math.max(1,visible.length);renderChannels();clearTimeout(switchTimer);switchTimer=setTimeout(fullscreen,120);}
     focus();return true;
   }
-  return {open,suspend,focusContent:()=>{column=1;focus();},openAddons:()=>open({addons:true}),openFavorites:()=>open({favorites:true}),close,resume,handle,get active(){return active;},diagnostics:()=>window.XuperPlayer.diagnostics};
+  return {open,suspend,focusContent:()=>{column=1;focus();},openAddons:()=>open({addons:true}),openFavorites:()=>open({favorites:true}),close,resume,handle,get atRoot(){return active&&!keyboard&&!deleteDialog;},get active(){return active;},diagnostics:()=>window.XuperPlayer.diagnostics};
 }

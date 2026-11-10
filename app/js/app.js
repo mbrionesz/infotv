@@ -5719,7 +5719,7 @@
     var options=document.querySelector('.detail-quality-options');if(!options)return;options.textContent='';
     var tracks=info.tracks||[];if(tracks.length<2)return;
     var title=e('span','detail-quality-label','Versión disponible');options.appendChild(title);
-    [{index:-1,label:'Automática'}].concat(tracks.slice(0,12).map(function(track,index){return {index:index,label:XuperStandalone.titleBadges({tracks:[track]},{}).join(' · ')||'Versión '+(index+1)};})).forEach(function(choice){
+    [{index:-1,label:'Automática'}].concat(tracks.map(function(track,index){return {index:index,label:XuperStandalone.titleBadges({tracks:[track]},{}).join(' · ')||'Versión '+(index+1)};})).forEach(function(choice){
       var button=e('button','detail-quality focusable',choice.label);button.classList.toggle('is-selected',choice.index<0?!item._trackExplicit:item._trackExplicit&&item._trackIndex===choice.index);
       button._activate=function(){item._trackExplicit=choice.index>=0;item._trackIndex=Math.max(0,choice.index);renderTitleMedia(info);var selected=options.querySelector('.is-selected');if(selected)rt(selected);};options.appendChild(button);
     });

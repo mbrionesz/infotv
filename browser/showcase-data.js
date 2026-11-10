@@ -12,6 +12,6 @@ export function createShowcaseQuery(request){
   if((catalog?.items||[]).length)groups.set(root==='series'?'Series para explorar':'Películas para explorar',catalog.items);
   for(const item of home?.items||[]){if(!item||!item.id)continue;const title=item.row||'En el catálogo';if(!groups.has(title))groups.set(title,[]);const row=groups.get(title);if(!row.some(existing=>String(existing.id)===String(item.id)))row.push(item);}
   const rows=Array.from(groups,([title,values])=>({title,items:values.slice(0,12),column:columns.find(column=>fold(column.name)===fold(title))?.id||null})).sort((a,b)=>Number(/prime|hbo|apple|hulu|paramount|netflix/i.test(b.title))-Number(/prime|hbo|apple|hulu|paramount|netflix/i.test(a.title))).slice(0,10);
-  const value={root,rows,editorial:items.slice(0,12),columns,facets:Object.assign({},results[3].status==='fulfilled'?results[3].value:{},{columns}),catalogSource:catalog?.source||null,metadataIncomplete:results[1].status==='rejected'};cache.set(root,{at:Date.now(),value});return value;
+  const value={root,rows,editorial:items.slice(0,12),columns,facets:Object.assign({},catalog?.facets||{},results[3].status==='fulfilled'?results[3].value:{},{columns}),catalogSource:catalog?.source||null,metadataIncomplete:results[1].status==='rejected'||results[3].status==='rejected'};cache.set(root,{at:Date.now(),value});return value;
  };
 }

@@ -19,3 +19,5 @@ test('poster cache prunes oldest blobs and unavailable storage degrades safely',
   assert.equal(await cache.get('posters','p0'),null);assert.ok(await cache.get('posters','p3'));
   const missing=createCache(null);assert.equal(await missing.available(),false);assert.equal(await missing.get('metadata','x'),null);assert.equal(await missing.put('metadata','x',{},1),false);
 });
+
+test('exit clears metadata without deleting cached posters or profile database',async()=>{const factory=new IDBFactory(),cache=createCache(factory);await cache.put('metadata','catalog',{items:[{id:'old'}]},10000);await cache.put('posters','poster',{data:'keep'},10000);assert.equal(await cache.clearMetadata(),true);assert.equal(await cache.get('metadata','catalog',true),null);assert.deepEqual(await cache.get('posters','poster'),{data:'keep'});});

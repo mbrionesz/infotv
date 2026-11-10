@@ -1109,36 +1109,18 @@ function detail(e, r, t) {
       "v4/getItemData",
       {
         contentId: n,
-        type: "0",
+        type: t === "alternate" ? "1" : "0",
         sortType: "0",
         language: "en",
         macAddr: FIXED_MAC,
       },
       function (e, s) {
         var a = itemCache[n] || null;
-        if (e)
-          return t || e.portalCode || /portal\d+/i.test(e.message || "")
-            ? e.portalCode || /portal/i.test(e.message)
-              ? r(null, {
-                  item: a || {
-                    id: n,
-                    title: "",
-                    kind: "película",
-                    episodes: [],
-                    seasons: [],
-                    portal: !0,
-                  },
-                  episodes: [],
-                  seasons: [],
-                })
-              : r(e)
-            : (console.log(
-                "[magis] reintentando detalle tras error temporal: " +
-                  e.message,
-              ),
-              setTimeout(function () {
-                detail(n, r, !0);
-              }, 900));
+        if(e){
+          if(e.portalCode==='portal100006'&&t!=="alternate")return detail(n,r,"alternate");
+          if(t||e.portalCode||/portal\d+/i.test(e.message||""))return r(e);
+          return setTimeout(function(){detail(n,r,true);},900);
+        }
         var o = s && s.assetData;
         if (!o)
           return a
@@ -1328,7 +1310,8 @@ function trackFrameRate(e) {
 }
 function trackSummary(e) {
   return {
-    audio: trim(e && e.audioInfo),
+    audio: trim(e && (e.audioInfo || e.language || e.audioLanguage || e.languageName)),
+    audioName: trim(e && (e.languageName || e.audioName)),
     codec: trim(e && e.encodeFormat).toUpperCase(),
     format: trim(e && e.videoFormat).toLowerCase(),
     quality: trim(e && (e.quality || e.groupQuality)),
@@ -1369,7 +1352,7 @@ function collectTracks(e) {
       }
   return (
     r.sort(function (e, r) {
-      return mediaScore(e) - mediaScore(r);
+      return trackHeight(r) - trackHeight(e) || mediaScore(e) - mediaScore(r);
     }),
     r
   );
@@ -1444,7 +1427,7 @@ function mediaInfo(e, r, t) {
     var n = r.tracks[0];
     t(null, {
       name: text(r.play && r.play.name),
-      audio: trim(n.audioInfo),
+      audio: trackSummary(n).audio,
       subtitles: subtitleList(r.episode),
       tracks: r.tracks.map(trackSummary),
       selected: trackSummary(n),
@@ -1465,9 +1448,13 @@ function resolve(e, r, t, n) {
         o = r.tracks,
         i = parseInt(t.trackIndex, 10);
       (i >= 0 && i < o.length) || (i = 0);
-      if(t.preferredAudio&&!t.trackExplicit&&!(i>0)){
-        var choices=[];for(var ci=0;ci<o.length;ci++){var names=trim(o[ci].audioInfo).split(/[,\/]/);for(var ai=0;ai<names.length;ai++)choices.push({language:names[ai],name:names[ai],variant:ci});}
-        var selected=audioLanguage.chooseAudioTrack(choices,t.preferredAudio);if(selected>=0)i=choices[selected].variant;
+      if(t.preferredAudio&&!t.trackExplicit&&(t.trackExplicit===false||!(i>0))){
+        var choices=[];for(var ci=0;ci<o.length;ci++){var summary=trackSummary(o[ci]),names=summary.audio.split(/[,\/]/);for(var ai=0;ai<names.length;ai++)choices.push({language:names[ai],name:summary.audioName||names[ai],variant:ci});}
+        var preferred=audioLanguage.languageOf(t.preferredAudio),matching=choices.filter(function(choice){return audioLanguage.languageOf(choice)===preferred||audioLanguage.languageOf(choice.name)===preferred;});
+        if(t.preferredAudio&&t.preferredAudio.name){var exact=matching.filter(function(choice){return audioLanguage.describe(choice,0).name===t.preferredAudio.name;});if(exact.length)matching=exact;}
+        var maximum=0;for(var mi=0;mi<matching.length;mi++)maximum=Math.max(maximum,trackHeight(o[matching[mi].variant]));
+        matching=matching.filter(function(choice){return trackHeight(o[choice.variant])===maximum;});
+        var selected=audioLanguage.chooseAudioTrack(matching,t.preferredAudio);if(selected>=0)i=matching[selected].variant;
       }
       for (var l = o[i], u = [], d = 0; d < o.length; d++)
         u.push(trackSummary(o[d]));
@@ -1510,7 +1497,7 @@ function resolve(e, r, t, n) {
           selectedTrack: trackSummary(l),
           availableTracks: u,
           trackIndex: i,
-          audio: trim(l.audioInfo),
+          audio: trackSummary(l).audio,
           headers: m(o.auth),
           backupUrls: v,
           subtitles: subtitleList(a),

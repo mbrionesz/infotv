@@ -1,3 +1,4 @@
+import {createExitGate} from './exit-gate.js';
 import {continueTitle} from './library-info.js';
 import {nextEpisodeOffer} from './next-episode.js';
 import {createVodRecovery} from './vod-recovery.js';
@@ -60,8 +61,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.10.12', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.10.12' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.10.13', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.10.13' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -94,7 +95,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.10.12', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.10.13', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -107,7 +108,7 @@ function request(method, payload, callback) {
 }
 let profileStorage;try{profileStorage=window.localStorage;}catch(_){}
 const profileStore=createProfileStore(profileStorage,window.indexedDB);
-window.XuperStandalone = { continueTitle, nextEpisodeOffer, resumeClock,canResumeVod,remainingLabel,similarTitles,detailFocus, openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.10.12', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { continueTitle, nextEpisodeOffer, resumeClock,canResumeVod,remainingLabel,similarTitles,detailFocus, openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.10.13', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 const vodRecovery=createVodRecovery(window,{reset:()=>{core.restart();nativeTransport.reset();streams.clear();lastError='';}});
 window.XuperStandalone.showVodRecovery=vodRecovery.open;
 window.XuperStandalone.auditCatalog=root=>catalogAudit.run({root:root||'series',onProgress:entry=>console.log('XT_CATALOG_OPTION '+JSON.stringify(entry))}).then(result=>{console.log('XT_CATALOG_AUDIT '+JSON.stringify(result));return result;});
@@ -127,8 +128,18 @@ window.XuperStandalone.openDiagnostics=function(playback){
  diagnosticPanel=createDiagnosticCards({playback:playback||window.XuperPlayer.diagnostics,signal:diagnosticSignal,internet:options=>measureInternet(options),cdns:options=>window.XuperStandalone.probeCdns(options),dns:async()=>await nativeTransport.ensure()?nativeTransport.diagnose():new Promise((resolve,reject)=>core.call('networkDiagnostic',{},(error,result)=>error?reject(error):resolve(result))),close:closeDiagnostics});
  document.getElementById('app').appendChild(diagnosticPanel);
 };
+let exitToast=null,exitToastTimer;
+const exitGate=createExitGate({prompt:()=>{window.XuperShell.focusHeader();if(!exitToast){exitToast=document.createElement('div');exitToast.className='xt-exit-toast';document.getElementById('app').appendChild(exitToast);}exitToast.textContent='Pulsa Atrás otra vez para salir';clearTimeout(exitToastTimer);exitToastTimer=setTimeout(()=>{exitToast?.remove();exitToast=null;},2200);},exit:async()=>{
+ window.__xuper?.checkpointVod?.();window.XuperPlayer.stop();window.XuperGuide.close();window.XuperCatalog.close();
+ const flush=window.XuperStandalone.profileStore.flush();const clear=new Promise(resolve=>core.call('clearMetadata',{},()=>resolve()));
+ await Promise.race([Promise.allSettled([flush,clear]),new Promise(resolve=>setTimeout(resolve,1200))]);
+ core.dispose();nativeTransport.dispose();posterLoader.dispose();streams.clear();exitToast?.remove();exitToast=null;
+ try{if(window.tizen?.application){window.tizen.application.getCurrentApplication().exit();return;}}catch(_){}
+ window.location.reload();
+}});
 function handleRemote(event){
   const code=event.keyCode;
+  if(![10009,461,27].includes(code)||window.__xuper?.state.screen!=='home')exitGate.reset();
   if(window.__xuper&&__xuper.state.screen==='player')__xuper.touchPlayerControls?.();
   if(code===10182&&window.__xuper?.state.screen==='player'){
     window.__xuper.checkpointVod?.();window.XuperStandalone.profileStore.flush();
@@ -139,7 +150,10 @@ function handleRemote(event){
   if(XuperArtwork.handle(event))return true;
   if(!diagnosticPanel&&XuperLiveTracks.handle(event))return true;
   if(diagnosticPanel){if(code===37||code===39){const buttons=diagnosticPanel.querySelectorAll('button');let index=Number(diagnosticPanel.dataset.action)||0;buttons[index].classList.remove('is-focused');index=(index+(code===39?1:buttons.length-1))%buttons.length;diagnosticPanel.dataset.action=String(index);buttons[index].classList.add('is-focused');}if(code===13){const buttons=diagnosticPanel.querySelectorAll('button');buttons[Number(diagnosticPanel.dataset.action)||0].click();return true;}if(code===405)diagnosticPanel.querySelector('.xt-diag-network').click();if(code===38||code===40){const step=code===40?180:-180;diagnosticPanel.querySelector('.xt-diag-body').scrollTop+=step;}if([10009,461,27,406].includes(code)){closeDiagnostics();}return ![447,448,449].includes(code);}
-  if(peoplePanel.handle(event)||window.XuperShell.handle(event)||window.XuperGuide.handle(event)||window.XuperCatalog.handle(event))return true;
+  if(peoplePanel.handle(event)){exitGate.reset();return true;}
+  const rootExit=window.__xuper?.state.screen==='home'&&(window.XuperShell.focused||window.XuperCatalog.atRoot||window.XuperGuide.atRoot)&&!document.querySelector('.xt-keyboard,.xt-search-workspace,.xt-filter-menu,.xt-history-actions');
+  if(exitGate.handle(event,rootExit))return true;
+  if(window.XuperShell.handle(event)||window.XuperGuide.handle(event)||window.XuperCatalog.handle(event))return true;
   if(code===406){window.XuperStandalone.openDiagnostics();return true;}
   if((code===427||code===428)&&window.__xuper&&__xuper.state.screen==='player'&&__xuper.state.playerMode==='live'){__xuper.key(code===427?38:40);return true;}
   return false;

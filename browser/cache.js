@@ -63,5 +63,6 @@ export function createCache(indexedDB, now = Date.now) {
       } catch (_) { resolve(); }
     });
   }
-  return {get,put,prune,available:async()=>!!(await database())};
+  async function clearMetadata(){const db=await database();if(!db)return false;return new Promise(resolve=>{try{const tx=db.transaction('metadata','readwrite');tx.objectStore('metadata').clear();tx.oncomplete=()=>resolve(true);tx.onerror=tx.onabort=()=>resolve(false);}catch(_){resolve(false);}});}
+  return {get,put,prune,clearMetadata,available:async()=>!!(await database())};
 }

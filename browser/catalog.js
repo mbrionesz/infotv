@@ -160,5 +160,5 @@ export function createCatalog(core){
     mark();return true;
   }
   function auditDates(){const data=showcases.get(root)||{};return {root,source:data.catalogSource||'catalogDiscover',basis:panel&&panel.querySelector('.xt-discovery-hero')?.dataset.carouselBasis||'',selection:(data.carouselSelection||[]).map(item=>({id:item.id,title:item.title,detectedOnThisTvAt:item.carouselDetectedAt||null})),items:(data.editorial||[]).map(item=>({title:item.title,releaseDate:item.releaseDate||'',portalDates:item.portalDates||{}})),note:'releaseDate es estreno; no se afirma que createTime/updateTime signifiquen incorporación al catálogo.'};}
-  return {auditDates,open,close,suspend,resume,focusContent:()=>{mark();},setHeaderFocus:()=>{},search,chooseSearch,handle,get root(){return root;},get active(){return active;}};
+  return {auditDates,open,close,suspend,resume,focusContent:()=>{mark();},setHeaderFocus:()=>{},search,chooseSearch,handle,get atRoot(){return active&&discoveryMode&&!keyboard&&!filterMenu&&!filterPanelOpen;},get root(){return root;},get active(){return active;}};
 }

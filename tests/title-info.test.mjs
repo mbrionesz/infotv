@@ -12,3 +12,5 @@ test('individual variants show declared FPS and bitrate, aggregate does not mix 
  assert.deepEqual(titleBadges(info,{},-1),['720p / 4K']);
  assert.deepEqual(titleBadges({tracks:[{frameRate:0,bitrateKbps:0}]}),[]);
 });
+
+test('aggregate audio badges preserve every version instead of inheriting the first audio name',()=>{const labels=titleBadges({tracks:[{quality:'720p',audio:'es',audioName:'Español latino'},{quality:'1080p',audio:'pt',audioName:'Português'}]}, {},-1);assert.ok(labels.some(label=>label.includes('Español latino')&&label.includes('Portugués')));});

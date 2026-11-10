@@ -16,6 +16,7 @@ export function catalogCategories(root,facets={},columns=[]){
   add(rows.find(row=>row.title==='Crimen'));
  }else for(const label of ['Acción','Crimen','Suspenso','Terror'])add(rows.find(row=>row.title===label));
  rows.forEach(add);
+ if(root==='movies')for(const column of columns){if(!/^(all|todos?|todas?|ver todo)$/i.test(name(column)))add({id:'column:'+id(column),title:genreLabel(name(column)),filters:{column:id(column)}});}
  for(const genre of facets.genres||[])add({id:'genre:'+id(genre),title:genreLabel(name(genre)),filters:{genre:id(genre)}});
  return result.slice(0,24);
 }

@@ -8,7 +8,7 @@ export async function auditVodMetadata(core,state,player){
  const info=await request('mediaInfo',episode&&episode.id||item.id,episode?item.seasonId||item.id:'');
  const asset=detail.item||{},reported={};
  for(const key of ['title','year','releaseDate','duration','score','genres','director','actors','country','quality','resolution','tagline','volumeCount','updateCount','moreAudio','moreSubtitle'])if(asset[key]!==undefined)reported[key]=asset[key];
- const track=t=>({audio:t.audio||'',codec:t.codec||'',format:t.format||'',quality:t.quality||'',height:t.height||0,bitrateKbps:t.bitrateKbps||0,frameRate:t.frameRate||0});
+ const track=t=>({audio:t.audio||'',audioName:t.audioName||'',codec:t.codec||'',format:t.format||'',quality:t.quality||'',height:t.height||0,bitrateKbps:t.bitrateKbps||0,frameRate:t.frameRate||0});
  const diag=player&&player.diagnostics||{};
  return {reported,episodes:(detail.episodes||[]).length,seasons:(detail.seasons||[]).length,media:{audio:info.audio||'',duration:info.duration||0,tracks:(info.tracks||[]).map(track),subtitles:(info.subtitles||[]).map(t=>Object.assign({language:t.lang,format:t.format},t.name?{name:t.name}:{},typeof t.forced==='boolean'?{forced:t.forced}:{}))},observed:state.screen==='player'?{engine:diag.engine,audio:player.audioTracks(),width:diag.media&&diag.media.width||0,height:diag.media&&diag.media.height||0,codecs:diag.codecs||{}}:null,note:'Calidad declarada por el portal; resolución y pistas observadas solo durante reproducción. No prueba HDR, 5.1 ni una intro.'};
 }
