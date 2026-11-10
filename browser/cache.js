@@ -1,68 +1,11 @@
-// Metadata only: never persist sessions, resolved stream URLs or auth headers.
-export function createCache(indexedDB, now = Date.now) {
-  let opened;
-  function database() {
-    if (opened) return opened;
-    opened = new Promise(resolve => {
-      if (!indexedDB) return resolve(null);
-      try {
-        const request = indexedDB.open('xuper-tizen-v3', 1);
-        request.onupgradeneeded = () => {
-          const db = request.result;
-          for (const name of ['metadata', 'posters']) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'key' });
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = request.onblocked = () => resolve(null);
-      } catch (_) { resolve(null); }
-    });
-    return opened;
-  }
-  async function get(store, key, stale = false) {
-    const db = await database(); if (!db) return null;
-    return new Promise(resolve => {
-      try {
-        const request = db.transaction(store).objectStore(store).get(key);
-        request.onsuccess = () => {
-          const item = request.result;
-          resolve(item && (item.expires > now() || (stale && now() - item.saved < 86400000)) ? item.value : null);
-        };
-        request.onerror = () => resolve(null);
-      } catch (_) { resolve(null); }
-    });
-  }
-  async function put(store, key, value, ttl) {
-    const db = await database(); if (!db) return false;
-    return new Promise(resolve => {
-      try {
-        const transaction = db.transaction(store, 'readwrite');
-        const bytes=value&&value.size||JSON.stringify(value).length*2;
-        transaction.objectStore(store).put({key,value,bytes,saved:now(),expires:now()+ttl});
-        transaction.oncomplete = () => resolve(true);
-        transaction.onerror = transaction.onabort = () => resolve(false);
-      } catch (_) { resolve(false); }
-    });
-  }
-  async function prune(store, maxEntries, maxBytes) {
-    const db = await database(); if (!db) return;
-    return new Promise(resolve => {
-      try {
-        const transaction = db.transaction(store, 'readwrite');
-        const objectStore = transaction.objectStore(store); const entries = [];
-        const request = objectStore.openCursor();
-        request.onsuccess = () => {
-          const cursor = request.result;
-          if (cursor) { entries.push(cursor.value); cursor.continue(); return; }
-          entries.sort((a,b) => b.saved-a.saved);
-          let bytes=0;
-          entries.forEach((entry,index) => {
-            bytes += entry.bytes || entry.value && entry.value.size || 0;
-            if (index >= maxEntries || bytes > maxBytes || entry.expires < now()) objectStore.delete(entry.key);
-          });
-        };
-        transaction.oncomplete = transaction.onerror = transaction.onabort = () => resolve();
-      } catch (_) { resolve(); }
-    });
-  }
-  async function clearMetadata(){const db=await database();if(!db)return false;return new Promise(resolve=>{try{const tx=db.transaction('metadata','readwrite');tx.objectStore('metadata').clear();tx.oncomplete=()=>resolve(true);tx.onerror=tx.onabort=()=>resolve(false);}catch(_){resolve(false);}});}
-  return {get,put,prune,clearMetadata,available:async()=>!!(await database())};
+import {isSearchCacheKey} from './search-privacy.js';
+// Persistent metadata/images only. Media bytes and playback credentials are never stored here.
+export function createCache(indexedDB,now=Date.now,{timeoutMs=1200}={}){
+ let opened,disabled=false;
+ function database(){if(opened)return opened;opened=new Promise(resolve=>{if(!indexedDB)return resolve(null);let settled=false;const finish=value=>{if(settled){if(value)value.close();return;}settled=true;clearTimeout(timer);resolve(value);},timer=setTimeout(()=>finish(null),timeoutMs);try{const r=indexedDB.open('xuper-tizen-v3',1);r.onupgradeneeded=()=>{for(const name of ['metadata','posters'])if(!r.result.objectStoreNames.contains(name))r.result.createObjectStore(name,{keyPath:'key'});};r.onsuccess=()=>finish(r.result);r.onerror=r.onblocked=()=>finish(null);}catch(_){finish(null);}});return opened;}
+ async function transaction(store,mode,operation,fallback){if(disabled)return fallback;const db=await database();if(!db||disabled)return fallback;return new Promise(resolve=>{let tx,settled=false,result=fallback;const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolve(value);},timer=setTimeout(()=>{disabled=true;finish(fallback);try{tx?.abort();}catch(_){}},timeoutMs);try{tx=db.transaction(store,mode);operation(tx.objectStore(store),value=>{result=value;});tx.oncomplete=()=>finish(result);tx.onerror=tx.onabort=()=>finish(fallback);}catch(_){finish(fallback);}});}
+ async function get(store,key,stale=false){return transaction(store,'readonly',(items,set)=>{const r=items.get(key);r.onsuccess=()=>{const item=r.result;set(item&&(item.expires>now()||stale&&now()-item.saved<86400000)?item.value:null);};},null);}
+ async function put(store,key,value,ttl){return transaction(store,'readwrite',(items,set)=>{const bytes=value&&value.size||JSON.stringify(value).length*2;items.put({key,value,bytes,saved:now(),expires:now()+ttl});set(true);},false);}
+ async function prune(store,maxEntries,maxBytes){return transaction(store,'readwrite',(items,set)=>{const entries=[],r=items.openCursor();r.onsuccess=()=>{const cursor=r.result;if(cursor){const item=cursor.value;entries.push({key:item.key,saved:item.saved,expires:item.expires,bytes:item.bytes||item.value&&item.value.size||0});cursor.continue();return;}entries.sort((a,b)=>b.saved-a.saved);let bytes=0,count=0;for(const entry of entries){if(entry.expires<=now()||count>=maxEntries||bytes+entry.bytes>maxBytes){items.delete(entry.key);continue;}bytes+=entry.bytes;count++;}set(true);};},false);}
+ return {get,put,prune,clearSearches:()=>transaction('metadata','readwrite',(items,set)=>{const r=items.openKeyCursor();r.onsuccess=()=>{const cursor=r.result;if(cursor){if(isSearchCacheKey(cursor.key))items.delete(cursor.key);cursor.continue();}else set(true);};},false),clearTemporary:async()=>{const results=await Promise.all(['metadata','posters'].map(store=>transaction(store,'readwrite',(items,set)=>{items.clear();set(true);},false)));return results.every(Boolean);},clearMetadata:()=>transaction('metadata','readwrite',(items,set)=>{items.clear();set(true);},false),available:async()=>!disabled&&!!(await database())};
 }

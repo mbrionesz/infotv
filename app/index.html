@@ -35,7 +35,7 @@
       <div class="welcome-credit">by Matias</div>
       <div class="welcome-status" role="status">Iniciando<span aria-hidden="true"> ···</span></div>
     </div>
-    <div class="welcome-version">v0.10.13 · beta</div>
+    <div class="welcome-version">v0.10.14 · beta</div>
   </section>
 
   <!-- ============================================================
@@ -215,12 +215,13 @@
     <!-- Live column picker.  The in-player rail can only show a few of the 38
          portal categories, so Up on the rail opens this full-screen grid (the
          reference app opens an "all columns" screen from live home). -->
-    <div class="player-categories" id="player-categories">
+    <div class="player-categories" id="player-categories" role="dialog" aria-label="Categorías de TV">
       <div class="pcat-head">
         <div class="pcat-title">Categorías de TV</div>
         <div class="pcat-sub" id="pcat-sub"></div>
       </div>
-      <div class="pcat-grid scrollable" id="pcat-grid"></div>
+      <div class="pcat-grid scrollable" id="pcat-grid" role="listbox" aria-label="Elegir categoría"></div>
+      <div class="pcat-foot">↑ ↓ Elegir · OK Filtrar · Atrás Volver</div>
     </div>
   </section>
 

@@ -1,4 +1,4 @@
-#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card{height:282px;min-height:282px}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card{width:220px;min-width:220px;height:470px;min-height:470px}
 #xt-catalog .xt-watch-episode{display:block;font-size:21px;line-height:28px;color:#d8eafd;font-weight:600;margin:3px 0}
 #xt-catalog .xt-continue-row .xt-discovery-card strong{line-height:29px}
 #screen-player .player-vod-infobar{height:370px;background:linear-gradient(transparent,rgba(3,8,15,.88) 60%,#03080fee)}
@@ -41,3 +41,23 @@
 /* Edge-to-edge sheet; safe padding keeps controls away from TV overscan. */
 #screen-player .player-playsetting-view{left:0;right:0;bottom:0;border-radius:0;border-left:0;border-right:0;border-bottom:0;padding-left:96px;padding-right:96px}
 .xt-exit-toast{position:absolute;z-index:1500;left:50%;bottom:80px;transform:translateX(-50%);padding:20px 34px;border:1px solid #5d7894;border-radius:14px;background:#102238f2;box-shadow:0 10px 28px #0006;color:#f0f7ff;font:25px 'Segoe UI',Arial,sans-serif;white-space:nowrap}
+.xt-top-brand small.xt-catalog-count{font-size:13px;line-height:17px;letter-spacing:0;color:#9fb4c9;max-width:350px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame{height:330px;padding-bottom:0;background:linear-gradient(145deg,#22364d,#0d1928)}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame img{object-fit:contain;object-position:center}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card strong{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:29px;height:58px;margin-top:9px;overflow:hidden}
+/* Live categories remain a local overlay, leaving the playing signal visible. */
+#screen-player #player-categories{left:60px;right:auto;top:60px;bottom:60px;width:610px;height:auto;padding:30px;background:rgba(13,25,42,.97);border:1px solid #3b536f;border-radius:22px;box-shadow:0 18px 50px #0008}
+#screen-player.has-category-picker .player-channels{visibility:hidden}
+#player-categories .pcat-head{margin:0}.pcat-title{font-family:'Segoe UI',Arial,sans-serif}
+#player-categories .pcat-title{font-size:35px;line-height:44px;font-weight:600}
+#player-categories .pcat-sub{font-size:21px;line-height:29px;color:#afc4db;margin-top:9px}
+#player-categories .pcat-grid{left:24px;right:24px;top:155px;bottom:78px;padding:7px;overflow-x:hidden;overflow-y:auto;box-sizing:border-box}
+#player-categories .pcat-tile{float:none;display:flex;align-items:center;width:100%;height:70px;min-height:70px;margin:0 0 12px;padding:0 20px;border-radius:12px;background:#1b3048;border:1px solid #39506a;font:25px/1.25 'Segoe UI',Arial,sans-serif;color:#e3edf7;transform:none}
+#player-categories .pcat-tile.is-selected{background:#29435d;border-color:#81b6db;color:#f2f8ff}
+#player-categories .pcat-tile.is-selected:after{content:'✓';margin-left:auto;padding-left:12px;color:inherit}
+#player-categories .pcat-tile.is-focused{background:#dceeff;color:#11283f;border-color:#e8f5ff;outline:2px solid #aad8fa;outline-offset:1px;transform:none}
+#player-categories .pcat-foot{position:absolute;left:30px;right:30px;bottom:24px;color:#a9c1d8;font:20px/26px 'Segoe UI',Arial,sans-serif}
+#player-categories .pcat-grid::-webkit-scrollbar{width:7px}
+#player-categories .pcat-grid::-webkit-scrollbar-track{background:#0c1928;border-radius:6px}
+#player-categories .pcat-grid::-webkit-scrollbar-thumb{background:#617f9c;border-radius:6px}

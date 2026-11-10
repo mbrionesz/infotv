@@ -62,7 +62,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
-        'hardwareValidation': '0.10.13-beta-pending-on-Samsung-TV', 'providerValidation': '0.10.13-beta-pending-with-live-provider',
+        'hardwareValidation': '0.10.14-beta-pending-on-Samsung-TV', 'providerValidation': '0.10.14-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'tmdbConfigured': bool(tmdb_key), 'tmdbCredentialInPublicWidget': bool(tmdb_key),
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion'],

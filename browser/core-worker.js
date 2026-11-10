@@ -1,3 +1,5 @@
+import {canPersistRequest} from './search-privacy.js';
+import {createCatalogCounter} from './catalog-counter.js';
 import {createShowcaseQuery} from './showcase-data.js';
 import {fetchPlaylist} from './addon-fetch.js';
 import {createDnsDiagnostic} from './dns-diagnostic.js';
@@ -7,13 +9,16 @@ import { createCatalogIndex } from './catalog-index.js';
 import {createRemoteCatalog} from './catalog-remote.js';
 import crypto from './crypto.js';
 const dnsDiagnostic=createDnsDiagnostic();let lastStreamHost='',lastPortalCode='';
-const cache = createCache(self.indexedDB);
+const cache = createCache(self.indexedDB);let cacheGeneration=0;
+cache.clearSearches();
+cache.prune('metadata',64,3*1024*1024);cache.prune('posters',48,6*1024*1024);
 const catalog = createCatalogIndex();
 const pageProgress=new Map();
 const inflight = new Map();
 const metadata = new Set(['home','liveCategories','liveChannels','search','catalogBrowse','catalogColumns','catalogFilters','catalogSearchPage','portalHome','portalShelve','portalShortVideos','portalPersons','portalPersonItems','portalCatchup']);
 const remoteCatalog=createRemoteCatalog(execute);
 const discoveryQuery=createShowcaseQuery(execute);
+const catalogCounter=createCatalogCounter(execute);
 const stats = { requests:0,cacheHits:0,staleHits:0,errors:0 };
 let cryptoVerified=false;
 try{
@@ -59,7 +64,7 @@ function poster(url,size='card') {
   size=size==='hero'?'hero':'card';const key=(size==='hero'?'hero:':'card480:')+url;
   return cache.get('posters',key).then(hit=>{
     if(hit){stats.cacheHits++;return hit;}
-    return new Promise((resolve,reject)=>{if(postersQueue.length>=12){reject(new Error('Cola de imágenes ocupada'));return;}postersQueue.push({url,key,size,resolve,reject});pump();});
+    return new Promise((resolve,reject)=>{if(postersQueue.length>=12){reject(new Error('Cola de imágenes ocupada'));return;}postersQueue.push({url,key,size,resolve,reject,generation:cacheGeneration});pump();});
   });
 }
 function pump(){
@@ -72,12 +77,14 @@ function pump(){
     xhr.onload=async()=>{
       if(xhr.status!==200 || !xhr.response || xhr.response.size>(job.size==='hero'?2*1024*1024:512*1024))return end(new Error('Imagen fuera del límite'));
       const blob=await thumbnail(xhr.response,job.size);job.resolve(blob);end();
-      cache.put('posters',job.key,blob,7*86400000).then(()=>cache.prune('posters',80,18*1024*1024));
+      if(job.generation===cacheGeneration&&!(job.size==='hero'&&/^https:\/\/image\.tmdb\.org\//.test(job.url)))cache.put('posters',job.key,blob,7*86400000).then(()=>cache.prune('posters',48,6*1024*1024));
     };xhr.send();
   }
 }
 async function execute(method,payload){
   stats.requests++;
+  if(method==='catalogTotals')return catalogCounter();
+  if(method==='clearTemporary'){cacheGeneration++;return {cleared:await createCache(self.indexedDB).clearTemporary()};}
   if(method==='clearMetadata')return {cleared:await cache.clearMetadata()};
   if(method==='catalogDiscover')return discoveryQuery(payload);
   if(method==='catalogFullPage')return remoteCatalog(payload);
@@ -108,7 +115,7 @@ async function execute(method,payload){
   // Filter option records now preserve id/label pairs; do not reuse v1 pages
   // whose category/filter selection may have been discarded.
   const key='art-dates-v1:'+(/^(catalog|portal)/.test(method)?'catalog-v5:':'')+method+':'+JSON.stringify(payload);
-  const cacheable=metadata.has(method)&&!(/^(catalog|portal)/.test(method)&&payload.fresh===true);
+  const cacheable=metadata.has(method)&&canPersistRequest(method,payload)&&!(/^(catalog|portal)/.test(method)&&payload.fresh===true);
   let stale=null;
   if(cacheable){
     const hit=await cache.get('metadata',key);
@@ -117,14 +124,14 @@ async function execute(method,payload){
     if(stale&&method==='home')catalog.add(payload.root||'movies',stale.items);
   }
   if(inflight.has(key)){if(stale){stats.staleHits++;return Object.assign({},stale,{cached:true,stale:true});}return inflight.get(key);}
+  const writeGeneration=cacheGeneration;
   const work=new Promise((resolve,reject)=>{
     try{invoke(method,payload,(error,result)=>error?reject(error):resolve(result));}catch(error){reject(error);}
   }).then(async result=>{
     if((method==='resolve'||method==='resolveLive')&&result&&result.url){try{lastStreamHost=new URL(result.url).hostname;}catch(_) {}}
     if(method==='home')catalog.add(payload.root||'movies',result.items);
-    if(cacheable){
-      await cache.put('metadata',key,result,method==='liveChannels'?300000:600000);
-      cache.prune('metadata',160,16*1024*1024);
+    if(cacheable&&writeGeneration===cacheGeneration){
+      cache.put('metadata',key,result,method==='liveChannels'?300000:600000).then(()=>cache.prune('metadata',64,3*1024*1024));
     }
     return result;
   },async error=>{

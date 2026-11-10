@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.10.13",
+  "version": "0.10.14",
   "private": true,
   "type": "module",
   "engines": {
@@ -35,7 +35,10 @@
     "test:vod-recovery": "node tools/vod-recovery-browser.mjs",
     "test:continue-watching": "node tools/continue-watching-browser.mjs",
     "test:exit": "node tools/exit-browser.mjs",
-    "test:vod-variants": "node tools/vod-variants-browser.mjs"
+    "test:vod-variants": "node tools/vod-variants-browser.mjs",
+    "test:live-categories": "node tools/live-category-panel-browser.mjs",
+    "test:cache-cleanup": "node tools/cache-cleanup-browser.mjs",
+    "test:vod-classification": "node tools/vod-classification-browser.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",

@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {isSeriesTitle} from '../browser/content-kind.js';
+test('explicit movie type wins over portal playback entries and stale series history',()=>{assert.equal(isSeriesTitle({type:'movie',series:true,episodes:[{id:'file'}],seasons:[{}],category:'series'}),false);assert.equal(isSeriesTitle({kind:'película',episodes:[{}]}),false);assert.equal(isSeriesTitle({episodes:[{}]}),false);});
+test('series identity remains true with one episode or incomplete season metadata',()=>{assert.equal(isSeriesTitle({type:'teleplay',episodes:[{}]}),true);assert.equal(isSeriesTitle({series:true}),true);assert.equal(isSeriesTitle({type:'series'}),true);});

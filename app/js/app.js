@@ -185,16 +185,9 @@
     return null == e || "" === e ? t : String(e);
   }
   function x(e) {
-    return (
-      !!e &&
-      ("teleplay" === e.type ||
-        "series" === e.type ||
-        "serie" === e.kind ||
-        (e.category && -1 !== e.category.indexOf("serie")) ||
-        (e.episodes && e.episodes.length > 0) ||
-        (e.seasons && e.seasons.length > 0) ||
-        (e.volumeCount && parseInt(e.volumeCount, 10) > 1))
-    );
+    if(window.XuperStandalone&&XuperStandalone.isSeriesTitle)return XuperStandalone.isSeriesTitle(e);
+    if(e&&/^(movie|film|pel[ií]cula)$/i.test(e.type||e.kind||''))return false;
+    return !!(e&&(e.series||/^(teleplay|series|serie)$/i.test(e.type||e.kind||'')||(e.seasons||[]).length||(e.episodes||[]).length>1));
   }
   function T(e, t) {
     var a = (e = e || {}).genres || e.genre || [];
@@ -206,15 +199,7 @@
     "number" == typeof r &&
       (r = Math.floor(r / 60) + " h " + (r % 60) + " min");
     var s = S(e.type || e.programType, ""),
-      l =
-        "teleplay" === s ||
-        "series" === s ||
-        "serie" === o(S(e.kind || "", "")) ||
-        -1 !== o(S(e.category || "", "")).indexOf("serie") ||
-        (e.episodes && e.episodes.length > 0) ||
-        (e.seasons && e.seasons.length > 0) ||
-        (e.volumeCount && parseInt(e.volumeCount, 10) > 1) ||
-        (e.volumnCount && parseInt(e.volumnCount, 10) > 1);
+      l = x(Object.assign({},e,{type:s}));
     return {
       id: S(
         e.id || e.vodId || e.programId || e.program_id || e.tmdb_id,
@@ -911,6 +896,7 @@
         desc: "Comunidad y soporte",
         group: "Sistema",
       },
+      {id:"storage",label:"Almacenamiento",desc:"Limpiar caché y datos temporales",group:"Sistema"},
       {
         id: "about",
         label: "Acerca de XuperTizen",
@@ -937,6 +923,7 @@
         '<svg viewBox="0 0 32 32"><path d="M3 13a19 19 0 0 1 26 0"/><path d="M8 18a12 12 0 0 1 16 0"/><path d="M13 23a6 6 0 0 1 6 0"/><circle cx="16" cy="27.5" r="1.2"/></svg>',
       feedback:
         '<svg viewBox="0 0 32 32"><path d="M6 4h15l5 5v19H6z"/><path d="M20 4v6h6M10 16h12M10 21h8"/></svg>',
+      storage:'<svg viewBox="0 0 32 32"><path d="M6 8h20M11 8V4h10v4M8 8l2 20h12l2-20M14 12v12M18 12v12"/></svg>',
       about:
         '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12"/><path d="M16 14v8M16 10h.1"/></svg>',
     },
@@ -1023,7 +1010,7 @@
     );
   }
   function librarySnapshot(item){
-    return {id:String(item.id),title:String(item.title||item.name||"Contenido").slice(0,200),poster:String(item.poster||item.cover||"").slice(0,4000),series:!!(item.series||x(item)),updatedAt:Date.now()};
+    return {id:String(item.id),title:String(item.title||item.name||"Contenido").slice(0,200),poster:String(item.poster||item.cover||"").slice(0,4000),series:!!x(item),type:x(item)?"teleplay":"movie",updatedAt:Date.now()};
   }
   function savedLibrary(){
     var favorites=[],saved=Q.savedItems&&typeof Q.savedItems==="object"?Q.savedItems:{},keys=Object.keys(X.favs||{});
@@ -1033,7 +1020,9 @@
       if(!item)item={id:key,title:'Título guardado',poster:'',series:false};
       if(item&&String(item.id)===key)favorites.push(librarySnapshot(item));
     }
-    var history=Array.isArray(Q.history)?Q.history:[];
+    var history=Array.isArray(Q.history)?Q.history:[],repairedHistory=false;
+    history=history.map(function(record){if(!record||record.type)return record;var known=l.filter(function(item){return item&&String(item.id)===String(record.id)&&/^(movie|teleplay|series)$/i.test(item.type||'');})[0];if(!known)return record;repairedHistory=true;return Object.assign({},record,{type:x(known)?'teleplay':'movie',series:!!x(known)});});
+    if(repairedHistory){Q.history=history;K($,Q);}
     return {favorites:favorites,continueWatching:history.filter(function(item){return item&&item.id&&item.position>=3&&!item.completed&&(!item.durationKnown||!item.duration||item.position<item.duration-30);}).slice(0,30).map(function(item){return item.durationKnown?item:Object.assign({},item,{duration:0});})};
   }
   function liveChannelKey(e) {
@@ -1508,21 +1497,11 @@
                   : (ct(),
                     e.preventDefault && e.preventDefault(),
                     void (e.stopPropagation && e.stopPropagation()));
-    if (X.categoryPickerOpen)
-      return (
-        37 === t
-          ? st("left")
-          : 38 === t
-            ? st("up")
-            : 39 === t
-              ? st("right")
-              : 40 === t
-                ? st("down")
-                : 13 === t || 32 === t
-                  ? pt()
-                  : (i = !1),
-        void (i && e.preventDefault && e.preventDefault())
-      );
+    if(X.categoryPickerOpen){
+      if(t===37||t===39){ur();e.preventDefault&&e.preventDefault();return;}
+      if(t===38||t===40){var categoryNodes=Array.prototype.slice.call(Ge.querySelectorAll('.pcat-tile')),categoryIndex=categoryNodes.indexOf(X.focus);rt(categoryNodes[Math.max(0,Math.min(categoryNodes.length-1,categoryIndex+(t===40?1:-1)))]);e.preventDefault&&e.preventDefault();return;}
+      if(t===13||t===32){pt();e.preventDefault&&e.preventDefault();}return;
+    }
     if (X.episodeBrowserOpen) {
       var r = n(X.focus, "#pe-seasons"),
         o = n(X.focus, "#pe-episodes");
@@ -4478,6 +4457,14 @@
       var i = e("div", "fb-help focusable", "Ayuda");
       return ((i._activate = function () {}), t.appendChild(i), t);
     })()),
+    (ze.storage=(function(){
+      var panel=samsungSettingsCard("Almacenamiento","Es normal que la app utilice espacio para portadas y catálogos. Puedes limpiar esos datos temporales si notas problemas.");
+      panel.appendChild(e("p","xt-setting-body","Se conservan favoritos, historial, progreso, idiomas, ajustes y la configuración de DNS. Las portadas volverán a descargarse cuando las necesites."));
+      var button=e("button","focusable xt-setting-action xt-clear-cache","Limpiar caché y reiniciar"),status=e("p","xt-setting-body xt-cache-status","");status.setAttribute("role","status");
+      button._activate=function(){if(button.disabled)return;button.disabled=true;status.textContent="Guardando tu biblioteca y limpiando datos temporales…";
+        window.XuperStandalone.cleanTemporaryData().then(function(result){if(!result.saved){button.disabled=false;status.textContent="No se pudo guardar tu biblioteca. La app no se reinició; vuelve a intentarlo.";return;}status.textContent=result.cleared?"Caché limpiada. Reiniciando…":"Limpieza parcial. Reiniciando para liberar conexiones…";setTimeout(function(){window.location.reload();},700);},function(){button.disabled=false;status.textContent="No se pudo completar la limpieza. Puedes volver a intentarlo.";});
+      };panel.appendChild(button);panel.appendChild(status);return panel;
+    })()),
     (ze.about = (function () {
       if(window.XuperStandalone){var about=samsungSettingsCard("XuperTizen by Matias","By MatiasB · Una aplicación para Samsung Tizen. Versión "+window.XuperStandalone.version+". Interfaz adaptable a Full HD y 4K. Licencias y avisos de terceros incluidos en el paquete.");var logo=e('img','tmdb-credit-logo');logo.src='assets/tmdb-logo.svg';logo.alt='TMDB';about.appendChild(logo);about.appendChild(e('p','xt-setting-footnote','This product uses the TMDB API but is not endorsed or certified by TMDB. Integración opcional para imágenes del carrusel.'));return about;}
       var t = e("div", "settings-panel");
@@ -5420,8 +5407,8 @@
     var keys=Object.keys(prefs).sort(function(a,b){return (prefs[b].updatedAt||0)-(prefs[a].updatedAt||0);});for(var i=200;i<keys.length;i++)delete prefs[keys[i]];
     K($,Q);
   }
-  function preferredVodAudio(){if(X.playerMode==='live')return window.XuperLiveTracks?XuperLiveTracks.preferredAudio():'es';return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
-  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn(),forced:Qi?Qi.forced===true:undefined});}
+  function preferredVodAudio(){if(X.playerMode==='live')return window.XuperLiveTracks?XuperLiveTracks.preferredAudio():'es';return titlePreferences(X.playerItem).audio||[{language:'es',name:'Español latino'},'pt','en'][Number(X.playback.audio)||0]||{language:'es',name:'Español latino'};}
+  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn(),name:Qi&&window.XuperStandalone?XuperStandalone.audioLanguageLabel({language:Qi.lang,name:Qi.name}):undefined,forced:Qi?Qi.forced===true:undefined});}
   function sn(e, t, a, context) {
     var i = context?context.item:X.playerItem;
     if (i && i.id && isFinite(e) && !(e < 3)) {
@@ -5437,6 +5424,7 @@
                 title: i.title || i.name || "Contenido",
                 poster: i.poster || i.cover || "",
                 series: !!x(i),
+                type: x(i)?"teleplay":"movie",
                 episodeId: r && r.id ? String(r.id) : "",
                 episodeNumber: (r && (r.number || r.seriesNumber)) || "",
                 seasonId: i.seasonId||i.id,
@@ -6368,7 +6356,7 @@
         for (var r = 0; r < t.length; r++)
           (function (t) {
             var a = e("button", "dps-btn focusable");
-            ((a.textContent = nr(t.lang || "Sub")+(t.forced===true?" · Forzados":"")),
+            ((a.textContent = (window.XuperStandalone?XuperStandalone.audioLanguageLabel({language:t.lang,name:t.name}):nr(t.lang || "Sub"))+(t.forced===true?" · Forzados":"")),
               Qi && Qi.url === t.url && a.classList.add("is-selected"),
               (a._activate = function () {
                 ((Qi = t), (Ji = !0), (Ki = !0), saveSubtitleChoice(), mn(t), ir());var selected=Vi.querySelector(".is-selected")||Vi.firstChild;if(selected)rt(selected);Dn();
@@ -6885,10 +6873,11 @@
     ) {
       ((X.categoryPickerOpen = !0),
         $e.classList.add("is-active"),
+        t("screen-player").classList.add("has-category-picker"),
         ui(),
         (function () {
           if (!Ge) return;
-          var t = Lt && Lt.length ? Lt : [];
+          var t = (Lt && Lt.length ? Lt : []).filter(function(item){return item&&String(item.id)!=="addons";});
           X.adultEnabled ||
             (t = t.filter(function (e) {
               return !!(e && (e.isAddon || !isAdultLiveChannel(e)));
@@ -6902,7 +6891,8 @@
             (function (t) {
               var a = e("div", "pcat-tile focusable");
               (a.appendChild(e("div", "pcat-name", t.name)),
-                Mt && Mt.id === t.id && a.classList.add("is-selected"),
+                Mt && String(Mt.id) === String(t.id) && a.classList.add("is-selected"),
+                a.setAttribute("role","option"),a.setAttribute("aria-selected",Mt&&String(Mt.id)===String(t.id)?"true":"false"),
                 (a._cat = t),
                 (a._activate = function () {
                   (Xt(t), ur(!0));
@@ -6922,7 +6912,7 @@
     if (
       $e &&
       X.categoryPickerOpen &&
-      ((X.categoryPickerOpen = !1), $e.classList.remove("is-active"), !e)
+      ((X.categoryPickerOpen = !1), $e.classList.remove("is-active"), document.getElementById("screen-player").classList.remove("has-category-picker"), !e)
     ) {
       var t = Se ? Se.querySelector(".pc-cat-pill.is-selected") : null;
       t ? (rt(t), cr()) : "player" === X.screen && Ce && rt(Ce);

@@ -13,6 +13,9 @@ export function createProfileStore(storage,indexedDB){
  }
 
  const initial=read(),restore=initial?Promise.resolve(initial):idb().then(value=>{if(value&&serial===0){memory=value;state.source='indexedDB';state.persistent=true;try{storage.setItem(KEY,JSON.stringify(value));}catch(_){}}return serial===0?memory:null;});
- function save(value){serial++;state.writes++;memory=JSON.parse(JSON.stringify(value));const copy=memory;let local=false;for(const key of [KEY,BACKUP])try{storage.setItem(key,JSON.stringify(copy));local=true;}catch(_){}state.persistent=local;state.source=local?'localStorage':'memory';pending=pending.then(()=>restore).then(()=>idb(copy)).then(ok=>{state.persistent=local||ok;if(!local&&ok)state.source='indexedDB';state.error=state.persistent?'':'No se pudo guardar la biblioteca en almacenamiento persistente';return state.persistent;});return pending;}
+ let queued=null,writer=null;
+ function drain(){if(writer)return writer;writer=(async()=>{await restore;let persistent=false;while(queued){const job=queued;queued=null;const ok=await idb(job.copy);persistent=job.local||ok;state.persistent=persistent;if(!job.local&&ok)state.source='indexedDB';state.error=persistent?'':'No se pudo guardar la biblioteca en almacenamiento persistente';}return persistent;})().finally(()=>{writer=null;if(queued)return drain();});pending=writer;return writer;}
+ function save(value){serial++;state.writes++;memory=JSON.parse(JSON.stringify(value));const copy=memory;let local=false;for(const key of [KEY,BACKUP])try{storage.setItem(key,JSON.stringify(copy));local=true;}catch(_){}state.persistent=local;state.source=local?'localStorage':'memory';queued={copy,local};return drain();}
+
  return {read,restore:()=>restore,save,flush:()=>pending,diagnostics:()=>Object.assign({},state)};
 }
