@@ -896,6 +896,7 @@
         desc: "Comunidad y soporte",
         group: "Sistema",
       },
+      {id:"catalogstats",label:"Estadísticas del catálogo",desc:"Totales y cambios del portal",group:"Sistema"},
       {id:"storage",label:"Almacenamiento",desc:"Limpiar caché y datos temporales",group:"Sistema"},
       {
         id: "about",
@@ -923,6 +924,7 @@
         '<svg viewBox="0 0 32 32"><path d="M3 13a19 19 0 0 1 26 0"/><path d="M8 18a12 12 0 0 1 16 0"/><path d="M13 23a6 6 0 0 1 6 0"/><circle cx="16" cy="27.5" r="1.2"/></svg>',
       feedback:
         '<svg viewBox="0 0 32 32"><path d="M6 4h15l5 5v19H6z"/><path d="M20 4v6h6M10 16h12M10 21h8"/></svg>',
+      catalogstats:'<svg viewBox="0 0 32 32"><path d="M5 4v24h23M10 22v-7M17 22V9M24 22V5"/></svg>',
       storage:'<svg viewBox="0 0 32 32"><path d="M6 8h20M11 8V4h10v4M8 8l2 20h12l2-20M14 12v12M18 12v12"/></svg>',
       about:
         '<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="12"/><path d="M16 14v8M16 10h.1"/></svg>',
@@ -4457,9 +4459,10 @@
       var i = e("div", "fb-help focusable", "Ayuda");
       return ((i._activate = function () {}), t.appendChild(i), t);
     })()),
+    (ze.catalogstats=(function(){var panel=samsungSettingsCard("Estadísticas del catálogo","");if(window.XuperStandalone&&window.XuperStandalone.mountCatalogStatistics)window.XuperStandalone.mountCatalogStatistics(panel);return panel;})()),
     (ze.storage=(function(){
       var panel=samsungSettingsCard("Almacenamiento","Es normal que la app utilice espacio para portadas y catálogos. Puedes limpiar esos datos temporales si notas problemas.");
-      panel.appendChild(e("p","xt-setting-body","Se conservan favoritos, historial, progreso, idiomas, ajustes y la configuración de DNS. Las portadas volverán a descargarse cuando las necesites."));
+      panel.appendChild(e("p","xt-setting-body","Se conservan favoritos, historial, progreso, estadísticas del catálogo, idiomas, ajustes y la configuración de DNS. Las portadas volverán a descargarse cuando las necesites."));
       var button=e("button","focusable xt-setting-action xt-clear-cache","Limpiar caché y reiniciar"),status=e("p","xt-setting-body xt-cache-status","");status.setAttribute("role","status");
       button._activate=function(){if(button.disabled)return;button.disabled=true;status.textContent="Guardando tu biblioteca y limpiando datos temporales…";
         window.XuperStandalone.cleanTemporaryData().then(function(result){if(!result.saved){button.disabled=false;status.textContent="No se pudo guardar tu biblioteca. La app no se reinició; vuelve a intentarlo.";return;}status.textContent=result.cleared?"Caché limpiada. Reiniciando…":"Limpieza parcial. Reiniciando para liberar conexiones…";setTimeout(function(){window.location.reload();},700);},function(){button.disabled=false;status.textContent="No se pudo completar la limpieza. Puedes volver a intentarlo.";});
