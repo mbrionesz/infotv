@@ -55,3 +55,8 @@ test('automatic resolution prefers a declared Latin Spanish variant and respects
  const resolve=options=>new Promise((yes,no)=>f.core.resolve('title','',options,(error,result)=>error?no(error):yes(result)));
  const automatic=await resolve({preferredAudio:'es',trackIndex:0});assert.equal(automatic.trackIndex,2);assert.ok(automatic.url.endsWith('/lat_media.mp4'));assert.equal(automatic.availableTracks[2].audio,'es-MX');const manual=await resolve({preferredAudio:'es',trackIndex:1});assert.equal(manual.trackIndex,1);const explicitFirst=await resolve({preferredAudio:'es',trackIndex:0,trackExplicit:true});assert.equal(explicitFirst.trackIndex,0);assert.ok(explicitFirst.url.endsWith('/pt_media.mp4'));
 });
+test('VOD metadata preserves group quality and parses fractional FPS without mutating provider tracks',()=>{
+ const f=fixture({});
+ const result=JSON.parse(f.run(`JSON.stringify((function(){var input={totalMovieList:[{quality:'1080p',movieList:[{contentId:'one',frameRate:'24000/1001',videoFormat:'mp4'}]},{quality:'2160p',movieList:[{contentId:'two',fps:'60',videoFormat:'mp4'}]}]};return {tracks:collectTracks(input).map(trackSummary),mutated:!!input.totalMovieList[0].movieList[0].groupQuality,decimal:trackFrameRate({fps:'23,976'}),invalid:trackFrameRate({fps:'1/0'}),interlaced:trackHeight({quality:'1080i'})};})())`));
+ assert.equal(result.tracks[0].height,1080);assert.equal(result.tracks[0].quality,'1080p');assert.ok(Math.abs(result.tracks[0].frameRate-23.976)<0.001);assert.equal(result.tracks[1].height,2160);assert.equal(result.tracks[1].frameRate,60);assert.equal(result.mutated,false);assert.equal(result.decimal,23.976);assert.equal(result.invalid,0);assert.equal(result.interlaced,1080);
+});

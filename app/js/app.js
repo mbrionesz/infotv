@@ -1611,6 +1611,10 @@
             void (e.preventDefault && e.preventDefault())
           );
         if ("vod" === X.playerMode) {
+          if(nextEpisodeButton&&!nextEpisodeButton.hidden&&!Ye){
+            if(X.focus===nextEpisodeButton&&(37===t||39===t||40===t)){rt(Ce);return void(e.preventDefault&&e.preventDefault());}
+            if(38===t){rt(nextEpisodeButton);return void(e.preventDefault&&e.preventDefault());}
+          }
           if (X.focus === Pe && Ye) {
             if (37 === t)
               return (Br(-1), void (e.preventDefault && e.preventDefault()));
@@ -1707,6 +1711,7 @@
       else if (39 === t) st("right");
       else if (40 === t) st("down");
       else if (13 === t || 32 === t) {
+        if(X.screen==="player"&&X.playerMode==="vod"&&!ji&&!zi&&!X.episodeBrowserOpen&&nextEpisodeButton&&!nextEpisodeButton.hidden&&X.focus===nextEpisodeButton){nextEpisodeButton._activate();return void(e.preventDefault&&e.preventDefault());}
         if (X.episodeBrowserOpen) return void pt();
         if(X.screen==="player"&&X.playerMode==="vod"&&X.streamError){checkpointVod();var retryRecord=(Q.history||[]).filter(function(row){return X.playerItem&&String(row.id)===String(X.playerItem.id)&&(!X.playerEpisode||String(row.episodeId)===String(X.playerEpisode.id));})[0];if(retryRecord)ln=retryRecord;Jr(X.playerItem,X.playerEpisode);return;}
         ji
@@ -5234,8 +5239,22 @@
     return ii(X.playerEpisode&&X.playerEpisode.duration||X.playerItem&&X.playerItem.duration||0);
   }
   function checkpointVod(context){if((context&&context.item||X.playerMode==='vod')&&xe)sn(xe.currentTime||0,trustedVodDuration(),true,context);}
+  var nextEpisodeButton=null;
+  function hideNextEpisode(){if(nextEpisodeButton){nextEpisodeButton.hidden=true;if(X.focus===nextEpisodeButton&&Ce)rt(Ce);}}
+  function updateNextEpisode(position,duration){
+    if(!window.XuperStandalone||!XuperStandalone.nextEpisodeOffer)return;
+    var item=X.playerItem,offer=null;
+    if(X.screen==="player"&&X.playerMode==="vod"&&item&&x(item)&&!X.streamError&&!ji&&!zi&&!X.episodeBrowserOpen&&!Ye){
+      var seasons=Vn(item),season=seasons[X.playerSeasonIndex||0],episodes=season&&season.id===(item.seasonId||item.id)?item.episodes||[]:season&&season._episodes||[];
+      offer=XuperStandalone.nextEpisodeOffer({position:position,duration:duration,current:X.playerEpisode,episodes:episodes,nextSeason:seasons[(X.playerSeasonIndex||0)+1]});
+    }
+    if(!offer){hideNextEpisode();return;}
+    if(!nextEpisodeButton){nextEpisodeButton=e('button','xt-next-episode focusable');nextEpisodeButton.id='xt-next-episode';nextEpisodeButton._activate=function(){if(nextEpisodeButton.hidden)return;hideNextEpisode();Qn();};nextEpisodeButton._onMove=function(){rt(Ce);return true;};Ce.parentNode.appendChild(nextEpisodeButton);}
+    nextEpisodeButton.textContent=offer.label+'  ›';nextEpisodeButton.setAttribute('aria-label',offer.label);nextEpisodeButton.hidden=false;
+  }
   function oi(position,total){
     if(!Ae||!De||!Oe)return;if(Ye)position=Ze;position=Math.max(0,Number(position)||0);var duration=trustedVodDuration();Ae.textContent=ai(position);De.textContent=duration>0?((window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated?'≈ ':'')+ai(duration)):'Duración sin informar';if(Pe)Pe.classList.toggle('duration-unknown',!duration);
+    updateNextEpisode(position,duration);
     var percent=duration>0?Math.min(100,position/duration*100):0;Oe.style.width=percent.toFixed(2)+'%';if(Ne)Ne.style.left=percent.toFixed(2)+'%';
     if(qe){var buffered=xe&&xe.buffered;qe.style.width=duration>0&&buffered&&buffered.length?Math.min(100,buffered.end(buffered.length-1)/duration*100).toFixed(2)+'%':'0%';}
   }
@@ -6586,7 +6605,7 @@
               ? (li(10), !0)
               : "down" === e
                 ? (Pn(), !0)
-                : "up" === e && (Fr(), !0)
+                : "up" === e && (nextEpisodeButton&&!nextEpisodeButton.hidden?rt(nextEpisodeButton):Fr(), !0)
           : "left" === e
             ? (no(), !0)
             : "right" === e
@@ -7202,6 +7221,7 @@
     }
   }
   function zr() {
+    hideNextEpisode();
     if(X.episodeSwitchTimer){clearTimeout(X.episodeSwitchTimer);X.episodeSwitchTimer=null;}X.episodeSwitchSeq=(X.episodeSwitchSeq||0)+1;
     mn(null);
     (Lr(), "vod" === X.playerMode && xe) &&

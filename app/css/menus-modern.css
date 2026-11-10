@@ -65,3 +65,8 @@
 .xt-continue-menu h2{font-size:34px;line-height:1.2;margin:0 0 18px;color:#f1f6ff;overflow-wrap:break-word}.xt-continue-menu p{font-size:23px;line-height:1.45;color:#b9cee7;margin:0 0 22px}
 #app #xt-catalog .xt-continue-menu button{width:100%;display:block;text-align:center;margin-top:12px;min-height:58px}
 #app #xt-catalog .xt-continue-menu button.selected{background:#dceeff;color:#132942;border-color:#8ac9f4;box-shadow:0 0 0 2px #8ac9f4}
+
+/* Explicit next-episode action; no animation or automatic credit skipping. */
+.xt-next-episode{position:absolute;right:5%;bottom:23%;z-index:45;max-width:65%;padding:18px 28px;border:1px solid #ffffff60;border-radius:14px;background:#f4f6fa;color:#111827;font:600 24px sans-serif;box-shadow:0 8px 28px #0008;}
+.xt-next-episode[hidden]{display:none!important;}
+.xt-next-episode.is-focused,.xt-next-episode:focus{outline:3px solid #7fcaff;outline-offset:5px;background:#fff;}

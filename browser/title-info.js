@@ -9,9 +9,12 @@ export function qualityLabel(track={}){
 export function audioLabel(code){const names={kor:'Coreano',ko:'Coreano',jpn:'Japonés',ja:'Japonés',fra:'Francés',fr:'Francés',ita:'Italiano',it:'Italiano',deu:'Alemán',de:'Alemán',zho:'Chino',zh:'Chino'};return names[code]||language.describe({language:code,name:code},0).name;}
 export function titleBadges(info={},item={},index=0){
  const tracks=info.tracks||[];
- if(index<0&&tracks.length>1){const unique=values=>Array.from(new Set(values.filter(Boolean)));const qualities=unique(tracks.map(qualityLabel));const summary=titleBadges(Object.assign({},info,{tracks:[Object.assign({},tracks[0],{quality:'',height:0,resolution:'',codec:unique(tracks.map(t=>String(t.codec||'').toUpperCase().replace(/H265|HEVC/,'HEVC').replace(/H264|AVC/,'H.264'))).join(' / '),audio:unique(tracks.map(t=>t.audio)).join(',')})]}),{},0);return (qualities.length?[qualities.join(' / ')]:[]).concat(summary);}
+ if(index<0&&tracks.length>1){const unique=values=>Array.from(new Set(values.filter(Boolean)));const qualities=unique(tracks.map(qualityLabel));const summary=titleBadges(Object.assign({},info,{tracks:[Object.assign({},tracks[0],{quality:'',height:0,resolution:'',frameRate:0,bitrateKbps:0,codec:unique(tracks.map(t=>String(t.codec||'').toUpperCase().replace(/H265|HEVC/,'HEVC').replace(/H264|AVC/,'H.264'))).join(' / '),audio:unique(tracks.map(t=>t.audio)).join(',')})]}),{},0);return (qualities.length?[qualities.join(' / ')]:[]).concat(summary);}
  const track=tracks[index]||info.selected||{};
  const labels=[qualityLabel(track)||qualityLabel(item)];
+ const fps=Number(track.frameRate),bitrate=Number(track.bitrateKbps);
+ if(Number.isFinite(fps)&&fps>0&&fps<=240)labels.push(Number(fps.toFixed(3))+' FPS');
+ if(Number.isFinite(bitrate)&&bitrate>0)labels.push(Number((bitrate/1000).toFixed(2))+' Mbps');
  const codec=String(track.codec||'').toUpperCase();if(codec)labels.push(/^(H265|HEVC)$/.test(codec)?'HEVC':/^(H264|AVC)$/.test(codec)?'H.264':codec);
  const audio=String(track.audio||info.audio||'').split(/[,\/]/).map(x=>x.trim()).filter(Boolean);
  if(audio.length)labels.push(Array.from(new Set(audio.map(audioLabel))).join(' / '));

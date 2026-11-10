@@ -1291,20 +1291,20 @@ function trackHeight(e) {
   var r = fieldNumber(e && (e.videoHeight || e.height || e.pixelHeight));
   if (r) return r;
   var t = text(
-      e && (e.resolution || e.videoResolution || e.quality),
+      e && (e.resolution || e.videoResolution || e.quality || e.groupQuality),
     ).toLowerCase(),
     n = t.match(/\d{3,4}\s*[x×]\s*(\d{3,4})/);
   return n
     ? parseInt(n[1], 10)
-    : /\b(4k|uhd|2160)\b/.test(t)
+    : /\b(4k|uhd)\b|(^|[^0-9])2160[pi]?([^0-9]|$)/.test(t)
       ? 2160
-      : /\b1440\b/.test(t)
+      : /(^|[^0-9])1440[pi]?([^0-9]|$)/.test(t)
         ? 1440
-        : /\b1080\b|\bfhd\b/.test(t)
+        : /(^|[^0-9])1080[pi]?([^0-9]|$)|\bfhd\b/.test(t)
           ? 1080
-          : /\b720\b|\bhd\b/.test(t)
+          : /(^|[^0-9])720[pi]?([^0-9]|$)|\bhd\b/.test(t)
             ? 720
-            : /\b480\b|\bsd\b/.test(t)
+            : /(^|[^0-9])480[pi]?([^0-9]|$)|\bsd\b/.test(t)
               ? 480
               : 0;
 }
@@ -1322,14 +1322,16 @@ function trackBitrateKbps(e) {
   return /mbps|m\b/.test(n) ? 1e3 * t : t > 1e4 ? t / 1e3 : t;
 }
 function trackFrameRate(e) {
-  return fieldNumber(e && (e.frameRate || e.fps || e.videoFps));
+  var value = trim(e && (e.frameRate || e.fps || e.videoFps)).replace(",", "."), fraction = /^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/.exec(value);
+  var fps = fraction ? Number(fraction[1]) / Number(fraction[2]) : fieldNumber(value);
+  return isFinite(fps) && fps > 0 && fps <= 240 ? fps : 0;
 }
 function trackSummary(e) {
   return {
     audio: trim(e && e.audioInfo),
     codec: trim(e && e.encodeFormat).toUpperCase(),
     format: trim(e && e.videoFormat).toLowerCase(),
-    quality: trim(e && e.quality),
+    quality: trim(e && (e.quality || e.groupQuality)),
     height: trackHeight(e),
     bitrateKbps: trackBitrateKbps(e),
     frameRate: trackFrameRate(e),
@@ -1360,7 +1362,11 @@ function mediaScore(e) {
 function collectTracks(e) {
   for (var r = [], t = (e && e.totalMovieList) || [], n = 0; n < t.length; n++)
     for (var s = (t[n] && t[n].movieList) || [], a = 0; a < s.length; a++)
-      s[a] && trim(s[a].contentId) && r.push(s[a]);
+      if (s[a] && trim(s[a].contentId)) {
+        var track = Object.assign({}, s[a]);
+        if (!trim(track.groupQuality)) track.groupQuality = trim(t[n].quality);
+        r.push(track);
+      }
   return (
     r.sort(function (e, r) {
       return mediaScore(e) - mediaScore(r);
@@ -1496,7 +1502,7 @@ function resolve(e, r, t, n) {
           url: p,
           mime: S,
           codec: E,
-          quality: trim(l.quality),
+          quality: trim(l.quality || l.groupQuality),
           duration: durationSeconds(
             l.duration || a.duration || (s && s.duration),
           ),
