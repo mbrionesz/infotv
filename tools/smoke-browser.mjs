@@ -163,7 +163,7 @@ try {
     }
     await browser.evaluate('if(XuperCatalog.active)XuperCatalog.close()');
   }
-  await browser.evaluate('homePosterActions[0]()');
+  await browser.evaluate('XuperCatalog.open("movies",{browse:true})');await browser.waitFor('document.querySelectorAll(".xt-catalog-card").length===36');await browser.evaluate('document.querySelector(".xt-catalog-card").click()');
   await browser.waitFor('__xuper.state.screen==="detail"');
     await browser.evaluate('__xuper.focus(document.querySelector(".detail-btn"));__xuper.key(13)');
     await browser.waitFor('__xuper.state.screen==="player"&&document.getElementById("player-video").currentTime>0.2',150);
