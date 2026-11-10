@@ -6185,9 +6185,9 @@
             s = (X.playerSeasonIndex || 0) + 1,
             l = o[s];
           if (l) {
-            var d = i;
+            var d = i, seasonGeneration=yr;
             Hn(e, l, function (t) {
-              X.playerItem === e &&
+              seasonGeneration===yr && X.playerItem === e &&
                 X.playerEpisode === d &&
                 "player" === X.screen &&
                 (t && t.length
