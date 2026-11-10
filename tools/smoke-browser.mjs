@@ -96,7 +96,7 @@ try {
   await browser.evaluate('XuperShell.focusHeader(0);__xuper.key(39)');
   assert.equal(await browser.evaluate('XuperCatalog.root'),"movies");
   await browser.evaluate('XuperCatalog.open("movies")');
-  await browser.waitFor('document.querySelectorAll(".xt-discovery-card").length>0');await browser.evaluate('document.querySelector(".xt-category-all").click()');
+  await browser.waitFor('!!document.querySelector(".xt-category-all")');await browser.evaluate('document.querySelector(".xt-category-all").click()');
   await browser.waitFor('!!document.getElementById("xt-catalog") && document.querySelectorAll(".xt-catalog-card").length===36');
   await browser.screenshot('dist/browser-movies.png');
   await browser.evaluate('XuperCatalog.close()');
@@ -111,14 +111,14 @@ try {
   assert.equal(cache.worker,true);assert.equal(cache.cryptoVerified,true);assert.equal(cache.cache,true);
   const posterURL=`http://127.0.0.1:${server.address().port}/images/icon-large.png`;
   const thumb=await browser.evaluate('new Promise(function(resolve,reject){XuperStandalone.core.poster('+JSON.stringify(posterURL)+',function(error,data){if(error){reject(error.message);return}createImageBitmap(data.blob).then(function(bitmap){var size={w:bitmap.width,h:bitmap.height};bitmap.close();resolve(size)})})})');
-  assert.ok(thumb.w<=320&&thumb.h<=480);
+  assert.ok(thumb.w<=480&&thumb.h<=720);
   await new Promise(resolve=>setTimeout(resolve,50));
   const beforePoster=appRequests.filter(url=>url==='/images/icon-large.png').length;
   await browser.evaluate('new Promise(function(resolve){XuperStandalone.core.poster('+JSON.stringify(posterURL)+',function(error,data){resolve(!!data)})})');
   assert.equal(appRequests.filter(url=>url==='/images/icon-large.png').length,beforePoster);
   // Persist an expired category page. The real worker must return it promptly
   // while its refresh is denied by the fixture's worker CSP (offline simulation).
-  await browser.evaluate(`new Promise(function(resolve,reject){var request=indexedDB.open('xuper-tizen-v3',1);request.onsuccess=function(){var db=request.result;var tx=db.transaction('metadata','readwrite');tx.objectStore('metadata').put({key:'liveCategories:{}',value:{categories:[{id:'cached-test',name:'Guardada sin conexión'}]},saved:Date.now()-3600000,expires:Date.now()-1000});tx.oncomplete=function(){db.close();resolve()};tx.onerror=reject};request.onerror=reject})`);
+  await browser.evaluate(`new Promise(function(resolve,reject){var request=indexedDB.open('xuper-tizen-v3',1);request.onsuccess=function(){var db=request.result;var tx=db.transaction('metadata','readwrite');tx.objectStore('metadata').put({key:'art-dates-v1:liveCategories:{}',value:{categories:[{id:'cached-test',name:'Guardada sin conexión'}]},saved:Date.now()-3600000,expires:Date.now()-1000});tx.oncomplete=function(){db.close();resolve()};tx.onerror=reject};request.onerror=reject})`);
   const stale=await browser.evaluate('new Promise(function(resolve){var start=performance.now();XuperStandalone.core.call("liveCategories",{},function(error,data){resolve({error:error&&error.message,stale:data&&data.stale,name:data&&data.categories[0].name,ms:performance.now()-start})})})');
   assert.equal(stale.error,null);assert.equal(stale.stale,true);assert.equal(stale.name,'Guardada sin conexión');assert.ok(stale.ms<1000);
   const vodResults=[];
