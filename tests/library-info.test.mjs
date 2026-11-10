@@ -4,3 +4,6 @@ test('similar titles require matching genres, exclude current title and remove d
 
 import {resumeClock} from '../browser/vod-renewal.js';
 test('resuming uses the precise bookmark within the saved second, without accepting an unrelated time',()=>{assert.equal(resumeClock({position:96,seek:{position:96.223}}),96.223);assert.equal(resumeClock({position:96,seek:{position:600}}),96);assert.equal(resumeClock({position:96,seek:{position:95.9}}),96);assert.equal(resumeClock(null),0);});
+import {continueTitle} from '../browser/library-info.js';
+test('continue-watching labels show actual episode and season only for series',()=>{assert.equal(continueTitle({title:'Serie',series:true,episodeNumber:4,seasonNumber:2}),'Serie · EP. 4 · T2');assert.equal(continueTitle({title:'Película',episodeNumber:4,seasonNumber:2}),'Película');assert.equal(continueTitle({title:'Serie',series:true,episodeNumber:4}),'Serie · EP. 4');});
+test('explicit season identity replaces a stale season suffix in the title',()=>{assert.equal(continueTitle({title:'Serie T1',series:true,episodeNumber:3,seasonNumber:2}),'Serie · EP. 3 · T2');assert.equal(continueTitle({title:'Serie T2',series:true,episodeNumber:3}),'Serie · EP. 3 · T2');});

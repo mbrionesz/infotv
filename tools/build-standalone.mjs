@@ -1,3 +1,4 @@
+import {patchTsLoading} from './ts-buffer-adapter.mjs';
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
@@ -52,6 +53,7 @@ const tsLanguagePlugin={name:'ts-language-selection',setup(builder){
   builder.onResolve({filter:/^mpegts\.js$/},()=>({path:path.join(root,'node_modules/mpegts.js/src/mpegts.js')}));
   builder.onLoad({filter:/mpegts\.js\/src\/.*\.(?:ts|js)$/},args=>{
     let source=readFileSync(args.path,'utf8').replace(/import \* as EventEmitter from 'events';/g,"import EventEmitter from 'events';").replace(/import \* as work from 'webworkify-webpack';/g,"import work from 'webworkify-webpack';");
+    if(args.path.endsWith('/player/loading-controller.ts'))source=patchTsLoading(source);
     if(args.path.endsWith('/demux/ts-demuxer.ts')){
       const durationAnchor='this.config_ = config;';if(source.split(durationAnchor).length!==2)throw new Error('Unexpected TS constructor');source=source.replace(durationAnchor,durationAnchor+'\nthis.duration_ = Math.max(0, Number(config.xuperTsDuration)||0);this.media_info_.duration=this.duration_;');
       const anchor='this.pmt_ = pmt;';if(source.split(anchor).length!==2)throw new Error('Unexpected MPEG-TS PMT parser; review language selection adapter');

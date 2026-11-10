@@ -1,6 +1,6 @@
 const fold=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const aliases={accion:'action',aventura:'adventure',aventuras:'adventure',comedia:'comedy',terror:'horror',suspenso:'thriller',suspense:'thriller',romantico:'romance',romantica:'romance',familia:'family',fantastico:'fantasy',fantasia:'fantasy',animacion:'animation',documental:'documentary','ciencia ficcion':'science fiction','sci-fi':'science fiction',crimen:'crime',historia:'history',guerra:'war',occidental:'western',biografia:'biography'};
-const country=value=>/^(turkey|turkiye|turquia|tr|tur)$/.test(fold(value))?'turkey':fold(value);
+const country=value=>{const key=fold(value);return /^(turkey|turkiye|turquia|tr|tur)$/.test(key)?'turkey':/^(united states(?: of america)?|usa|us|estados unidos)$/.test(key)?'us':/^(korea|south korea|korea republic|corea del sur|kr|kor)$/.test(key)?'korea':key;};
 const genre=value=>aliases[fold(value)]||fold(value);
 export function collectionMatch(item,filters){
  const genres=Array.isArray(item.genres)?item.genres:[];

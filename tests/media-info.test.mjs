@@ -13,3 +13,11 @@ test('frame meter leaves unsupported TVs unavailable and cancels pending callbac
 });
 
 test('frame aspect recognizes decoded dimensions without claiming to detect encoded black bars',async()=>{const {frameAspect}=await import('../browser/media-info.js');assert.equal(frameAspect(1920,1080).label,'16:9');assert.equal(frameAspect(2520,1080).label,'21:9');assert.equal(frameAspect(3840,1608).label,'2.39:1');assert.equal(frameAspect(1920,800).label,'2.40:1');assert.equal(frameAspect(1920,1080).embeddedBars,'unknown');assert.equal(frameAspect(0,0),null);assert.equal(frameAspect(Infinity,1080),null);assert.match(formatMediaInfo({media:{width:3840,height:1608}}),/Fotograma 2.39:1/);});
+
+test('VOD format uses portal metadata when observed values are unavailable',()=>{
+ assert.match(formatMediaInfo({portalTrack:{quality:'1080p',frameRate:23.976}}),/1080p \(portal\) · 23,98 FPS del portal/);
+ assert.match(formatMediaInfo({media:{width:1280,height:720,measuredFps:24},portalTrack:{quality:'1080p',frameRate:60}}),/1280×720 · 24,00 FPS medidos/);
+ assert.match(formatMediaInfo({portalTrack:{frameRate:999}}),/FPS sin datos/);
+});
+
+test('aspect identifies 18:13 and native video track dimensions',async()=>{const {frameAspect,nativeVideoDimensions}=await import('../browser/media-info.js');assert.equal(frameAspect(1800,1300).label,'18:13');assert.equal(frameAspect(2160,1080).label,'18:9');assert.equal(nativeVideoDimensions([{type:'VIDEO',extra_info:'{"Width":"1920","Height":"1080"}'}]).aspect.label,'16:9');assert.equal(nativeVideoDimensions([{type:'VIDEO',extra_info:'invalid'}]),null);});

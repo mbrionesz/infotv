@@ -1,8 +1,9 @@
 import {readSearchHistory} from './stored-ui.js';
-export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()=>{},mode='search',onSubmit=()=>{}}={}){
+export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()=>{},mode='search',onSubmit=()=>{},mount,onBoundary}={}){
   const panel=document.createElement('section');panel.className='xt-keyboard';
   const privateInput=mode==='url'||mode==='secret';
   const rows=privateInput?['qwertyuiop','asdfghjkl','zxcvbnm','1234567890','./:-_?=&%+#@~']:['QWERTYUIOP','ASDFGHJKL','ZXCVBNM','1234567890'];
+  let closed=false;
   let text=String(value||'').slice(0,privateInput?2048:100),row=0,column=0;
   let history=privateInput?[]:readSearchHistory();
   panel.innerHTML='<h2></h2><div class="xt-keyboard-value"></div><div class="xt-keyboard-grid"></div><div class="xt-keyboard-history"></div><p>Flechas · OK escribir · Return volver</p>';
@@ -26,10 +27,11 @@ export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()
     if(key==='Espacio')text+=' ';else if(key==='Borrar')text=text.slice(0,-1);else if(key==='Limpiar')text='';else text+=key;
     update();
   }
-  function close(){remember();panel.remove();onClose(text);}
+  function close(){if(closed)return;closed=true;remember();panel.remove();onClose(text);}
   function handle(event){
     const code=event.keyCode;
     if(code===10009||code===461||code===27){close();return;}
+    if(code===37&&column===0&&onBoundary){onBoundary('left');return;}
     if(code===37)column=Math.max(0,column-1);
     else if(code===39)column=Math.min(keys[row].length-1,column+1);
     else if(code===38){row=Math.max(0,row-1);column=Math.min(column,keys[row].length-1);}
@@ -39,5 +41,5 @@ export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()
     else if(event.key&&event.key.length===1){text+=event.key;update();return;}
     render();
   }
-  document.getElementById('app').appendChild(panel);render();return {handle,close};
+  (mount||document.getElementById('app')).appendChild(panel);render();return {handle,close,node:panel};
 }

@@ -35,7 +35,7 @@
       <div class="welcome-credit">by Matias</div>
       <div class="welcome-status" role="status">Iniciando<span aria-hidden="true"> ···</span></div>
     </div>
-    <div class="welcome-version">v0.10.11 · beta</div>
+    <div class="welcome-version">v0.10.12 · beta</div>
   </section>
 
   <!-- ============================================================
@@ -132,8 +132,16 @@
             <div class="vod-tip"><img src="assets/original/common/icon_info_menu.png" alt=""><span>Audio, subtítulos y episodios</span></div>
           </div>
         </div>
+        <div class="xt-vod-controls" aria-label="Controles de reproducción">
+          <button class="focusable xt-vod-play" data-vod-action="play"><span class="xt-vod-control-icon">Ⅱ</span><span class="xt-vod-control-label">Pausar</span></button>
+          <button class="focusable" data-vod-action="rewind"><span class="xt-vod-control-icon">↶</span><span>10 s</span></button>
+          <button class="focusable" data-vod-action="forward"><span class="xt-vod-control-icon">↷</span><span>10 s</span></button>
+          <button class="focusable" data-vod-action="settings"><span class="xt-vod-control-icon">≡</span><span>Audio y subtítulos</span></button>
+          <button class="focusable" data-vod-action="back"><span>Volver a la ficha</span></button>
+        </div>
       </div>
     </div>
+    <section class="xt-vod-pause-card" id="xt-vod-pause-card" hidden aria-label="Vídeo en pausa"><span class="xt-vod-pause-tag">EN PAUSA</span><h2></h2><p class="xt-vod-pause-buffer"></p><small>OK para continuar</small></section>
     <!-- VOD Subtitle Text Overlay -->
     <div class="player-subtitles" id="player-subtitles"></div>
 
@@ -358,5 +366,8 @@
 <link rel="stylesheet" href="css/cinematic.css">
 <link rel="stylesheet" href="css/controls-modern.css">
 <link rel="stylesheet" href="css/menus-modern.css">
+<link rel="stylesheet" href="css/category-hub.css">
+<link rel="stylesheet" href="css/search-workspace.css">
+<link rel="stylesheet" href="css/vod-ui.css">
 </body>
 </html>

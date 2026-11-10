@@ -1611,6 +1611,7 @@
             void (e.preventDefault && e.preventDefault())
           );
         if ("vod" === X.playerMode) {
+          if(X.focus&&n(X.focus,'.xt-vod-controls')){var toolbar=Array.prototype.slice.call(document.querySelectorAll('.xt-vod-controls .focusable')),at=toolbar.indexOf(X.focus);pi();if(37===t||39===t)rt(toolbar[Math.max(0,Math.min(toolbar.length-1,at+(39===t?1:-1)))]);else if(38===t)Fr();return void(e.preventDefault&&e.preventDefault());}
           if(nextEpisodeButton&&!nextEpisodeButton.hidden&&!Ye){
             if(X.focus===nextEpisodeButton&&(37===t||39===t||40===t)){rt(Ce);return void(e.preventDefault&&e.preventDefault());}
             if(38===t){rt(nextEpisodeButton);return void(e.preventDefault&&e.preventDefault());}
@@ -1627,8 +1628,7 @@
             return (li(-10), void (e.preventDefault && e.preventDefault()));
           if (39 === t)
             return (li(10), void (e.preventDefault && e.preventDefault()));
-          if (40 === t)
-            return (Pn(), void (e.preventDefault && e.preventDefault()));
+          if (40 === t){pi();var firstControl=document.querySelector('.xt-vod-controls .focusable');if(firstControl)rt(firstControl);else Pn();return void(e.preventDefault&&e.preventDefault());}
           if (38 === t)
             return (Fr(), void (e.preventDefault && e.preventDefault()));
         } else {
@@ -1711,6 +1711,7 @@
       else if (39 === t) st("right");
       else if (40 === t) st("down");
       else if (13 === t || 32 === t) {
+        if(X.screen==='player'&&X.playerMode==='vod'&&!ji&&!zi&&X.focus&&n(X.focus,'.xt-vod-controls')){pt();return void(e.preventDefault&&e.preventDefault());}
         if(X.screen==="player"&&X.playerMode==="vod"&&!ji&&!zi&&!X.episodeBrowserOpen&&nextEpisodeButton&&!nextEpisodeButton.hidden&&X.focus===nextEpisodeButton){nextEpisodeButton._activate();return void(e.preventDefault&&e.preventDefault());}
         if (X.episodeBrowserOpen) return void pt();
         if(X.screen==="player"&&X.playerMode==="vod"&&X.streamError){checkpointVod();var retryRecord=(Q.history||[]).filter(function(row){return X.playerItem&&String(row.id)===String(X.playerItem.id)&&(!X.playerEpisode||String(row.episodeId)===String(X.playerEpisode.id));})[0];if(retryRecord)ln=retryRecord;Jr(X.playerItem,X.playerEpisode);return;}
@@ -5252,13 +5253,23 @@
     if(!nextEpisodeButton){nextEpisodeButton=e('button','xt-next-episode focusable');nextEpisodeButton.id='xt-next-episode';nextEpisodeButton._activate=function(){if(nextEpisodeButton.hidden)return;hideNextEpisode();Qn();};nextEpisodeButton._onMove=function(){rt(Ce);return true;};Ce.parentNode.appendChild(nextEpisodeButton);}
     nextEpisodeButton.textContent=offer.label+'  ›';nextEpisodeButton.setAttribute('aria-label',offer.label);nextEpisodeButton.hidden=false;
   }
+  function updateVodChrome(){
+    var card=t('xt-vod-pause-card'),play=t('player-vod-infobar')&&t('player-vod-infobar').querySelector('[data-vod-action="play"]');
+    var active=X.screen==='player'&&X.playerMode==='vod'&&xe,item=X.playerItem||{},ep=X.playerEpisode,season=(item.seasons||[]).filter(function(s){return String(s.id)===String(item.seasonId||item.id);})[0];
+    var title=window.XuperStandalone&&XuperStandalone.continueTitle?XuperStandalone.continueTitle({title:item.title||item.name,series:!!x(item),episodeNumber:ep&&(ep.number||ep.seriesNumber),seasonNumber:season&&season.number||ep&&ep.seasonNumber||item.seasonNumber}):item.title||'';
+    if(active&&Ee)Ee.textContent=title;
+    if(play){play.classList.toggle('is-paused',!!(xe&&xe.paused));play.querySelector('.xt-vod-control-label').textContent=xe&&xe.paused?'Continuar':'Pausar';play.querySelector('.xt-vod-control-icon').textContent=xe&&xe.paused?'▶':'Ⅱ';play.setAttribute('aria-label',xe&&xe.paused?'Continuar reproducción':'Pausar reproducción');}
+    if(card){var show=active&&xe.paused&&!xe.ended&&xe.currentTime>0&&!X.streamError&&!ji&&!zi&&!X.episodeBrowserOpen;card.hidden=!show;if(show){card.querySelector('h2').textContent=title;var ahead=0;for(var b=0;b<xe.buffered.length;b++)if(xe.currentTime>=xe.buffered.start(b)&&xe.currentTime<=xe.buffered.end(b)){ahead=Math.max(0,xe.buffered.end(b)-xe.currentTime);break;}card.querySelector('.xt-vod-pause-buffer').textContent='Reserva disponible · '+Math.floor(ahead)+' s';}}
+  }
   function oi(position,total){
+    updateVodChrome();
     if(!Ae||!De||!Oe)return;if(Ye)position=Ze;position=Math.max(0,Number(position)||0);var duration=trustedVodDuration();Ae.textContent=ai(position);De.textContent=duration>0?((window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated?'≈ ':'')+ai(duration)):'Duración sin informar';if(Pe)Pe.classList.toggle('duration-unknown',!duration);
     updateNextEpisode(position,duration);
     var percent=duration>0?Math.min(100,position/duration*100):0;Oe.style.width=percent.toFixed(2)+'%';if(Ne)Ne.style.left=percent.toFixed(2)+'%';
     if(qe){var buffered=xe&&xe.buffered;qe.style.width=duration>0&&buffered&&buffered.length?Math.min(100,buffered.end(buffered.length-1)/duration*100).toFixed(2)+'%':'0%';}
   }
   function si(e) {
+    Re || (Re=t('player-osd-icon'));if(Re)Re.setAttribute('data-state',e);
     (Re || (Re = t("player-osd-icon")),
       Re &&
         (ti && (clearTimeout(ti), (ti = null)),
@@ -5320,6 +5331,7 @@
       ci());
   }
   function ui() {
+    if(X.focus&&n(X.focus,'.xt-vod-controls')&&Ce)rt(Ce);
     (X.infoTimer && (clearTimeout(X.infoTimer), (X.infoTimer = null)),
       (X.infobar = !1),
       we && we.classList.remove("is-active"),
@@ -5428,6 +5440,7 @@
                 episodeId: r && r.id ? String(r.id) : "",
                 episodeNumber: (r && (r.number || r.seriesNumber)) || "",
                 seasonId: i.seasonId||i.id,
+                seasonNumber: (function(){var seasons=i.seasons||[],id=String(i.seasonId||i.id),match=seasons.filter(function(season){return String(season.id)===id;})[0];return match&&match.number||r&&r.seasonNumber||i.seasonNumber||"";})(),
                 position: Math.floor(e),
                 seek:window.XuperPlayer&&XuperPlayer.bookmark?XuperPlayer.bookmark(e):null,
                 duration: Math.floor(trustedVodDuration()),
@@ -6597,6 +6610,7 @@
       }, 2e3),
       a(we),
       a(Se),
+      (function(){document.querySelectorAll('[data-vod-action]').forEach(function(button){button._activate=function(){var action=button.getAttribute('data-vod-action');if(action==='play')di();else if(action==='rewind')li(-10);else if(action==='forward')li(10);else if(action==='settings')Pn();else if(action==='back')ct();};});})(),
       Ce.classList.add("focusable"),
       (Ce._onMove = function (e) {
         return "vod" === X.playerMode
@@ -7222,7 +7236,7 @@
     }
   }
   function zr() {
-    hideNextEpisode();
+    hideNextEpisode();var pauseCard=t('xt-vod-pause-card');if(pauseCard)pauseCard.hidden=true;
     if(X.episodeSwitchTimer){clearTimeout(X.episodeSwitchTimer);X.episodeSwitchTimer=null;}X.episodeSwitchSeq=(X.episodeSwitchSeq||0)+1;
     mn(null);
     (Lr(), "vod" === X.playerMode && xe) &&
@@ -7505,6 +7519,7 @@
           }
         }),
         (xe.onpause = function () {
+          updateVodChrome();
           (ri(), "vod" === X.playerMode) &&
             (sn(
               br ? Cr + (xe.currentTime || 0) : xe.currentTime || 0,
@@ -7521,6 +7536,7 @@
             br && (wr = !0));
         }),
         (xe.onplay = function () {
+          updateVodChrome();
           "vod" === X.playerMode &&
             (si("none"),
             ri(),
@@ -7568,7 +7584,7 @@
           audioIndex: X.playerMode==="vod"&&$i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
           onNotice: function (message) { Yt(message); },
-          onInfo: function (data) { if(X.playerMode==='live'&&window.XuperLiveTracks)XuperLiveTracks.sync();if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod")format.textContent=window.XuperStandalone.formatMediaInfo(data); },
+          onInfo: function (data) { updateVodChrome();if(X.playerMode==='live'&&window.XuperLiveTracks)XuperLiveTracks.sync();if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod"){var reported=un[Ln(X.playerItem)];format.textContent=window.XuperStandalone.formatMediaInfo(Object.assign({},data,{portalTrack:reported&&reported.selected||{}}));} },
           onStarted: function () { X.streamError = ""; jr(""); },
           onResumeRequired: function(){if(window.XuperStandalone.showVodRecovery)XuperStandalone.showVodRecovery("La TV estuvo suspendida. Reanuda con una conexión nueva.");},
           onError: function (message) { X.streamError = message; jr(message);Gn();if(X.playerMode==="vod"&&window.XuperStandalone.showVodRecovery)XuperStandalone.showVodRecovery(message); } });

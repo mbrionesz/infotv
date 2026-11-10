@@ -16,11 +16,11 @@ export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio
   if(eof&&tracks.every(t=>!t.sb.updating&&!t.queue.length)&&media.readyState==='open'){try{media.endOfStream();}catch(_){}}
  }
  async function pump(){
-  if(closed||failed||pumping||eof||ready&&!bufferWindow.shouldRead(ahead(),queuedBytes))return;
+  if(closed||failed||pumping||eof||ready&&!bufferWindow.shouldRead(ahead(),queuedBytes,video.paused&&video.currentTime>0&&!video.ended))return;
   pumping=true;const run=generation;
   try{const result=await reader.read(offset);if(closed||failed||run!==generation)return;total=result.total;result.data.fileStart=offset;const next=file.appendBuffer(result.data);offset=Number.isSafeInteger(next)&&next>=0&&next!==offset?next:offset+result.data.byteLength;if(offset>=total){file.flush();eof=true;tracks.forEach(drain);}}
   catch(error){if(!closed&&run===generation&&error.name!=='AbortError')fail(error);}
-  finally{pumping=false;if(!closed&&!failed&&!eof&&!(ready&&!bufferWindow.shouldRead(ahead(),queuedBytes)))timer=setTimeout(pump,0);}
+  finally{pumping=false;if(!closed&&!failed&&!eof&&!(ready&&!bufferWindow.shouldRead(ahead(),queuedBytes,video.paused&&video.currentTime>0&&!video.ended)))timer=setTimeout(pump,0);}
  }
  file.onError=message=>fail(new Error('MP4: '+message));
  file.onReady=info=>{
@@ -36,5 +36,5 @@ export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio
  function seeking(){if(!ready||closed||failed)return;const time=video.currentTime;if(time>=media.duration-0.05)return;for(let i=0;i<video.buffered.length;i++)if(time>=video.buffered.start(i)&&time<video.buffered.end(i)-0.1)return;if(seekTime!==null&&Math.abs(seekTime-time)<0.1)return;seekTime=time;bufferWindow.reset();generation++;reader.abort();eof=false;file.stop();let seek;try{seek=file.seek(time,true);}catch(error){fail(error);return;}if(!Number.isSafeInteger(seek.offset)||seek.offset<0||seek.offset>=total){fail(new Error("Posición MP4 no disponible"));return;}offset=seek.offset;for(const track of tracks){queuedBytes-=track.queue.reduce((sum,p)=>sum+p.buffer.byteLength,0);track.queue=[];track.reset=true;if(track.sb.updating)try{track.sb.abort();}catch(_){}drain(track);}file.start();if(!pumping)pump();}
  video.addEventListener('seeking',seeking);media.addEventListener('sourceopen',()=>{if(!closed)pump();},{once:true});video.src=objectURL;
  interval=setInterval(()=>{tracks.forEach(drain);pump();},250);
- return {destroy(){if(closed)return;closed=true;generation++;reader.close();clearInterval(interval);clearTimeout(timer);video.removeEventListener('seeking',seeking);file.stop();file.onReady=file.onSegment=file.onError=null;for(const track of tracks)track.queue=[];URL.revokeObjectURL(objectURL);}};
+ return {get bufferPolicy(){bufferWindow.setPaused(video.paused&&video.currentTime>0&&!video.ended);return bufferWindow.policy;},destroy(){if(closed)return;closed=true;generation++;reader.close();clearInterval(interval);clearTimeout(timer);video.removeEventListener('seeking',seeking);file.stop();file.onReady=file.onSegment=file.onError=null;for(const track of tracks)track.queue=[];URL.revokeObjectURL(objectURL);}};
 }
