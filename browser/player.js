@@ -360,7 +360,7 @@ export function createPlayer(getStream) {
         if (typeof av.setBufferingParam === 'function') {
           try {
             av.setBufferingParam('PLAYER_BUFFER_FOR_PLAY', 'PLAYER_BUFFER_SIZE_IN_SECOND', 3);
-            av.setBufferingParam('PLAYER_BUFFER_FOR_RESUME', 'PLAYER_BUFFER_SIZE_IN_SECOND', 6);
+            av.setBufferingParam('PLAYER_BUFFER_FOR_RESUME', 'PLAYER_BUFFER_SIZE_IN_SECOND', options.live?6:8);
           } catch (_) {} // Older firmwares retain their documented defaults.
         }
         const rect = video.getBoundingClientRect();

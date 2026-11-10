@@ -54,3 +54,14 @@
 .xt-vod-recovery h2{font-size:36px;margin:0 0 18px}.xt-vod-recovery p{margin:12px 0 20px;overflow-wrap:break-word}.xt-vod-recovery .xt-recovery-note{font-size:21px;color:#b4cae3}
 #app .xt-vod-recovery button{display:block;width:100%;margin:12px 0 0;padding:16px 22px;min-height:62px;border:1px solid #436080;border-radius:14px;background:#20344f;color:#eef6ff;text-align:left;font:24px 'Segoe UI',Arial,sans-serif}
 #app .xt-vod-recovery button.selected{background:#dceeff;color:#132942;border-color:#8ac9f4;box-shadow:0 0 0 2px #8ac9f4}
+#app.tv-shell-ready #xt-catalog .xt-showcase-row-head{justify-content:flex-start;min-height:54px;align-items:center}
+#app.tv-shell-ready #xt-catalog .xt-showcase-row-head h2{margin:0 22px 0 0;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#app.tv-shell-ready #xt-catalog .xt-showcase-row-head .xt-showcase-all{width:auto;min-width:118px;height:46px;min-height:46px;padding:0 18px;font-size:20px;border-radius:13px;flex-shrink:0}
+.xt-continue-hint{font-size:19px;color:#a7bed9;margin-left:8px}
+#app #xt-catalog .xt-watch-progress{position:absolute;left:0;bottom:0;right:0;height:5px;background:#ffffff38;z-index:2}
+#app #xt-catalog .xt-watch-fill{display:block;height:100%;background:#ef3843;min-width:2px;max-width:100%}
+#app #xt-catalog .xt-watch-progress.is-unknown .xt-watch-fill{width:12px}
+#app #xt-catalog .xt-continue-menu{position:absolute;z-index:100;left:520px;top:220px;width:780px;padding:34px;background:#142238;border:1px solid #45617f;border-radius:24px;box-shadow:0 16px 45px #0007,0 0 0 2000px #0008}
+.xt-continue-menu h2{font-size:34px;line-height:1.2;margin:0 0 18px;color:#f1f6ff;overflow-wrap:break-word}.xt-continue-menu p{font-size:23px;line-height:1.45;color:#b9cee7;margin:0 0 22px}
+#app #xt-catalog .xt-continue-menu button{width:100%;display:block;text-align:center;margin-top:12px;min-height:58px}
+#app #xt-catalog .xt-continue-menu button.selected{background:#dceeff;color:#132942;border-color:#8ac9f4;box-shadow:0 0 0 2px #8ac9f4}

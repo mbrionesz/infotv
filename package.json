@@ -1,6 +1,6 @@
 {
   "name": "infotv-tizen",
-  "version": "0.10.7",
+  "version": "0.10.8",
   "private": true,
   "type": "module",
   "engines": {
@@ -29,7 +29,8 @@
     "test:catalog-remote-ux": "node tools/catalog-remote-ux-browser.mjs",
     "test:tv-network-ux": "node tools/tv-network-ux-browser.mjs",
     "test:settings": "node tools/settings-audit-browser.mjs",
-    "test:vod-recovery": "node tools/vod-recovery-browser.mjs"
+    "test:vod-recovery": "node tools/vod-recovery-browser.mjs",
+    "test:continue-watching": "node tools/continue-watching-browser.mjs"
   },
   "devDependencies": {
     "buffer": "6.0.3",
