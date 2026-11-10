@@ -15,3 +15,8 @@ export function knownVodDuration({engine='',declared=0,media=0,ended=false,posit
 
 // History uses whole seconds; the TS bookmark can be just after that boundary.
 export function resumeClock(record){const position=Math.max(0,Number(record&&record.position)||0),precise=Number(record&&record.seek&&record.seek.position);return Number.isFinite(precise)&&precise>=position&&precise-position<1?precise:position;}
+
+export function canResumeVod(record){
+ const position=Number(record&&record.position),duration=Number(record&&record.duration);
+ return !!record&&!record.completed&&Number.isFinite(position)&&position>=0&&!(record.durationKnown&&duration>0&&position>=duration-1);
+}

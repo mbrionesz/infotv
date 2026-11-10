@@ -5353,6 +5353,7 @@
     Zi = "normal",
     en = "white",
     tn = "contain",
+    vodEndedKey = "",
     an = 0;
   function nn() {
     ((Zi =
@@ -5413,7 +5414,7 @@
                 duration: Math.floor(trustedVodDuration()),
                 durationKnown:trustedVodDuration()>0,
                 durationEstimated:!!(window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated),
-                completed:!!(xe&&xe.ended),
+                completed:!!(context&&context.completed||vodEndedKey===String(i.id)+":"+String(r&&r.id||"")||xe&&xe.ended),
                 updatedAt: n,
               },
             ],
@@ -6101,7 +6102,7 @@
   function $n(e, t) {
     if (e && t) {
       if (X.screen === "detail") { X.detailEpisode = t; Jn(e); Kr(e, t); return; }
-      ((X.playerItem = e),
+      (closeVodPanels(),zr(), _n(), (vodEndedKey=""), (X.playerItem = e),
         (X.playerEpisode = t),
         (X.detailEpisode = t),
         (X.playerSeasonIndex = X.detailSeason || 0),
@@ -6110,8 +6111,7 @@
         X.episodeSwitchTimer && clearTimeout(X.episodeSwitchTimer),
         (X.episodeSwitchSeq = (X.episodeSwitchSeq || 0) + 1));
       var a = X.episodeSwitchSeq;
-      (zr(),
-        jr("Cambiando capítulo…"),
+      (jr("Cambiando capítulo…"),
         (X.episodeSwitchTimer = setTimeout(function () {
           ((X.episodeSwitchTimer = null),
             a === X.episodeSwitchSeq && "player" === X.screen && Jr(e, t));
@@ -6122,6 +6122,25 @@
     (ke || (ke = t("next-episode-loading")),
       ke &&
         (ke.classList.remove("is-active"), (ke.style.backgroundImage = "")));
+  }
+  function closeVodPanels(){if(ji)tr();if(zi)On();if(X.episodeBrowserOpen)zn();if(X.categoryPickerOpen)ur(true);}
+  function returnVodCatalog(){
+    var series=x(X.playerItem);closeVodPanels();zr();Gn();_n();X.streamError="";X.vodInfobarVisible=false;lt("home");
+    if(window.XuperCatalog&&XuperCatalog.resume())return;
+    if(window.XuperShell)XuperShell.activate(series?"series":"movies");
+  }
+  function recoverVod(action){
+    closeVodPanels();checkpointVod();zr();Gn();_n();un={};vn={};X.streamError="";vodEndedKey="";
+    if(action==="stop")return;
+    if(action==="catalog"){returnVodCatalog();return;}
+    var item=X.playerItem,ep=X.playerEpisode,record=(Q.history||[]).filter(function(row){return item&&String(row.id)===String(item.id)&&String(row.episodeId||"")===String(ep&&ep.id||"");})[0];ln=record&&!record.completed?record:null;
+    if(item)Kr(item,ep);else returnVodCatalog();
+  }
+  function vodFinished(){
+    if(X.playerMode!=="vod"||X.screen!=="player"||!X.playerItem)return;
+    var item=X.playerItem,ep=X.playerEpisode,key=String(item.id)+":"+String(ep&&ep.id||"");if(vodEndedKey===key)return;vodEndedKey=key;
+    sn(xe.currentTime,trustedVodDuration(),true,{item:item,episode:ep,completed:true});
+    var generation=yr;setTimeout(function(){if(generation!==yr||X.screen!=="player"||X.playerItem!==item||X.playerEpisode!==ep)return;if(x(item))Qn();else returnVodCatalog();},0);
   }
   function Qn() {
     var e = X.playerItem;
@@ -6146,6 +6165,7 @@
           n = r;
           break;
         }
+      if(n<0){returnVodCatalog();return;}
       if (!(n < 0))
         if (
           ((function (e) {
@@ -6177,9 +6197,9 @@
                     (e.episodes = t),
                     (l._episodes = t),
                     $n(e, t[0]))
-                  : Gn());
+                  : returnVodCatalog());
             });
-          } else Gn();
+          } else returnVodCatalog();
         }
     }
   }
@@ -7182,6 +7202,7 @@
     }
   }
   function zr() {
+    if(X.episodeSwitchTimer){clearTimeout(X.episodeSwitchTimer);X.episodeSwitchTimer=null;}X.episodeSwitchSeq=(X.episodeSwitchSeq||0)+1;
     mn(null);
     (Lr(), "vod" === X.playerMode && xe) &&
       sn(
@@ -7436,7 +7457,7 @@
           (Lr(), Gn(), v());
         }),
         (xe.onended = function () {
-          if("vod"===X.playerMode){sn(xe.currentTime,xe.duration,true);Qn();}
+          if("vod"===X.playerMode)vodFinished();
         }),
         (xe.ontimeupdate = function () {
           if (
@@ -7516,7 +7537,7 @@
       if (window.XuperPlayer) {
         xe.classList.add("is-active");
         Te && (Te.style.display = "none");
-        var resumeRecord=ln&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
+        var resumeRecord=ln&&XuperStandalone.canResumeVod(ln)&&X.playerItem&&String(ln.id)===String(X.playerItem.id)&&(!ln.episodeId||X.playerEpisode&&String(X.playerEpisode.id)===String(ln.episodeId))?ln:null;
         var checkpointContext=X.playerMode==="vod"?{item:Object.assign({},X.playerItem),episode:X.playerEpisode&&Object.assign({},X.playerEpisode)}:null;
         gn();if(X.playerMode==='live'){mn(null);Ji=false;Qi=null;Ki=true;if(window.XuperLiveTracks)XuperLiveTracks.reset();}
         var formatInfo=document.getElementById("vod-format-info");if(formatInfo)formatInfo.textContent="";
@@ -7528,7 +7549,8 @@
           onNotice: function (message) { Yt(message); },
           onInfo: function (data) { if(X.playerMode==='live'&&window.XuperLiveTracks)XuperLiveTracks.sync();if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod")format.textContent=window.XuperStandalone.formatMediaInfo(data); },
           onStarted: function () { X.streamError = ""; jr(""); },
-          onError: function (message) { X.streamError = message; jr(message); } });
+          onResumeRequired: function(){if(window.XuperStandalone.showVodRecovery)XuperStandalone.showVodRecovery("La TV estuvo suspendida. Reanuda con una conexión nueva.");},
+          onError: function (message) { X.streamError = message; jr(message);Gn();if(X.playerMode==="vod"&&window.XuperStandalone.showVodRecovery)XuperStandalone.showVodRecovery(message); } });
         ln=null;
         if(X.playerMode==="vod"){var subtitleInfo=un[Ln(X.playerItem)];if(subtitleInfo)An(subtitleInfo);}
         return;
@@ -7624,6 +7646,8 @@
               (X.streamError =
                 "No se pudo resolver el título" + (i ? ": " + i : "")),
               jr(X.streamError),
+              Gn(),
+              window.XuperStandalone&&XuperStandalone.showVodRecovery&&XuperStandalone.showVodRecovery(X.streamError),
               t("")
             );
           if(typeof n.trackIndex==="number")X.trackIndex=n.trackIndex;
@@ -7674,6 +7698,7 @@
   }
   function Jr(e, t) {
     if (xe) {
+      if(e&&X.playerItem!==e||t&&X.playerEpisode&&String(t.id)!==String(X.playerEpisode.id)){checkpointVod();zr();_n();vodEndedKey="";}
       (t &&
         ((X.playerEpisode = t), (X.playerSeasonIndex = X.detailSeason || 0)),
         e && (X.playerItem = e));
@@ -7728,12 +7753,14 @@
         X.playerEpisode === a ||
         X.playerEpisode.id === a.id,
       n = "detail" === X.screen && !X.streamError && xe && !!xe.src && X.playerItem === e && i && (!window.XuperPlayer||XuperPlayer.diagnostics.stage!=="idle");
+    if(!n){checkpointVod();zr();_n();vodEndedKey="";}
     ((X.playerMode = "vod"),
       e && X.playerItem !== e && _n(),
       e && (X.playerItem = e),
       a && (X.playerEpisode = a),
       e && xn(e),
       (X.playerReturn = { screen: "detail", focus: X.focus }));
+    if(e&&!x(e)){X.playerEpisode=null;X.detailEpisode=null;}
     var r = t("screen-player"),
       o = t("screen-detail");
     (r && (r.classList.remove("is-mini"), r.classList.add("is-active")),
@@ -8098,6 +8125,8 @@
           (vt(), bt(e, !0));
         },
         resumeContent: cn,
+        recoverVod: recoverVod,
+        checkpointVod: checkpointVod,
         library: savedLibrary,
         removeHistory: removeHistory,
         openCollection: function(kind){We=kind==="favs"?"favs":"history";libraryPage=0;Ha();Ua("history",!0);},

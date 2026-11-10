@@ -27,3 +27,10 @@ test('a synchronous VOD constructor failure cannot replace or leak the backup se
  try{player.open(new Video(),'https://primary.example/movie.mp4',{onError:message=>assert.fail(message)});await tick();assert.equal(opened,2);assert.deepEqual(destroyed,['https://primary.example/movie.mp4']);player.stop();assert.deepEqual(destroyed,['https://primary.example/movie.mp4','https://backup.example/movie.mp4']);}
  finally{player.stop();globalThis.window=previous.window;globalThis.document=previous.document;}
 });
+test('a throwing decoder destructor cannot prevent player teardown or a subsequent open',async()=>{
+ const previous={window:globalThis.window,document:globalThis.document};let count=0;
+ globalThis.document={addEventListener(){}};globalThis.window={MediaSource:class{},XuperVod:{openMp4:()=>{count++;return {destroy(){throw new Error('detached decoder');}};}}};
+ class Video extends EventTarget{constructor(){super();this.paused=true;this.readyState=0;this.currentTime=0;this.buffered={length:0};}pause(){}play(){return Promise.resolve()}load(){}removeAttribute(){}}
+ const video=new Video(),player=createPlayer(()=>({mime:'video/mp4',headers:{'Content-Auth':'test'}}));
+ try{player.open(video,'https://cdn.example/a.mp4',{onError(){}});await tick();assert.doesNotThrow(()=>player.stop());assert.equal(player.diagnostics.stage,'idle');player.open(video,'https://cdn.example/b.mp4',{onError(){}});await tick();assert.equal(count,2);}finally{player.stop();Object.assign(globalThis,previous);}
+});

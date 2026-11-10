@@ -64,3 +64,7 @@ test('redirects cannot introduce URL credentials that initial requests forbid',a
 });
 
 test('diagnostics retain the library versions returned by the native worker',async()=>{const libraries={curl:'8.23.0',tls:'OpenSSL/3.5.9',zlib:'1.4'},mock=workers({libraries}),transport=createNativeTransport({workerFactory:mock.factory});try{assert.equal(await transport.ensure(),true);assert.deepEqual(transport.snapshot().libraries,libraries);}finally{transport.dispose();}});
+test('reset replaces transient workers without changing the configured DNS resolvers',async()=>{
+ const mock=workers(),transport=createNativeTransport({workerFactory:mock.factory});
+ try{await transport.request({url:'https://cdn.example/a'});const resolvers=transport.snapshot().dnsServers;transport.reset();assert.equal(transport.snapshot().available,false);await transport.request({url:'https://cdn.example/b'});assert.equal(transport.snapshot().available,true);assert.deepEqual(transport.snapshot().dnsServers,resolvers);assert.equal(mock.calls.filter(c=>c.method==='dns').length,2);}finally{transport.dispose();}
+});

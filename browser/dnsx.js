@@ -1,6 +1,6 @@
 import {requestSignal,abortable} from './request-signal.js';
 import {dnsQuestion,resolvers,resolverEndpoints} from './dns-diagnostic.js';
-export function createNativeTransport({workerFactory=()=>new Worker(new URL('vendor/native-worker.js',document.baseURI)),now=Date.now}={}){
+function createTransport({workerFactory=()=>new Worker(new URL('vendor/native-worker.js',document.baseURI)),now=Date.now}={}){
  let libraryVersions=null;
  let disposed=false,replacing=0;const counters={canceledQueued:0,canceledActive:0,replacements:0};
  let serial=0,cooldown=0,ready=false,disabled=false,portalFallback=false,lastFailure=null,reason='Comprobando extensión Samsung';const queue=[],slots=[],cache=new Map(),inflight=new Map(),recent=new Map(),originFallbacks=new Set();
@@ -120,4 +120,10 @@ export function createNativeTransport({workerFactory=()=>new Worker(new URL('ven
   try{return await requestWork(Object.assign({},options,{signal,startedAt:now(),budget}));}finally{off();clearTimeout(timer);}
  }
  return {ensure,request,diagnose:async()=>({available:await ensure(),libraries:libraryVersions,dnsOverride:ready&&Array.from(recent.values()).some(item=>item.mode==='secure-dns'&&item.httpStatus&&!item.fallback),secureDnsCapable:ready,hosts:Array.from(recent.values()),note:'resolver es el DNS consultado; ip es la dirección del portal/CDN. secure-dns indica el intento de usar esa IP conservando Host/SNI. system-fallback usa DNS del TV. No se afirma DNS alterado sin comparación concluyente.'}),snapshot:()=>({available:ready,libraries:libraryVersions,reason,nativeDisabled:disabled,portalFallback,originFallbacks:Array.from(originFallbacks),lastFailure,dnsServers:resolvers,dnsProviders:resolverEndpoints,fieldLegend:{resolver:'Servidor DNS consultado',ip:'IP del portal/CDN devuelta por DNS; no es otro resolutor'},engine:ready?'samsung-wasm-curl':'xhr-system-dns',requests:Object.assign({queued:queue.length,active:slots.filter(item=>item.busy).length,replacing},counters),hosts:Array.from(recent.values()),cooldownUntil:cooldown}),dispose:()=>{disposed=true;slots.forEach(item=>{item.worker.terminate();if(item.pending){clearTimeout(item.pending.timer);if(item.pending.off)item.pending.off();item.pending.reject(new Error('Transporte cerrado'));item.pending=null;}});while(queue.length){const job=queue.shift();if(job.off)job.off();job.reject(new Error('Transporte cerrado'));}}};
+}
+
+// Keep callers bound to one facade while replacing a failed worker/socket session.
+export function createNativeTransport(options={}){
+ let current=createTransport(options);
+ return {ensure:()=>current.ensure(),request:options=>current.request(options),diagnose:()=>current.diagnose(),snapshot:()=>current.snapshot(),dispose:()=>current.dispose(),reset(){current.dispose();current=createTransport(options);}};
 }

@@ -1,17 +1,18 @@
+import {requestSignal} from './request-signal.js';
 export function createCoreClient() {
-  let worker=null,serial=0,failure='';const pending=new Map();
+  let worker=null,serial=0,failure='',workerSignal=null;const pending=new Map();
   function start(){
     if(worker)return worker;
     if(failure)throw new Error(failure);
     try{
       worker=new Worker(new URL('vendor/core-worker.js',document.baseURI).href);
-      const target=worker;
+      const target=worker;const signal=workerSignal=requestSignal();
       target.onmessage=event=>{
         if(worker!==target)return;
         const message=event.data||{};
         if(message.nativeRequest){
           const transport=window.XuperNativeTransport;
-          Promise.resolve(transport?transport.request(message.options):null).then(result=>{
+          Promise.resolve(transport?transport.request(Object.assign({},message.options,{signal})):null).then(result=>{
             if(worker!==target)return;const reply={nativeReply:message.nativeRequest,result};target.postMessage(reply,result&&result.body?[result.body]:[]);
           },error=>{if(worker===target)target.postMessage({nativeReply:message.nativeRequest,error:error.message});});return;
         }
@@ -22,10 +23,10 @@ export function createCoreClient() {
       };
       target.onerror=()=>{
         if(worker!==target)return;
-        failure='No pudo iniciar el servicio de datos del TV (Web Worker).';
+        signal.abort();failure='No pudo iniciar el servicio de datos del TV (Web Worker).';
         const entries=Array.from(pending.values());pending.clear();worker=null;target.terminate();
         for(const entry of entries)clearTimeout(entry.timer);
-        for(const entry of entries)entry.callback(new Error(failure));
+        for(const entry of entries)try{entry.callback(new Error(failure));}catch(_){}
       };
     }catch(error){failure=error.message;throw error;}
     return worker;
@@ -48,6 +49,7 @@ export function createCoreClient() {
   api.fetchM3u=(url,callback)=>call('fetchM3u',{url},(error,result)=>callback(error,result&&result.channels));
   api.getLiveCategories=callback=>call('liveCategories',{},(error,result)=>callback(error,result&&result.categories));
   api.getLiveChannels=(columnId,pageNum,pageSize,callback)=>call('liveChannels',{columnId,pageNum,pageSize},(error,result)=>callback(error,result&&result.channels,result&&result.hasMore,result));
-  api.dispose=()=>{const old=worker;worker=null;if(old)old.terminate();const entries=Array.from(pending.values());pending.clear();api.session.ready=false;for(const entry of entries)clearTimeout(entry.timer);const error=Object.assign(new Error('Servicio de datos cerrado'),{name:'AbortError'});for(const entry of entries)entry.callback(error);};
+  api.dispose=()=>{const old=worker;worker=null;if(workerSignal)workerSignal.abort();workerSignal=null;if(old)old.terminate();const entries=Array.from(pending.values());pending.clear();api.session.ready=false;for(const entry of entries)clearTimeout(entry.timer);const error=Object.assign(new Error('Servicio de datos cerrado'),{name:'AbortError'});for(const entry of entries)try{entry.callback(error);}catch(_){}};
+  api.restart=()=>{api.dispose();failure='';};
   return api;
 }
