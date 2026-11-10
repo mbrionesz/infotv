@@ -1399,9 +1399,10 @@ function loadPlay(e, r, t) {
   var s = n + ":" + trim(r);
   if (playCache[s] && Date.now() < playCache[s].at + PLAY_TTL)
     return t(null, playCache[s].data);
+  var ownWaiters;
   function a(e, r) {
-    var t = playWaiters[s] || [];
-    delete playWaiters[s];
+    var t = ownWaiters || [];
+    if(playWaiters[s]===ownWaiters)delete playWaiters[s];
     for (var n = 0; n < t.length; n++)
       try {
         t[n](e, r);
@@ -1409,7 +1410,7 @@ function loadPlay(e, r, t) {
   }
   playWaiters[s]
     ? playWaiters[s].push(t)
-    : ((playWaiters[s] = [t]),
+    : ((ownWaiters = playWaiters[s] = [t]),
       ensureSession(function (e) {
         if (e) return a(e);
         call(
@@ -1431,7 +1432,8 @@ function loadPlay(e, r, t) {
             if (!n.length)
               return a(new Error("el portal no devolvió pistas de vídeo"));
             var o = { play: r, episode: t, tracks: n };
-            ((playCache[s] = { at: Date.now(), data: o }), a(null, o));
+            if(playWaiters[s]===ownWaiters)playCache[s] = { at: Date.now(), data: o };
+            a(null, o);
           },
         );
       }));
@@ -1455,7 +1457,7 @@ function mediaInfo(e, r, t) {
 function resolve(e, r, t, n) {
   ("function" == typeof t && ((n = t), (t = {})),
     (t = t || {}),
-    t.force && (delete playCache[trim(e)+":"+trim(r)], slbCache=null),
+    t.force && (delete playCache[trim(e)+":"+trim(r)], delete playWaiters[trim(e)+":"+trim(r)], slbCache=null),
     loadPlay(e, r, function (e, r) {
       if (e) return n(e);
       var s = r.play,

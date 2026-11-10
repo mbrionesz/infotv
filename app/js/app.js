@@ -4097,11 +4097,11 @@
         var panel=samsungSettingsCard("Reproducción","Elige estabilidad o menor retraso para TV en vivo. Si el modo experimental produce cortes, la app vuelve al perfil estable para ese canal.");
         var lowDelay=e("button","xt-setting-action focusable");
         function latencyLabel(){var on=false;try{on=localStorage.getItem("xt.lowDelay720")==="on";}catch(_){}lowDelay.textContent="Menor retraso en 720p · "+(on?"Activado":"Desactivado");lowDelay.setAttribute("aria-pressed",String(on));}
-        lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="on"?"off":"on");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};lowDelay.onclick=lowDelay._activate;latencyLabel();panel.appendChild(lowDelay);
+        lowDelay._activate=function(){try{localStorage.setItem("xt.lowDelay720",localStorage.getItem("xt.lowDelay720")==="on"?"off":"on");}catch(_){}latencyLabel();Yt("Se aplica al abrir el siguiente canal");};latencyLabel();panel.appendChild(lowDelay);
         panel.appendChild(e("p","xt-setting-footnote","Audio e idioma de subtítulos son preferencias para el próximo título y requieren pistas disponibles. Tamaño y estilo afectan a los subtítulos externos; los integrados dependen del reproductor. Estas opciones no añaden pistas ni traducen contenido."));
-        var art=e('button','xt-setting-action focusable','Imágenes del carrusel · TMDB');art._activate=function(){if(window.XuperArtwork)XuperArtwork.open();};art.onclick=art._activate;panel.appendChild(art);
+        var art=e('button','xt-setting-action focusable','Imágenes del carrusel · TMDB');art._activate=function(){if(window.XuperArtwork)XuperArtwork.open();};panel.appendChild(art);
         panel.className+=" xt-playback-card";X.playback.streamMode="normal";
-        var subtitleModes=["Automáticos · solo sin audio español","Siempre desactivados","Activados si están disponibles"];var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+subtitleModes[X.playback.subtitlePolicy||0]);subtitles._activate=function(){X.playback.subtitlePolicy=((X.playback.subtitlePolicy||0)+1)%3;X.playback.subtitle=X.playback.subtitlePolicy===2;subtitles.textContent="Subtítulos · "+subtitleModes[X.playback.subtitlePolicy];nn();Y();};subtitles.onclick=subtitles._activate;panel.appendChild(subtitles);panel.appendChild(e("p","xt-setting-footnote","Por defecto: español latino y subtítulos apagados. Si no hay audio español identificado, se usan subtítulos en español disponibles. Los cambios dentro de un título se recuerdan para esa película o serie y tienen prioridad."));
+        var subtitleModes=["Automáticos · solo sin audio español","Siempre desactivados","Activados si están disponibles"];var subtitles=e("button","xt-setting-action focusable", "Subtítulos · "+subtitleModes[X.playback.subtitlePolicy||0]);subtitles._activate=function(){X.playback.subtitlePolicy=((X.playback.subtitlePolicy||0)+1)%3;X.playback.subtitle=X.playback.subtitlePolicy===2;subtitles.textContent="Subtítulos · "+subtitleModes[X.playback.subtitlePolicy];nn();Y();};panel.appendChild(subtitles);panel.appendChild(e("p","xt-setting-footnote","Por defecto: español latino y subtítulos apagados. Si no hay audio español identificado, se usan subtítulos en español disponibles. Los cambios dentro de un título se recuerdan para esa película o serie y tienen prioridad."));
         Ba(panel,700,"Fuente de subtítulos",["Sistema","Cine · Open Sans","Serif","Monoespaciada"],"font",X.playback.font||0);
         panel.appendChild(e("p","xt-setting-footnote","Las fuentes se incluyen en la app. Cine usa Open Sans; no es la fuente propietaria Netflix Sans. Los subtítulos incrustados en la imagen no se pueden modificar."));
         Ba(panel,780,"Formato de pantalla",["Pantalla completa","Normal","16:9","4:3"],"screen",X.playback.screen);
@@ -4224,7 +4224,7 @@
         var nativePanel=samsungSettingsCard("Conoce tu conexión","Estado de la señal, reserva de vídeo y tiempos HTTP desde tu televisor.");
         nativePanel.appendChild(e("div","xt-setting-body","Revisa tu conexión con tarjetas de latencia, descarga, estabilidad de la prueba y servidores del canal. Puedes comprobar DNS y realizar una descarga de 4 MiB. No mide la velocidad física del Wi-Fi ni garantiza disponibilidad de la señal."));
         var nativeButton=e("div","dg-btn focusable xt-open-diagnostics","Abrir diagnóstico");
-        nativeButton.className+=" xt-setting-action";nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativeButton.onclick=nativeButton._activate;nativePanel.appendChild(nativeButton);
+        nativeButton.className+=" xt-setting-action";nativeButton._activate=function(){window.XuperStandalone.openDiagnostics();};nativePanel.appendChild(nativeButton);
         return nativePanel;
       }
       var t = Fa("Diagnóstico de red");
@@ -5409,7 +5409,7 @@
     K($,Q);
   }
   function preferredVodAudio(){if(X.playerMode==='live')return window.XuperLiveTracks?XuperLiveTracks.preferredAudio():'es';return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
-  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn(),forced:Qi&&typeof Qi.forced==='boolean'?Qi.forced:undefined});}
+  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn(),forced:Qi?Qi.forced===true:undefined});}
   function sn(e, t, a, context) {
     var i = context?context.item:X.playerItem;
     if (i && i.id && isFinite(e) && !(e < 3)) {

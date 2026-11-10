@@ -59,8 +59,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.10.10', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.10.10' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.10.11', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.10.11' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -93,7 +93,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.10.10', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.10.11', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -106,7 +106,7 @@ function request(method, payload, callback) {
 }
 let profileStorage;try{profileStorage=window.localStorage;}catch(_){}
 const profileStore=createProfileStore(profileStorage,window.indexedDB);
-window.XuperStandalone = { nextEpisodeOffer, resumeClock,canResumeVod,remainingLabel,similarTitles,detailFocus, openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.10.10', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { nextEpisodeOffer, resumeClock,canResumeVod,remainingLabel,similarTitles,detailFocus, openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe({language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.10.11', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 const vodRecovery=createVodRecovery(window,{reset:()=>{core.restart();nativeTransport.reset();streams.clear();lastError='';}});
 window.XuperStandalone.showVodRecovery=vodRecovery.open;
 window.XuperStandalone.auditCatalog=root=>catalogAudit.run({root:root||'series',onProgress:entry=>console.log('XT_CATALOG_OPTION '+JSON.stringify(entry))}).then(result=>{console.log('XT_CATALOG_AUDIT '+JSON.stringify(result));return result;});

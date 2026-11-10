@@ -7,6 +7,7 @@ import {openKeyboard} from './keyboard.js';
 const fold=text=>String(text||'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 export function createGuide(core){
   let panel=null,active=false,column=0,category=0,channel=0,categories=[],all=[],visible=[],query='',keyboard=null;
+  let deferredLoad=null,deferredCategories=null;
   let suspended=false,deleteDialog=null,headerAction=0,headerButtons=[];
   let sequence=0,page=1,hasMore=false,loading=false,selected=null,filterTimer=null,switchTimer=null;
   let favorites=readGuideFavorites();
@@ -73,12 +74,12 @@ export function createGuide(core){
     }
     const addon=categories[category];
     if(addon&&addon.url){
-      const apply=(error,items)=>{if(!active||run!==sequence)return;loading=false;hasMore=false;if(error){status(error.message||String(error));renderChannels();return;}all=(items||[]).map(item=>Object.assign({},item,{_search:fold(item.name+' '+item.group)}));filter();status('Lista M3U · '+all.length+' canales · busca también por grupo');};
+      const apply=(error,items)=>{if(!panel||run!==sequence)return;if(!active){if(suspended)deferredLoad=()=>apply(error,items);return;}loading=false;hasMore=false;if(error){status(error.message||String(error));renderChannels();return;}all=(items||[]).map(item=>Object.assign({},item,{_search:fold(item.name+' '+item.group)}));filter();status('Lista M3U · '+all.length+' canales · busca también por grupo');};
       const hit=addonCache.get(addon.url);if(!force&&hit&&Date.now()-hit.at<300000)apply(null,hit.items);
       else core.fetchM3u(addon.url,(error,items)=>{if(!error){addonCache.delete(addon.url);addonCache.set(addon.url,{at:Date.now(),items});if(addonCache.size>3)addonCache.delete(addonCache.keys().next().value);}apply(error,items);});return;
     }
-    core.getLiveChannels(categories[category]&&categories[category].id,page,100,(error,items,moreAvailable,metadata)=>{
-      if(!active||run!==sequence)return;loading=false;
+    core.getLiveChannels(categories[category]&&categories[category].id,page,100,function applyChannels(error,items,moreAvailable,metadata){
+      if(!panel||run!==sequence)return;if(!active){if(suspended)deferredLoad=()=>applyChannels(error,items,moreAvailable,metadata);return;}loading=false;
       if(error){status(error.message||String(error));renderChannels();return;}
       const known=new Set(all.map(item=>item.channelCode||item.streamUrl));
       (items||[]).forEach(item=>{const id=item.channelCode||item.streamUrl;if(!known.has(id)){known.add(id);all.push(Object.assign({},item,{_search:fold(item.name)}));}});
@@ -86,6 +87,7 @@ export function createGuide(core){
     });
   }
   function fullscreen(){
+    if(!active||!panel)return;clearTimeout(filterTimer);clearTimeout(switchTimer);
     const target=visible[channel];if(!target)return;selected=target;
     const items=visible.slice();let index=items.indexOf(target);if(index<0){items.push(target);index=items.length-1;}suspended=true;active=false;panel.hidden=true;
     if(window.__xuper){__xuper.channels.splice(0,__xuper.channels.length,...items);__xuper.state.channel=Math.max(0,index);__xuper.show('player');}
@@ -105,12 +107,12 @@ export function createGuide(core){
     const empty=document.createElement('p');empty.className='xt-guide-empty';panel.querySelector('.xt-guide-channels').appendChild(empty);
     portalCategories=[];column=0;category=0;rebuildCategories();if(options.favorites)category=categories.findIndex(item=>item.id==='__favorites');if(options.addons)category=customAddons.length?categories.findIndex(item=>item.id===customAddons[0].id):categories.findIndex(item=>item.id==='__m3u_add');if(options.addons&&!customAddons.length){renderCategories();renderChannels();addList();}else load();focus();
     if(window.XuperShell)XuperShell.onOpen('tv');
-    core.getLiveCategories((error,result)=>{if(!active||error||!result||!result.length)return;portalCategories=result.filter(item=>String(item.id)!=='76182');rebuildCategories();});
+    const openedPanel=panel;core.getLiveCategories(function applyCategories(error,result){if(panel!==openedPanel||error||!result||!result.length)return;if(!active){if(suspended)deferredCategories=()=>applyCategories(error,result);return;}portalCategories=result.filter(item=>String(item.id)!=='76182');rebuildCategories();});
   }
-  function suspend(){if(!panel)return;suspended=true;active=false;panel.hidden=true;if(window.XuperShell)XuperShell.onSuspend('tv');}
-  function resume(){if(!suspended||!panel)return false;suspended=false;active=true;panel.hidden=false;focus();if(window.XuperShell)XuperShell.onOpen('tv');return true;}
+  function suspend(){if(!panel)return;clearTimeout(filterTimer);clearTimeout(switchTimer);suspended=true;active=false;panel.hidden=true;if(window.XuperShell)XuperShell.onSuspend('tv');}
+  function resume(){if(!suspended||!panel)return false;suspended=false;active=true;panel.hidden=false;const categoriesReply=deferredCategories,loadReply=deferredLoad;deferredCategories=deferredLoad=null;if(categoriesReply)categoriesReply();if(loadReply)loadReply();focus();if(window.XuperShell)XuperShell.onOpen('tv');return true;}
   function close(){
-    suspended=false;if(deleteDialog){deleteDialog.node.remove();deleteDialog=null;}
+    suspended=false;deferredLoad=deferredCategories=null;if(deleteDialog){deleteDialog.node.remove();deleteDialog=null;}
     if(keyboard){keyboard.close();keyboard=null;}
     active=false;sequence++;clearTimeout(filterTimer);clearTimeout(switchTimer);if(panel)panel.remove();panel=null;
     // Playback leaves the legacy focus on hidden player controls. Restore a

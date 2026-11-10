@@ -1,5 +1,5 @@
 import http from 'node:http';import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';import path from 'node:path';import {once} from 'node:events';import assert from 'node:assert/strict';import {browserHarness} from './browser-harness.mjs';
-const root=path.resolve('app'),out=path.resolve(process.env.SCREENSHOT_DIR||'docs/screenshots/frontend-review');let browser;mkdirSync(out,{recursive:true});
+const root=path.resolve('app'),out=path.resolve(process.env.SCREENSHOT_DIR||'docs/ux-usability/settings-audit');let browser;mkdirSync(out,{recursive:true});
 const server=http.createServer((req,res)=>{if(req.url.includes('$WEBAPIS/')){res.setHeader('Content-Type','text/javascript');res.end('');return;}try{const file=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!file.startsWith(root+path.sep))throw new Error();res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml'})[path.extname(file)]||'application/octet-stream');res.end(readFileSync(file));}catch(_){res.writeHead(404);res.end();}});
 try{
  server.listen(0,'127.0.0.1');await once(server,'listening');browser=await browserHarness();
@@ -20,11 +20,13 @@ try{
  for(const group of ['screen','audio','subLang','size','style','font']){
  const value=await browser.evaluate('(function(){var el=document.querySelector(".settings-panel.is-active .pb-opt[data-unused]");var options=Array.from(document.querySelectorAll(".settings-panel.is-active .pb-opt")).filter(function(x){return x._group==='+JSON.stringify(group)+'});__xuper.focus(options[1]);__xuper.key(13);return {value:__xuper.state.playback['+JSON.stringify(group)+'],checked:options[1].classList.contains("is-checked")}})()');assert.equal(value.value,1);assert.ok(value.checked);
  }
+ const pointer=await browser.evaluate('(function(){var low=document.querySelector(".xt-setting-action"),before=localStorage.getItem("xt.lowDelay720")==="on";low.click();var after=localStorage.getItem("xt.lowDelay720")==="on";low.click();var sub=Array.from(document.querySelectorAll(".xt-setting-action")).find(b=>b.textContent.startsWith("Subtítulos")),mode=__xuper.state.playback.subtitlePolicy||0;sub.click();var changed=__xuper.state.playback.subtitlePolicy;sub.click();sub.click();return {before:before,after:after,mode:mode,changed:changed}})()');assert.notEqual(pointer.before,pointer.after,'One pointer click must toggle low-delay exactly once');assert.equal(pointer.changed,(pointer.mode+1)%3,'One pointer click must advance subtitle policy once');
  await browser.evaluate('__xuper.focus(document.querySelector(".xt-setting-action"));__xuper.key(13);__xuper.key(13)');
  await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".xt-setting-action")).find(b=>b.textContent.startsWith("Subtítulos")));__xuper.key(13);__xuper.key(13);__xuper.key(13)');
  await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".xt-setting-action")).find(b=>b.textContent.includes("TMDB")));__xuper.key(13)');assert.ok(await browser.evaluate('!!document.querySelector(".xt-tmdb-settings")'));await browser.evaluate('document.dispatchEvent(new KeyboardEvent("keydown",{keyCode:10009,bubbles:true}))');assert.equal(await browser.evaluate('!!document.querySelector(".xt-tmdb-settings")'),false);
  await browser.evaluate('__xuper.focus(Array.from(document.querySelectorAll(".settings-panel.is-active .pb-opt")).filter(function(x){return x._group==="style"})[1])');await browser.screenshot(path.join(out,'ajustes-final-'+width+'.png'));
  }
+ if(id==='netdiag'){const count=await browser.evaluate('(function(){var original=XuperStandalone.openDiagnostics,calls=0;XuperStandalone.openDiagnostics=function(){calls++};document.querySelector(".xt-open-diagnostics").click();XuperStandalone.openDiagnostics=original;return calls})()');assert.equal(count,1,'Diagnostic pointer activation runs once');}
  if(id==='parent')await browser.evaluate('__xuper.key(13);__xuper.key(13)');
  if(id==='display')await browser.evaluate('__xuper.key(39);__xuper.key(13);__xuper.key(37);__xuper.key(13)');
  await browser.screenshot(path.join(out,"menu-"+id+"-"+width+".png"));audit.push({width,id});
@@ -33,5 +35,6 @@ try{
  assert.equal(await browser.evaluate('__xuper.state.focus._index'),9);
  assert.ok(await browser.evaluate('document.getElementById("settings-menu").scrollTop>0'));
  }
+ const saved=await browser.evaluate('JSON.stringify(__xuper.state.playback)');await browser.command('Page.reload');await browser.waitFor('!!window.__xuper&&__xuper.state.screen==="home"');assert.equal(await browser.evaluate('JSON.stringify(__xuper.state.playback)'),saved,'Playback preferences survive reload');
  assert.deepEqual(browser.errors,[]);console.log('PASS settings: independent column scrolling at 1080p/4K; all ten panels; all playback groups, switches and display mode. '+JSON.stringify(audit));
 }finally{if(browser)await browser.close();server.closeAllConnections();server.close();}

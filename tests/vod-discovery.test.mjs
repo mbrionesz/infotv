@@ -64,3 +64,12 @@ test('subtitle metadata preserves explicit forced flags without guessing from la
  const f=fixture({});const rows=JSON.parse(f.run(`JSON.stringify(subtitleList({subtitleList:[{language:'es',forced:true,name:'Textos',file:[{url:'https://example/sub',fileType:'srt'}]},{language:'es',file:[{url:'https://example/forced.srt'}]},{language:'es',isForced:'0',file:[{url:'https://example/full'}]}]}))`));
  assert.equal(rows[0].forced,true);assert.equal(rows[0].name,'Textos');assert.equal(rows[1].forced,undefined);assert.equal(rows[2].forced,false);
 });
+test('forced VOD resolve starts fresh while old metadata request is pending and old response cannot overwrite fresh cache',async()=>{
+ const f=fixture({});f.run(`ensureSession=function(cb){cb(null)};var waiting=[];call=function(path,bean,cb){waiting.push(cb)};getSlb=function(cb){cb(null,{cdn_list:[{tag:'vod',main_addr:'https://vod.example',url_list:[{tag:'free',sign_type:'cfl',url:'fixture'}]}]})};`);
+ const old=new Promise((yes,no)=>f.core.mediaInfo('title','',(e,r)=>e?no(e):yes(r)));
+ const fresh=new Promise((yes,no)=>f.core.resolve('title','',{force:true},(e,r)=>e?no(e):yes(r)));
+ assert.equal(f.run('waiting.length'),2);
+ f.run(`function response(name){return {name:name,episodeList:[{totalMovieList:[{movieList:[{contentId:'file',videoFormat:'mp4',licenseList:[{license:'fixture'}]}]}]}]}};waiting[1](null,response('fresh'));`);
+ assert.equal((await fresh).name,'fresh');f.run(`waiting[0](null,response('old'))`);assert.equal((await old).name,'old');
+ const hit=await new Promise((yes,no)=>f.core.mediaInfo('title','',(e,r)=>e?no(e):yes(r)));assert.equal(hit.name,'fresh');assert.equal(f.run('waiting.length'),2);
+});
