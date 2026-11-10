@@ -130,7 +130,7 @@ export function createPlayer(getStream) {
         if(video.currentTime>vodLastClock+0.05){vodLastClock=video.currentTime;vodLastProgress=performance.now();}
         else if(performance.now()-vodLastProgress>16000){vodLastProgress=performance.now();if(vodBudget.take(performance.now())){diagnostics.vodRecoveries++;record('vod-clock-stalled');vodRecovery();}else fail('El vídeo sigue detenido. Pulsa OK para reintentar o Volver para regresar.');}
       }else{vodLastClock=video.currentTime;vodLastProgress=performance.now();}
-      if(frameMeter){frameMeter.sample();Object.assign(sample,frameMeter.read());}diagnostics.media=sample;diagnostics.vodBufferPolicy=!options.live&&progressive&&progressive.bufferPolicy||(!options.live&&hls?{paused:!!(started&&video.paused),maxAhead:hls.config.maxMaxBufferLength,estimatedForwardBytes:hls.config.maxBufferSize}:null);if(options.onInfo)options.onInfo(diagnostics);
+      if(frameMeter){frameMeter.sample();Object.assign(sample,frameMeter.read());}diagnostics.media=sample;diagnostics.vodMemory=progressive&&progressive.memory||null;diagnostics.vodBufferPolicy=!options.live&&progressive&&progressive.bufferPolicy||(!options.live&&hls?{paused:!!(started&&video.paused),maxAhead:hls.config.maxMaxBufferLength,estimatedForwardBytes:hls.config.maxBufferSize}:null);if(options.onInfo)options.onInfo(diagnostics);
       const clockMismatch=options.live&&started&&!document.hidden&&!(bufferGate&&bufferGate.userPaused)&&!video.seeking&&clockOutsideBuffer(sample);
       clockMismatchChecks=clockMismatch?clockMismatchChecks+1:0;
       if(clockMismatchChecks>=2&&!refreshing&&hls){clockMismatchChecks=0;diagnostics.timelineResets++;record('media-clock-outside-buffer');recoverSequence();return;}
