@@ -5409,7 +5409,7 @@
     K($,Q);
   }
   function preferredVodAudio(){if(X.playerMode==='live')return window.XuperLiveTracks?XuperLiveTracks.preferredAudio():'es';return titlePreferences(X.playerItem).audio||['es','pt','en'][Number(X.playback.audio)||0]||'es';}
-  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn()});}
+  function saveSubtitleChoice(){saveTitlePreference('subtitle',{enabled:!!Ji,language:Qi&&Qi.lang||rn(),forced:Qi&&typeof Qi.forced==='boolean'?Qi.forced:undefined});}
   function sn(e, t, a, context) {
     var i = context?context.item:X.playerItem;
     if (i && i.id && isFinite(e) && !(e < 3)) {
@@ -5658,13 +5658,14 @@
     if (un[a]) return (renderTitleMedia(un[a]), An(un[a]), t(un[a]));
     if (vn[a]) vn[a].push(t);
     else {
-      vn[a] = [t];
+      var pendingMetadata = vn[a] = [t];
       var i = kn(e),
         n = { contentId: a },
         r = e.seasonId || e.id;
       (i && i.id && r && i.id !== r && (n.seriesContentId = r),
         P("mediaInfo", n, function (e, t) {
-          var i = vn[a] || [];
+          if(vn[a]!==pendingMetadata)return;
+          var i = pendingMetadata;
           delete vn[a];
           var n = !e && t && !1 !== t.returnValue ? t : null;
           n && ((un[a] = n), X.detail&&String(Ln(X.detail))===String(a)&&renderTitleMedia(n), X.playerItem&&String(Ln(X.playerItem))===String(a)&&An(n));
@@ -5688,7 +5689,7 @@
   }
   function En(e) {
     for (var t = [], a = (e && e.subtitles) || [], i = 0; i < a.length; i++)
-      t.push({ lang: a[i].lang, url: a[i].url, format: a[i].format });
+      t.push({ lang: a[i].lang, url: a[i].url, format: a[i].format, name:a[i].name, forced:a[i].forced });
     return (
       t.sort(function (e, t) {
         return (
@@ -6354,7 +6355,7 @@
         for (var r = 0; r < t.length; r++)
           (function (t) {
             var a = e("button", "dps-btn focusable");
-            ((a.textContent = nr(t.lang || "Sub")),
+            ((a.textContent = nr(t.lang || "Sub")+(t.forced===true?" · Forzados":"")),
               Qi && Qi.url === t.url && a.classList.add("is-selected"),
               (a._activate = function () {
                 ((Qi = t), (Ji = !0), (Ki = !0), saveSubtitleChoice(), mn(t), ir());var selected=Vi.querySelector(".is-selected")||Vi.firstChild;if(selected)rt(selected);Dn();

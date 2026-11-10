@@ -60,3 +60,7 @@ test('VOD metadata preserves group quality and parses fractional FPS without mut
  const result=JSON.parse(f.run(`JSON.stringify((function(){var input={totalMovieList:[{quality:'1080p',movieList:[{contentId:'one',frameRate:'24000/1001',videoFormat:'mp4'}]},{quality:'2160p',movieList:[{contentId:'two',fps:'60',videoFormat:'mp4'}]}]};return {tracks:collectTracks(input).map(trackSummary),mutated:!!input.totalMovieList[0].movieList[0].groupQuality,decimal:trackFrameRate({fps:'23,976'}),invalid:trackFrameRate({fps:'1/0'}),interlaced:trackHeight({quality:'1080i'})};})())`));
  assert.equal(result.tracks[0].height,1080);assert.equal(result.tracks[0].quality,'1080p');assert.ok(Math.abs(result.tracks[0].frameRate-23.976)<0.001);assert.equal(result.tracks[1].height,2160);assert.equal(result.tracks[1].frameRate,60);assert.equal(result.mutated,false);assert.equal(result.decimal,23.976);assert.equal(result.invalid,0);assert.equal(result.interlaced,1080);
 });
+test('subtitle metadata preserves explicit forced flags without guessing from language or filenames',()=>{
+ const f=fixture({});const rows=JSON.parse(f.run(`JSON.stringify(subtitleList({subtitleList:[{language:'es',forced:true,name:'Textos',file:[{url:'https://example/sub',fileType:'srt'}]},{language:'es',file:[{url:'https://example/forced.srt'}]},{language:'es',isForced:'0',file:[{url:'https://example/full'}]}]}))`));
+ assert.equal(rows[0].forced,true);assert.equal(rows[0].name,'Textos');assert.equal(rows[1].forced,undefined);assert.equal(rows[2].forced,false);
+});

@@ -5,3 +5,7 @@ test('metadata audit is explicit, bounded and excludes transport secrets',async(
  assert.deepEqual(calls,[['detail','root'],['mediaInfo','episode2','season2']]);assert.equal(result.seasons,2);assert.equal(result.observed,null);assert.ok(!JSON.stringify(result).includes(secret));assert.deepEqual(result.media.subtitles,[{language:'es',format:'vtt'}]);
  await assert.rejects(auditVodMetadata(core,{screen:'home'}),/Abre la ficha/);
 });
+test('audit exposes provider forced-subtitle metadata without resource URLs',async()=>{
+ const core={detail(id,cb){cb(null,{item:{}});},mediaInfo(id,series,cb){cb(null,{subtitles:[{lang:'es',format:'srt',forced:true,name:'Textos',url:'https://private.invalid/sub'}]});}};
+ const result=await auditVodMetadata(core,{screen:'detail',detail:{id:'one'}});assert.deepEqual(result.media.subtitles,[{language:'es',format:'srt',name:'Textos',forced:true}]);assert.ok(!JSON.stringify(result).includes('private.invalid'));
+});

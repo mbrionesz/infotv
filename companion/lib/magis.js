@@ -1375,22 +1375,21 @@ function collectTracks(e) {
   );
 }
 function subtitleList(e) {
-  for (
-    var r = [], t = (e && e.subtitleList) || [], n = 0;
-    n < t.length && r.length < 30;
-    n++
-  ) {
-    var s = t[n] && t[n].file && t[n].file[0];
-    s &&
-      trim(s.url) &&
-      r.push({
-        lang: trim(t[n].language),
-        url: trim(s.url),
-        format: trim(s.fileType) || "srt",
-      });
+  var result=[],list=e&&e.subtitleList||[];
+  for(var i=0;i<list.length&&result.length<30;i++){
+    var entry=list[i],file=entry&&entry.file&&entry.file[0];
+    if(!file||!trim(file.url))continue;
+    var item={lang:trim(entry.language),url:trim(file.url),format:trim(file.fileType)||"srt"};
+    var name=trim(file.name||file.label||entry.name||entry.label).slice(0,120);
+    if(name)item.name=name;
+    var flag=file.forced!==undefined?file.forced:file.isForced!==undefined?file.isForced:entry.forced!==undefined?entry.forced:entry.isForced;
+    if(flag===true||flag===1||flag==="1"||flag==="true")item.forced=true;
+    else if(flag===false||flag===0||flag==="0"||flag==="false")item.forced=false;
+    result.push(item);
   }
-  return r;
+  return result;
 }
+
 var PLAY_TTL = 6e4,
   playCache = {},
   playWaiters = {};

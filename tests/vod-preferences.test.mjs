@@ -19,3 +19,4 @@ test('saved audio language and variant survive reordered tracks',()=>{
  assert.equal(language.chooseAudioTrack([first[2],first[0],first[1]],saved),2);
  assert.equal(language.chooseAudioTrack([first[2],first[0]],saved),0);
 });
+test('manual forced subtitle preference survives reordered Spanish tracks and respects Off',()=>{const rows=[{lang:'es',url:'full',forced:false},{lang:'es',url:'forced',forced:true}];assert.equal(subtitleDecision({subtitles:rows,manual:{enabled:true,language:'es',forced:true}}).url,'forced');assert.equal(subtitleDecision({subtitles:rows.slice().reverse(),manual:{enabled:true,language:'es',forced:false}}).url,'full');assert.equal(subtitleDecision({subtitles:rows,manual:{enabled:false,language:'es',forced:true}}),null);assert.equal(subtitleDecision({subtitles:[rows[0]],manual:{enabled:true,language:'es',forced:true}}),null);});
