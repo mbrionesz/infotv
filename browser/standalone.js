@@ -66,8 +66,8 @@ function request(method, payload, callback) {
     callback(error ? lastError : null, error ? null : Object.assign({ returnValue: true }, result || {}));
   }
   try {
-    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.10.16', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
-    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.10.16' });
+    if (method === 'ping') return done(null, { service: 'xuper-tizen-standalone', version: '0.10.17', standalone: true, relayAvailable: false, capabilities: window.XuperPlayer.capabilities() });
+    if (method === 'checkUpdate') return done(null, { updateAvailable: false, currentVersion: '0.10.17' });
     if (method === 'prewarm' || method === 'heartbeat' || method === 'keepAlive') return done(null, { standalone: true });
     if (method === 'abortMedia') { window.XuperPlayer.stop(); return done(null, {}); }
     if (method === 'resolveSmooth') return done(new Error('Usa reproducción automática en este televisor Samsung.'));
@@ -100,7 +100,7 @@ function request(method, payload, callback) {
     }
     if (method === 'netdiag') {
       const caps = window.XuperPlayer.capabilities();
-      return core.diagnostics(function (error, worker) { done(null, { version: '0.10.16', verdict: lastError ? 'pendiente' : 'local',
+      return core.diagnostics(function (error, worker) { done(null, { version: '0.10.17', verdict: lastError ? 'pendiente' : 'local',
         serviceError: lastError, hosts: [], providers: [],
         layers: { session: {ready:!!core.session.ready,userId:core.session.ready?'✓':'?',token:core.session.ready?'✓':'?'} },
         standalone:true, codec:{h264:caps.codecs.h264.native,hevc:caps.codecs.hevc.native,hls:caps.hlsjs?'HLS.js '+window.XuperPlayer.diagnostics.hlsVersion:'MSE no disponible'}, capabilities:caps,
@@ -115,7 +115,7 @@ let profileStorage;try{profileStorage=window.localStorage;}catch(_){}
 const profileStore=createProfileStore(profileStorage,window.indexedDB);
 const catalogStatistics=createCatalogStatistics({getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)});
 const catalogStatisticsPanel=createCatalogStatisticsPanel(catalogStatistics,document);
-window.XuperStandalone = { catalogStatistics:()=>catalogStatistics.snapshot(),mountCatalogStatistics:node=>catalogStatisticsPanel.mount(node), isSeriesTitle,continueTitle, nextEpisodeOffer, resumeClock,canResumeVod,remainingLabel,similarTitles,detailFocus, openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe(typeof value==='object'?value:{language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.10.16', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
+window.XuperStandalone = { catalogStatistics:()=>catalogStatistics.snapshot(),mountCatalogStatistics:node=>catalogStatisticsPanel.mount(node), isSeriesTitle,continueTitle, nextEpisodeOffer, resumeClock,canResumeVod,remainingLabel,similarTitles,detailFocus, openPeople:peoplePanel.open, portal:(method,payload={})=>new Promise((resolve,reject)=>{if(!['portalRoutes','portalHome','portalShelve','portalPersons','portalPersonItems','portalShortVideos','portalCatchup','portalResolveCatchup'].includes(method))return reject(new Error('Ruta no disponible'));core.call(method,payload,(error,result)=>error?reject(error):resolve(result));}), compareCatalogTotals:root=>compareCatalogTotals((method,payload)=>new Promise((resolve,reject)=>core.call(method,payload,(error,result)=>error?reject(error):resolve(result))),root), profileStore,knownVodDuration, titleBadges,qualityLabel, auditVodMetadata:()=>auditVodMetadata(core,window.__xuper&&window.__xuper.state||{},window.XuperPlayer), subtitleDecision, chooseAudioTrack:audioLanguage.chooseAudioTrack,audioLanguageLabel:value=>audioLanguage.describe(typeof value==='object'?value:{language:value,name:value},0).name,loadSubtitles,playbackHistory:()=>window.XuperPlayer.history(),allowContent, formatMediaInfo, measureRemote:callback=>remoteMetrics.measure(callback),request, core, version: '0.10.17', diagnostics: () => ({ storage:profileStore.diagnostics(),lastError, startup:window.__xuperStartup||null, player: window.XuperPlayer.diagnostics, capabilities: window.XuperPlayer.capabilities() }) };
 const vodRecovery=createVodRecovery(window,{reset:()=>{core.restart();nativeTransport.reset();streams.clear();lastError='';}});
 window.XuperStandalone.showVodRecovery=vodRecovery.open;
 window.XuperStandalone.auditCatalog=root=>catalogAudit.run({root:root||'series',onProgress:entry=>console.log('XT_CATALOG_OPTION '+JSON.stringify(entry))}).then(result=>{console.log('XT_CATALOG_AUDIT '+JSON.stringify(result));return result;});
@@ -137,10 +137,9 @@ window.XuperStandalone.openDiagnostics=function(playback){
 };
 let exitToast=null,exitToastTimer;
 const exitGate=createExitGate({prompt:()=>{window.XuperShell.focusHeader();if(!exitToast){exitToast=document.createElement('div');exitToast.className='xt-exit-toast';document.getElementById('app').appendChild(exitToast);}exitToast.textContent='Pulsa Atrás otra vez para salir';clearTimeout(exitToastTimer);exitToastTimer=setTimeout(()=>{exitToast?.remove();exitToast=null;},2200);},exit:async()=>{
- window.__xuper?.checkpointVod?.();window.XuperPlayer.stop();window.XuperGuide.close();window.XuperCatalog.close();
- const flush=window.XuperStandalone.profileStore.flush();const clear=new Promise(resolve=>core.call('clearMetadata',{},()=>resolve()));
- await Promise.race([Promise.allSettled([flush,clear]),new Promise(resolve=>setTimeout(resolve,1200))]);
- core.dispose();nativeTransport.dispose();posterLoader.dispose();streams.clear();exitToast?.remove();exitToast=null;
+ const result=await window.XuperStandalone.cleanTemporaryData();
+ if(!result.saved){if(exitToast)exitToast.textContent='No se pudo guardar el progreso. Vuelve a intentar salir.';return;}
+ nativeTransport.dispose();exitToast?.remove();exitToast=null;
  try{if(window.tizen?.application){window.tizen.application.getCurrentApplication().exit();return;}}catch(_){}
  window.location.reload();
 }});
@@ -176,7 +175,7 @@ window.XuperStandalone.handleRemote=event=>remoteMetrics.measure(()=>handleRemot
 
 try{localStorage.removeItem('xuper.searchHistory');}catch(_){}
 const posterLoader=installPosterLoader(core,window);
-window.XuperStandalone.cleanTemporaryData=createCacheCleaner({checkpoint:()=>window.__xuper?.checkpointVod?.(),flush:()=>window.XuperStandalone.profileStore.flush(),stop:()=>{window.XuperPlayer.stop();window.XuperGuide.close();window.XuperCatalog.close();},clear:[()=>new Promise(resolve=>core.call('clearTemporary',{},(error,result)=>resolve(!error&&result?.cleared===true))),()=>createCarouselCache(window.indexedDB).clear()],reset:()=>{catalogCount.dispose();core.dispose();nativeTransport.reset();posterLoader.dispose();streams.clear();try{localStorage.removeItem('xt.catalogCount');}catch(_){}}});
+window.XuperStandalone.cleanTemporaryData=createCacheCleaner({checkpoint:()=>window.__xuper?.checkpointVod?.(),flush:()=>window.XuperStandalone.profileStore.flush(),stop:()=>{window.XuperPlayer.stop();window.XuperGuide.close();window.XuperCatalog.close();},clear:[()=>new Promise(resolve=>core.call('clearTemporary',{},(error,result)=>resolve(!error&&result?.cleared===true))),()=>createCarouselCache(window.indexedDB).clear()],reset:()=>{catalogCount.dispose();core.dispose();nativeTransport.reset();posterLoader.dispose();streams.clear();}});
 
 window.XuperStandalone.loadPoster=posterLoader.load;
 window.addEventListener('pagehide',()=>{vodRecovery.close();window.XuperShell.dispose();XuperLiveTracks.close();XuperArtwork.close();closeDiagnostics();peoplePanel.close();window.XuperGuide.close();window.XuperCatalog.close();core.dispose();nativeTransport.dispose();posterLoader.dispose();});

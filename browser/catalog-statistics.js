@@ -1,14 +1,14 @@
-const KEY='xt.catalogStatistics.v1',LIMIT=90;
+const KEY='xt.catalogStatistics.v1',LIMIT=5;
 const integer=value=>Number.isSafeInteger(value)&&value>=0;
 const date=value=>Number.isFinite(value)&&Number.isFinite(new Date(value).getTime());
 function entry(value){if(!value||!integer(value.total)||!date(value.changedAt))return null;const result={total:value.total,changedAt:value.changedAt};if(integer(value.movies)&&integer(value.series)&&value.movies+value.series===value.total){result.movies=value.movies;result.series=value.series;}return result;}
 export function createCatalogStatistics(storage){
  let history=[],lastCheckedAt=null,status='saved',persisted=true;
- try{const data=JSON.parse(storage.getItem(KEY)||'null');if(data&&data.version===1&&Array.isArray(data.history)){for(const raw of data.history.slice(-LIMIT)){const item=entry(raw);if(item&&(!history.length||history[history.length-1].total!==item.total))history.push(item);}if(date(data.lastCheckedAt))lastCheckedAt=data.lastCheckedAt;}}catch(_){}
+ try{const data=JSON.parse(storage.getItem(KEY)||'null');if(data&&data.version===1&&Array.isArray(data.history)){for(const raw of data.history.slice(-LIMIT)){const item=entry(raw);if(item&&(!history.length||history[history.length-1].total!==item.total))history.push(item);}if(date(data.lastCheckedAt))lastCheckedAt=data.lastCheckedAt;if(data.history.length>LIMIT){try{storage.setItem(KEY,JSON.stringify({version:1,history,lastCheckedAt}));}catch(_){persisted=false;}}}}catch(_){}
  function snapshot(){return {version:1,history:history.map(item=>Object.assign({},item)),lastCheckedAt,status,persisted};}
  function record(report){if(!report||report.complete!==true||!integer(report.total)||!date(report.checkedAt))return false;
   const latest=history[history.length-1];if(latest&&report.checkedAt<latest.changedAt)return false;
-  if(!latest||latest.total!==report.total){const item={total:report.total,changedAt:report.checkedAt},reports=report.reports||[];const movies=reports.find(r=>r.root==='movies'),series=reports.find(r=>r.root==='series');if(movies&&series&&integer(movies.total)&&integer(series.total)&&movies.total+series.total===item.total){item.movies=movies.total;item.series=series.total;}history.push(item);history=history.slice(-LIMIT);}
+  if(!latest||latest.total!==report.total){const item={total:report.total,changedAt:report.checkedAt},reports=report.reports||[];const movies=reports.find(r=>r.root==='movies'),series=reports.find(r=>r.root==='series');if(movies&&series&&integer(movies.total)&&integer(series.total)&&movies.total+series.total===item.total){item.movies=movies.total;item.series=series.total;}history.push(item);if(history.length>LIMIT)history.splice(0,4);}
   lastCheckedAt=report.checkedAt;status='ok';try{storage.setItem(KEY,JSON.stringify({version:1,history,lastCheckedAt}));persisted=true;}catch(_){persisted=false;}return true;
  }
  return {record,snapshot,failed(){status='unavailable';}};
@@ -29,7 +29,7 @@ export function createCatalogStatisticsPanel(store,document){let panel=null;
   const list=add(panel,'div','xt-catalog-stat-list','');list.setAttribute('role','list');
   const rows=data.history.slice().reverse();rows.forEach((item,index)=>{const row=add(list,'div','focusable xt-catalog-stat-row','');row.tabIndex=-1;row.setAttribute('role','listitem');row._onFocus=()=>{const adjust=()=>{if(!win||!win.__xuper||win.__xuper.state.focus!==row)return;const parent=panel.closest('.scrollable');if(!parent)return;const r=row.getBoundingClientRect(),p=parent.getBoundingClientRect(),scale=p.height/parent.clientHeight||1;if(r.bottom>p.bottom-12)parent.scrollTop+=(r.bottom-p.bottom+16)/scale;else if(r.top<p.top+12)parent.scrollTop-=(p.top-r.top+16)/scale;};if(win)win.requestAnimationFrame(adjust);};add(row,'span','',format(item.changedAt));add(row,'strong','',item.total.toLocaleString('es-CL')+' títulos');const prior=rows[index+1];if(prior){const diff=item.total-prior.total;add(row,'span','xt-catalog-stat-delta',(diff>0?'+':'')+diff.toLocaleString('es-CL'));}});
   if(focused&&focusIndex>=0){const target=list.children[Math.min(focusIndex,list.children.length-1)];if(target)win.__xuper.focus(target);}
-  add(panel,'p','xt-setting-footnote','Hasta 90 cambios guardados como JSON local. Se conservan al limpiar caché. El conteo no verifica títulos únicos ni garantiza que todos estén disponibles.');
+  add(panel,'p','xt-setting-footnote','Hasta 5 cambios guardados como JSON local. Al sexto se conservan los dos últimos. Se conservan al limpiar caché. El conteo no verifica títulos únicos ni garantiza que todos estén disponibles.');
  }
  return {mount(node){panel=node;render();},render};
 }
