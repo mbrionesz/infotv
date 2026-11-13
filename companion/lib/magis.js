@@ -456,6 +456,25 @@ function call(e, r, t, n) {
       for (a in r) Object.prototype.hasOwnProperty.call(r, a) && (o[a] = r[a]);
       post(e, o, function (a, o) {
         s();
+        // No reiniciar una autenticación que todavía está en curso.
+if (a && t.baseFields === false) {
+  console.warn(
+    "[magis] Error de autenticación inicial:",
+    e,
+    a.portalCode || a.message
+  );
+  return n(a);
+}
+
+// Una versión descontinuada no se recupera renovando la sesión.
+if (a && a.portalCode === "portal200001") {
+  console.warn(
+    "[magis] Versión rechazada por el portal:",
+    e,
+    a.portalCode
+  );
+  return n(a);
+}
         var i = a && a.portalCode,
           l = i && SESSION_DEAD[i],
           u =
