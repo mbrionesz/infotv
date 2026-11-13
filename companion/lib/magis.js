@@ -1912,7 +1912,7 @@ function resolveLive(e, r, options) {
                 "Content-License": a,
                 "User-Agent": "Ranger/4.9.4-17294ac0",
                 App: "com.android.msandroid",
-                "App-Version": "49902",
+                "App-Version": "49920",
                 "X-Buffer": "0",
               },
               name: text(
