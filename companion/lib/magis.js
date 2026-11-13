@@ -1901,7 +1901,7 @@ function resolveLive(e, r, options) {
             )
               m.push({url:"http://" + t[p].cflHost + "/live/" + s + ".m3u8",headers:{
                 "Content-Auth":signLiveCdn(t[p].authBase),"Content-License":a,
-                "User-Agent":"Ranger/4.9.4-17294ac0",App:"com.android.msandroid","App-Version":"49902","X-Buffer":"0"
+                "User-Agent":"Ranger/4.9.4-17294ac0",App:"com.android.msandroid","App-Version":"49920","X-Buffer":"0"
               }});
             var v = {
               url: i,
