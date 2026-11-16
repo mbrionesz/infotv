@@ -6,6 +6,10 @@ on:
         description: Shared Tizen release receiving the Windows installers
         required: true
         default: v0.10.20-beta.1
+      source_ref:
+        description: Windows source tag (independent version)
+        required: true
+        default: v0.1.1-beta.1
       tmdb_public_config_b64:
         description: Owner-authorized public TMDB configuration
         required: false
@@ -18,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.source_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
