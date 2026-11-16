@@ -18,3 +18,7 @@ docs/qa-security-0.7/
 
 # Generated discovery screenshots
 docs/discovery-preview/
+
+# Windows build staging
+desktop/ui/
+desktop/node_modules/

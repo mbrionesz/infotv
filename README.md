@@ -1,19 +1,14 @@
-# XuperTizen 0.10.19 beta · Diseño
+# XuperTizen · Tizen 0.10.20 beta / Windows 0.1.1 beta
 
 **XuperTizen by Matias · By MatiasB**
 
-App autónoma para Samsung Tizen 4.0+, adaptable a Full HD y 4K.
+TV, Películas, Series y búsqueda con filtros. Mismo diseño oscuro inspirado en shadcn, favoritos, seguir viendo, idiomas y subtítulos. DNS seguro y comprobaciones internas del portal.
 
-- Tema Zinc oscuro: adaptación para TV de shadcn/ui, sin runtime React.
-- TV, Películas, Series, búsqueda con filtros y navegación con mando.
-- Seguir viendo, favoritos, idiomas, subtítulos y estadísticas del catálogo.
-- DNS seguro, limpieza de sesión y revisión informativa semanal de clientes del portal.
+[Descargas](https://github.com/mbrionesz/infotv/releases/tag/v0.10.20-beta.1)
 
-[Descargar 0.10.19 beta](https://github.com/mbrionesz/infotv/releases/tag/v0.10.19-beta.1).
-Firma e instala el `.wgt` **UNSIGNED** con **Apps2Samsung**.
+- **Samsung Tizen 4.0+:** instala el `.wgt` UNSIGNED con Apps2Samsung.
+- **Windows 10/11:** instalador `.exe` x64 o x86 según tu sistema. Ventana maximizable y F11 para pantalla completa. Windows 11 es de 64 bits.
 
-Requiere prueba en el TV; la reproducción depende de las fuentes y códecs disponibles.
+Beta; reproducción según fuentes y códecs disponibles. Instaladores Windows sin firma Authenticode.
 
-[Instalación](docs/INSTALAR-WINDOWS.md) · [Notas](docs/RELEASE-0.10.19-beta.1.md) · [Diseño](docs/SHADCN-TV.md)
-
-Desarrollo: Node.js 22+, `npm ci`, `npm test`, `npm run package`.
+[Windows](docs/WINDOWS-0.1.1.md) · [Instalar en Samsung](docs/INSTALAR-WINDOWS.md) · [Notas](docs/RELEASE-0.10.20-beta.1.md)

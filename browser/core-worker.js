@@ -1,3 +1,4 @@
+import {portalEvidence} from './portal-evidence.js';
 import {canPersistRequest} from './search-privacy.js';
 import {createCatalogCounter} from './catalog-counter.js';
 import {createShowcaseQuery} from './showcase-data.js';
@@ -26,6 +27,7 @@ try{
   cryptoVerified=Buffer.concat([decipher.update(Buffer.from('c8c781f3c07c806c304a26ac5327083541155b5cfcbfed46','hex')),decipher.final()]).toString('utf8')==='XuperTizen worker';
 }catch(_){}
 function invoke(method,payload,done) {
+  if(method==='portalEvidence')return done(null,portalEvidence.snapshot());
   if(method==='portalRoutes')return done(null,core.portalRoutes());
   if(method==='portalHome')return core.portalHome(payload.root||'movies',done);
   if(method==='portalShelve')return core.portalShelve(payload.root||'movies',payload,done);

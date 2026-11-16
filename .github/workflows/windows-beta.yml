@@ -1,0 +1,73 @@
+name: Windows 0.1.1 beta
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Shared Tizen release receiving the Windows installers
+        required: true
+        default: v0.10.20-beta.1
+      tmdb_public_config_b64:
+        description: Owner-authorized public TMDB configuration
+        required: false
+        default: ''
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix desktop
+      - run: node --test tests/desktop/*.test.mjs
+      - run: npm run build
+      - run: node tools/build-desktop.mjs
+      - name: Include authorized TMDB configuration
+        shell: pwsh
+        env:
+          TMDB_PUBLIC_CONFIG_B64: ${{ inputs.tmdb_public_config_b64 }}
+          XUPER_TMDB_PUBLIC_KEY: ${{ secrets.XUPER_TMDB_PUBLIC_KEY }}
+        run: |
+          if ($env:TMDB_PUBLIC_CONFIG_B64) { $env:XUPER_TMDB_PUBLIC_KEY=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:TMDB_PUBLIC_CONFIG_B64)) }
+          if ($env:XUPER_TMDB_PUBLIC_KEY) { Write-Output "::add-mask::$env:XUPER_TMDB_PUBLIC_KEY"; node tools/provision-desktop.mjs }
+      - name: Actual Electron desktop smoke test
+        run: desktop/node_modules/.bin/electron tools/desktop-smoke.cjs
+      - name: Build separate x64 and x86 installers
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run dist --prefix desktop
+      - name: Verify executables and checksums
+        shell: pwsh
+        run: |
+          $files=Get-ChildItem dist/windows/*-Setup.exe
+          if ($files.Count -ne 2) { throw 'Expected two Windows installers' }
+          $sums=@{}
+          foreach ($file in $files) { $sums[$file.Name]=(Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower() }
+          $sums | ConvertTo-Json | Set-Content dist/windows/SHA256SUMS-Windows.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XuperTizen-Windows-0.1.1-beta
+          path: |
+            dist/windows/*-Setup.exe
+            dist/windows/SHA256SUMS-Windows.json
+            dist/windows-0.1.1-smoke.png
+      - name: Attach Windows installers to the shared beta release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Publish the Tizen release first' }
+          $assets=@((Get-ChildItem dist/windows/*-Setup.exe).FullName)+@('dist/windows/SHA256SUMS-Windows.json')
+          gh release upload $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY @assets
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }

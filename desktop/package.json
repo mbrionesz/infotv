@@ -1,0 +1,45 @@
+{
+  "name": "xupertizen-windows",
+  "version": "0.1.1",
+  "private": true,
+  "description": "XuperTizen para Windows 10/11 \u2014 beta",
+  "author": "MatiasB",
+  "license": "UNLICENSED",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --ia32",
+    "test": "node --test ../tests/desktop/*.test.mjs"
+  },
+  "devDependencies": {
+    "electron": "43.8.10",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.matiasb.xupertizen.windows",
+    "productName": "XuperTizen",
+    "asar": true,
+    "directories": {
+      "output": "../dist/windows"
+    },
+    "files": [
+      "*.cjs",
+      "resolvers.json",
+      "ui/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "XuperTizen-Windows-${version}-beta-${arch}-Setup.${ext}",
+      "requestedExecutionLevel": "asInvoker",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true
+    },
+    "compression": "normal"
+  }
+}

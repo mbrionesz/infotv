@@ -32,6 +32,13 @@ const plugin = {
       const end = source.indexOf('\nfunction ', start + 1);
       if (start < 0 || end < 0) throw new Error('Unexpected upstream service structure');
       source = source.slice(0, start) + 'function refreshSeeds(e) { if(e) e(new Error("Sesiones prestadas no disponibles en este widget")); }\n' + source.slice(end);
+      // Instrument parsed replies without modifying the upstream source or outgoing beans.
+      const observer = 'try{__xtEvidence.observe({route:e,status:t.statusCode,envelope:s,payload:PAYLOAD});}catch(__xtIgnored){}';
+      for(const [anchor,payload] of [['return ((d.portalCode = u), c(d));','null'],['return c(null, p);','p'],['c(null, void 0 !== s.data && null !== s.data ? s.data : s);','s.data']]){
+        if(source.split(anchor).length!==2)throw new Error('Unexpected portal observation boundary');
+        source=source.replace(anchor,observer.replace('PAYLOAD',payload)+'\n'+anchor);
+      }
+      source='var __xtEvidence=require('+JSON.stringify(path.join(root,'browser/portal-evidence.js'))+').portalEvidence;\n'+source;
       return { contents: source, loader: 'js', resolveDir: path.dirname(args.path) };
     });
   }
@@ -76,7 +83,7 @@ for (const [folder, license] of [['events','LICENSE'], ['hls.js','LICENSE'], ['m
 copyFileSync(path.join(root,'LICENSE-UPSTREAM'),path.join(root,'app/vendor/UPSTREAM-LICENSE.txt'));
 copyFileSync(path.join(root,'docs/THIRD_PARTY-UPSTREAM.md'),path.join(root,'app/vendor/UPSTREAM-NOTICES.txt'));
 console.log('Standalone bundle: browser runtime, HLS.js, portal protocol; Chrome 56 target (Tizen 4.0).');
-const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js','companion/lib/audio-language.js','app/css/shadcn-tv.css','design/shadcn-tv.json','data/portal-client-watch.json',
+const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js','companion/lib/audio-language.js','app/css/shadcn-tv.css','design/shadcn-tv.json',
   ...readdirSync(path.join(root,'browser')).filter(name=>name.endsWith('.js')).map(name=>'browser/'+name)].sort();
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}

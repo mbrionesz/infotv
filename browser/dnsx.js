@@ -1,3 +1,4 @@
+import {createDesktopTransport} from './desktop-transport.js';
 import {requestSignal,abortable} from './request-signal.js';
 import {dnsQuestion,resolvers,resolverEndpoints} from './dns-diagnostic.js';
 function createTransport({workerFactory=()=>new Worker(new URL('vendor/native-worker.js',document.baseURI)),now=Date.now}={}){
@@ -124,6 +125,7 @@ function createTransport({workerFactory=()=>new Worker(new URL('vendor/native-wo
 
 // Keep callers bound to one facade while replacing a failed worker/socket session.
 export function createNativeTransport(options={}){
+ if(typeof window!=='undefined'&&window.XuperDesktop)return createDesktopTransport(window.XuperDesktop);
  let current=createTransport(options);
  return {ensure:()=>current.ensure(),request:options=>current.request(options),diagnose:()=>current.diagnose(),snapshot:()=>current.snapshot(),dispose:()=>current.dispose(),reset(){current.dispose();current=createTransport(options);}};
 }

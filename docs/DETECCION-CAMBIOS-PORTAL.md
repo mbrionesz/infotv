@@ -1,17 +1,11 @@
-# Cómo saber si cambió el portal
+# Comprobación interna del portal
 
-No se ha identificado un endpoint fiable que declare la versión del servidor. apkVersion, apkVer y spkgVer/sysVersion de magis.js son identificadores enviados por el cliente: no demuestran una actualización del portal.
+Corrección en borrador posterior a 0.10.19 beta.1: se retiró el monitor de clientes externos por aclaración del usuario. La tarea GitHub Actions que consultaba otras apps fue desactivada. El código de consulta de GitHub, sus datos y su workflow se retiran de la app.
 
-Los totales y su historial prueban solo que cambiaron las cifras declaradas por las consultas de catálogo. Un total igual puede contener títulos diferentes. Una releaseDate es el estreno del título; no es una fecha de incorporación salvo que el proveedor la identifique así.
+Ajustes → Estado del portal usa directamente `catalogFullPage` para Películas y Series, con actualización fresca, una página de un título por sección y la sesión/transportes existentes. Revisa cada siete días en la app cuando está abierta y fuera de reproducción; tiene botón manual y guarda la fecha local. No consulta otros clientes o repositorios.
 
-Para detectar un cambio de protocolo se comparan respuestas de la misma ruta y sesión (campos y tipos), resultados de autenticación, códigos exactos y constantes de clientes de referencia. Un error de autenticación o de red aislado no prueba una actualización; tampoco se soluciona automáticamente igualando todos los números de versión.
+Las rutas subyacentes son v3/getShelveData y v3/filterByContent según la colección del catálogo. El panel muestra respuesta, total informado, ruta y códigos de error. No se identificó un endpoint confirmado que publique la versión del servidor. `apkVersion`, `apkVer` y `spkgVer/sysVersion` son los valores enviados por nuestro cliente y se etiquetan así. La app no inventa ni cambia esos valores.
 
-La app conserva los valores de cliente de 0.10.17. No descarga ni ejecuta código nuevo del portal ni modifica magis.js automáticamente. Una corrección de compatibilidad requiere evidencia, pruebas y una versión de la app.
+Un cambio en el total demuestra un cambio en esa cifra declarada, no una actualización de la API. Un total igual puede contener títulos diferentes. Los errores de red/autenticación tampoco prueban por sí solos una actualización del servidor. Para conocer futuras versiones exigidas por el portal es necesaria una respuesta o ruta verificada que las declare; la consulta de catálogo no proporciona esa información en el modelo actual.
 
-## Comprobación semanal desde 0.10.19
-
-GitHub Actions (`check-portal-versions.yml`) revisa los clientes públicos los lunes y permite ejecución manual. Guarda únicamente `data/portal-client-watch.json`, con versiones, fuente, revisión y fecha. No conecta al portal ni cambia código de autenticación. Descarga fuentes y el paquete público Samsung con límites de tamaño y tiempo, sin ejecutarlos. Si falla una fuente, conserva su último dato legible con estado no comprobado. El programador de GitHub puede retrasar una ejecución.
-
-La TV incluye un informe inicial y consulta el JSON público como máximo una vez cada siete días en segundo plano, fuera de reproducción y después del inicio. Solo descarga un JSON de alrededor de 1 KB, no APK/WGT. La fecha de consulta se conserva al reiniciar y hay un botón manual en Ajustes → Clientes de referencia. Las diferencias se comparan con los valores de magis.js incluidos al compilar esta app. Un cambio respecto al informe anterior se registra con fecha. No se ejecutan archivos de referencia ni se aplican sus valores.
-
-Se mantiene la última información si no hay red. Un informe con más de siete días se identifica como antiguo. Borrar los datos de usuario desde el TV puede eliminar la fecha local de consulta. La interfaz permite desplazarse por todas las fuentes y no comunica al proveedor datos de reproducción o credenciales.
+La 0.10.19 beta.1 ya instalada conserva su monitor anterior hasta instalar una versión corregida. Desactivar el workflow remoto impide nuevas consultas a otras apps por ese proceso, pero no cambia el código de una instalación existente.

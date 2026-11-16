@@ -1,0 +1,8 @@
+// Observes parsed portal responses only. Never retains response bodies or credentials.
+export function createPortalEvidence(){
+ const rows=new Map();
+ function fields(value){if(!value||typeof value!=='object'||Array.isArray(value))return [];return Object.keys(value).filter(key=>/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/.test(key)).slice(0,48).map(key=>({name:key,type:value[key]===null?'null':Array.isArray(value[key])?'array':typeof value[key]}));}
+ function versions(value,location){const out=[];if(!value||typeof value!=='object')return out;for(const key of ['serverVersion','apiVersion','protocolVersion','apkVersion','apkVer','spkgVer','sysVersion','version','versionCode','versionName']){const candidate=value[key];if((typeof candidate==='string'||typeof candidate==='number')&&/^[0-9][0-9A-Za-z ._:+-]{0,79}$/.test(String(candidate)))out.push({location,field:key,value:String(candidate)});}return out;}
+ return {observe({route,status,envelope,payload}){if(!/^[a-zA-Z0-9/]{1,64}$/.test(route))return;const entry={route,checkedAt:new Date().toISOString(),httpStatus:Number(status)||0,returnCode:/^[a-zA-Z0-9_-]{1,40}$/.test(String(envelope&&envelope.returnCode))?String(envelope.returnCode):null,envelopeFields:fields(envelope),payloadFields:fields(payload),versionFields:versions(envelope,'envelope').concat(versions(payload,'payload'))};rows.delete(route);rows.set(route,entry);while(rows.size>32)rows.delete(rows.keys().next().value);},snapshot(){return {kind:'observed-portal-responses',serverVersionVerified:false,routes:JSON.parse(JSON.stringify(Array.from(rows.values()))),note:'Campos observados, no inventario del servidor. Una versión genérica no demuestra una actualización del portal.'};}};
+}
+export const portalEvidence=createPortalEvidence();

@@ -896,7 +896,7 @@
         desc: "Comunidad y soporte",
         group: "Sistema",
       },
-      {id:"portalversions",label:"Clientes de referencia",desc:"Revisión de versiones cada 7 días",group:"Sistema"},
+      {id:"portalversions",label:"Estado del portal",desc:"Consulta interna cada 7 días",group:"Sistema"},
       {id:"catalogstats",label:"Estadísticas del catálogo",desc:"Totales y cambios del portal",group:"Sistema"},
       {id:"storage",label:"Almacenamiento",desc:"Limpiar caché y datos temporales",group:"Sistema"},
       {
@@ -4461,7 +4461,7 @@
       var i = e("div", "fb-help focusable", "Ayuda");
       return ((i._activate = function () {}), t.appendChild(i), t);
     })()),
-    (ze.portalversions=(function(){var panel=samsungSettingsCard("Clientes de referencia","");if(window.XuperStandalone&&XuperStandalone.mountPortalVersions)XuperStandalone.mountPortalVersions(panel);return panel;})()),
+    (ze.portalversions=(function(){var panel=samsungSettingsCard("Estado del portal","");if(window.XuperStandalone&&XuperStandalone.mountPortalStatus)XuperStandalone.mountPortalStatus(panel);return panel;})()),
     (ze.catalogstats=(function(){var panel=samsungSettingsCard("Estadísticas del catálogo","");if(window.XuperStandalone&&window.XuperStandalone.mountCatalogStatistics)window.XuperStandalone.mountCatalogStatistics(panel);return panel;})()),
     (ze.storage=(function(){
       var panel=samsungSettingsCard("Almacenamiento","Es normal que la app utilice espacio para portadas y catálogos. Puedes limpiar esos datos temporales si notas problemas.");
