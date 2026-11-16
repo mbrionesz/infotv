@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 const root = fileURLToPath(new URL('../', import.meta.url));
+const portalSource=readFileSync(path.join(root,'companion/lib/magis.js'),'utf8');
+const portalField=name=>{const found=portalSource.match(new RegExp(name+'\\s*=\\s*\"([^\"]+)\"'));if(!found)throw Error('Portal field missing: '+name);return found[1];};
+const portalClientConfig={apkVersion:portalField('APK_VERSION'),apkVer:portalField('APK_VER_HEADER'),spkgVer:portalField('SPKG_VER')};
 const aliases = { crypto: 'crypto.js', http: 'network.js', https: 'network.js' };
 const env = new Set(['fs', 'path', 'os', 'url', './dnsx', './upstream']);
 const plugin = {
@@ -43,7 +46,7 @@ const nativeInfoPath=path.join(root,'app/vendor/native/build-info.json');
 mkdirSync(path.join(root, 'app/vendor'), { recursive: true });
 await build({ entryPoints: [path.join(root, 'browser/standalone.js')], outfile: path.join(root, 'app/vendor/standalone.js'),
   bundle: true, platform: 'browser', format: 'iife', target: ['chrome56'], minify: true,
-  inject: [path.join(root, 'browser/globals.js')], define: { __dirname: '"/embedded"' }, plugins: [plugin], legalComments: 'eof' });
+  inject: [path.join(root, 'browser/globals.js')], define: { __dirname: '"/embedded"', __PORTAL_CLIENT_CONFIG__:JSON.stringify(portalClientConfig) }, plugins: [plugin], legalComments: 'eof' });
 await build({ entryPoints: [path.join(root,'browser/core-worker.js')], outfile:path.join(root,'app/vendor/core-worker.js'),
   bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,
   banner:{js:'var globalThis = self;'},inject:[path.join(root,'browser/globals.js')],define:{__dirname:'"/embedded"'},plugins:[plugin],legalComments:'eof' });
@@ -73,7 +76,7 @@ for (const [folder, license] of [['events','LICENSE'], ['hls.js','LICENSE'], ['m
 copyFileSync(path.join(root,'LICENSE-UPSTREAM'),path.join(root,'app/vendor/UPSTREAM-LICENSE.txt'));
 copyFileSync(path.join(root,'docs/THIRD_PARTY-UPSTREAM.md'),path.join(root,'app/vendor/UPSTREAM-NOTICES.txt'));
 console.log('Standalone bundle: browser runtime, HLS.js, portal protocol; Chrome 56 target (Tizen 4.0).');
-const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js','companion/lib/audio-language.js',
+const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js','companion/lib/audio-language.js','app/css/shadcn-tv.css','design/shadcn-tv.json','data/portal-client-watch.json',
   ...readdirSync(path.join(root,'browser')).filter(name=>name.endsWith('.js')).map(name=>'browser/'+name)].sort();
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}

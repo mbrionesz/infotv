@@ -896,6 +896,7 @@
         desc: "Comunidad y soporte",
         group: "Sistema",
       },
+      {id:"portalversions",label:"Clientes de referencia",desc:"Revisión de versiones cada 7 días",group:"Sistema"},
       {id:"catalogstats",label:"Estadísticas del catálogo",desc:"Totales y cambios del portal",group:"Sistema"},
       {id:"storage",label:"Almacenamiento",desc:"Limpiar caché y datos temporales",group:"Sistema"},
       {
@@ -924,6 +925,7 @@
         '<svg viewBox="0 0 32 32"><path d="M3 13a19 19 0 0 1 26 0"/><path d="M8 18a12 12 0 0 1 16 0"/><path d="M13 23a6 6 0 0 1 6 0"/><circle cx="16" cy="27.5" r="1.2"/></svg>',
       feedback:
         '<svg viewBox="0 0 32 32"><path d="M6 4h15l5 5v19H6z"/><path d="M20 4v6h6M10 16h12M10 21h8"/></svg>',
+      portalversions:'<svg viewBox="0 0 32 32"><path d="M26 13a10 10 0 0 0-18-5L4 12m0-7v7h7M6 19a10 10 0 0 0 18 5l4-4m0 7v-7h-7"/></svg>',
       catalogstats:'<svg viewBox="0 0 32 32"><path d="M5 4v24h23M10 22v-7M17 22V9M24 22V5"/></svg>',
       storage:'<svg viewBox="0 0 32 32"><path d="M6 8h20M11 8V4h10v4M8 8l2 20h12l2-20M14 12v12M18 12v12"/></svg>',
       about:
@@ -4459,6 +4461,7 @@
       var i = e("div", "fb-help focusable", "Ayuda");
       return ((i._activate = function () {}), t.appendChild(i), t);
     })()),
+    (ze.portalversions=(function(){var panel=samsungSettingsCard("Clientes de referencia","");if(window.XuperStandalone&&XuperStandalone.mountPortalVersions)XuperStandalone.mountPortalVersions(panel);return panel;})()),
     (ze.catalogstats=(function(){var panel=samsungSettingsCard("Estadísticas del catálogo","");if(window.XuperStandalone&&window.XuperStandalone.mountCatalogStatistics)window.XuperStandalone.mountCatalogStatistics(panel);return panel;})()),
     (ze.storage=(function(){
       var panel=samsungSettingsCard("Almacenamiento","Es normal que la app utilice espacio para portadas y catálogos. Puedes limpiar esos datos temporales si notas problemas.");

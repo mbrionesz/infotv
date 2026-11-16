@@ -1,0 +1,158 @@
+/* Adapted from shadcn/ui Zinc + New York Button/Card/Badge (MIT).
+   See design/shadcn-tv.json and vendor/shadcn-ui-LICENSE.txt.
+   Hex colors support Chromium 56. No extra JavaScript, filters or focus zoom. */
+:root{
+  --ui-background:#09090b;
+  --ui-foreground:#fafafa;
+  --ui-card:#111113;
+  --ui-card-foreground:#fafafa;
+  --ui-popover:#151518;
+  --ui-popover-foreground:#fafafa;
+  --ui-primary:#fafafa;
+  --ui-primary-foreground:#18181b;
+  --ui-secondary:#27272a;
+  --ui-secondary-foreground:#fafafa;
+  --ui-muted:#27272a;
+  --ui-muted-foreground:#a1a1aa;
+  --ui-accent:#27272a;
+  --ui-accent-foreground:#fafafa;
+  --ui-destructive:#7f1d1d;
+  --ui-destructive-foreground:#fafafa;
+  --ui-border:#27272a;
+  --ui-input:#27272a;
+  --ui-ring:#d4d4d8;
+  --ui-radius:12px;
+  --ui-success:#86efac;
+  --ui-warning:#fcd34d;
+  --ui-shadow-sm:0 2px 4px rgba(0,0,0,.18);
+  --ui-shadow:0 8px 20px rgba(0,0,0,.22);
+  --studio-focus:var(--ui-primary);--studio-text:var(--ui-foreground);--studio-muted:var(--ui-muted-foreground);--studio-line:var(--ui-border);
+}
+/* Semantic surfaces. AVPlay's transparent video surface keeps its own rules. */
+#app{background:var(--ui-background)}
+html,body{background:var(--ui-background);color:var(--ui-foreground);font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif}
+#screen-home,#screen-settings,#screen-search,#screen-detail,.xt-panel{background:var(--ui-background);color:var(--ui-foreground)}
+#screen-home:before{background:none}
+#boot-splash,#screen-welcome{background:radial-gradient(ellipse at 50% 38%,#242427,var(--ui-background) 64%)}
+#boot-splash strong span,.welcome-name span,.welcome-credit,.welcome-version{color:var(--ui-muted-foreground)}
+#app .xt-topnav{color:var(--ui-foreground)}
+#app .xt-top-brand{font-weight:600;letter-spacing:-.6px}
+#app .xt-top-brand small{color:var(--ui-muted-foreground);letter-spacing:.6px}
+#app .xt-top-symbol{color:var(--ui-foreground)}
+#app .xt-top-thin{color:#d4d4d8}
+#app .xt-topnav nav{background:var(--ui-secondary);border:1px solid var(--ui-border);border-radius:16px;box-shadow:var(--ui-shadow-sm);padding:6px}
+#app .xt-topnav nav button{background:transparent;color:var(--ui-muted-foreground);border:1px solid transparent;border-radius:10px;font-size:28px;font-weight:500;box-shadow:none}
+#app .xt-topnav nav button.is-current{background:var(--ui-primary);color:var(--ui-primary-foreground);border-color:var(--ui-primary);font-weight:600;box-shadow:var(--ui-shadow-sm)}
+#app .xt-topnav .xt-top-settings{background:var(--ui-card);color:var(--ui-foreground);border:1px solid var(--ui-input);border-radius:12px;box-shadow:var(--ui-shadow-sm)}
+#app .xt-topnav button.is-focused,#app .xt-topnav nav button.is-focused{background:var(--ui-accent);color:var(--ui-accent-foreground);border-color:var(--ui-ring);box-shadow:inset 0 0 0 2px var(--ui-ring);outline:0}
+#app .xt-topnav nav button.is-current.is-focused{background:var(--ui-primary);color:var(--ui-primary-foreground);box-shadow:0 0 0 2px var(--ui-background),0 0 0 4px var(--ui-ring)}
+/* Button: secondary, outline and primary; focus is separate from chosen state. */
+.ui-button,#app .xt-panel button:not(.xt-catalog-card):not(.xt-discovery-card),#app .xt-setting-action,#app .library-page,#app .detail-btn,#app .detail-btn.resume,#app .psv-btn,#app .psv-season-btn,#app .psv-ep-btn,#app .dps-btn,#app .xt-live-tracks button,#app .xt-diag-actions button{background:var(--ui-secondary);color:var(--ui-secondary-foreground);border:1px solid var(--ui-input);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow-sm);font-family:inherit;font-weight:500;text-shadow:none;transform:none}
+#app #xt-catalog button:not(.xt-catalog-card):not(.xt-discovery-card){background:var(--ui-secondary);color:var(--ui-secondary-foreground);border-color:var(--ui-input);border-radius:12px;box-shadow:var(--ui-shadow-sm);min-height:60px}
+#app #xt-catalog button.xt-discovery-primary:not(.xt-catalog-card):not(.xt-discovery-card),#app .detail-btn._primary,#app .xt-search-submit{background:var(--ui-primary);color:var(--ui-primary-foreground);border-color:var(--ui-primary);font-weight:600}
+#app #xt-catalog button:not(.xt-catalog-card):not(.xt-discovery-card).selected,#app .xt-panel button.selected,#app .xt-setting-action.is-focused,#app .library-page.is-focused,#app .detail-btn.is-focused,#app .psv-btn.is-focused,#app .psv-season-btn.is-focused,#app .psv-ep-btn.is-focused,#app .dps-btn.is-focused,#app .xt-live-tracks button.selected,#app .xt-diag-actions button.selected{background:var(--ui-accent);color:var(--ui-accent-foreground);border-color:var(--ui-ring);outline:0;box-shadow:inset 0 0 0 2px var(--ui-ring);transform:none}
+#app.tv-header-focus #xt-catalog button:not(.xt-catalog-card):not(.xt-discovery-card).selected{background:var(--ui-secondary);color:var(--ui-secondary-foreground);border-color:var(--ui-border);box-shadow:var(--ui-shadow-sm);outline:0}
+#app button:disabled{opacity:.45;box-shadow:none}
+/* Catalog cards, hero and category grid: retain geometry and artwork ratios. */
+#app #xt-catalog,#app #xt-catalog[data-discovery=true]{background:var(--ui-background)}
+#app.tv-shell-ready #xt-catalog .xt-discovery-hero{background:var(--ui-card);border:1px solid var(--ui-border);border-radius:20px;box-shadow:var(--ui-shadow)}
+#app.tv-shell-ready #xt-catalog .xt-discovery-copy{background:linear-gradient(90deg,#111113 60%,rgba(17,17,19,0));border-radius:18px 0 0 18px}
+#app #xt-catalog .xt-discovery-copy h2{font-weight:600;letter-spacing:-1px;color:var(--ui-foreground)}
+#app #xt-catalog .xt-discovery-copy p,#app #xt-catalog .xt-discovery-meta,#app #xt-catalog .xt-catalog-status,#app #xt-catalog .xt-eyebrow{color:var(--ui-muted-foreground)}
+#app #xt-catalog .xt-showcase-row-head h2,#app #xt-catalog .xt-category-section>h2{font-size:31px;font-weight:600;letter-spacing:-.5px;color:var(--ui-foreground)}
+#app.tv-shell-ready #xt-catalog .xt-category-grid button.xt-category-card{background:linear-gradient(145deg,#232326,#141416);border:1px solid var(--ui-border);border-radius:16px;box-shadow:var(--ui-shadow-sm)}
+#app.tv-shell-ready #xt-catalog .xt-category-grid button.xt-category-card:nth-child(4n+2),#app.tv-shell-ready #xt-catalog .xt-category-grid button.xt-category-card:nth-child(4n+3),#app.tv-shell-ready #xt-catalog .xt-category-grid button.xt-category-card:nth-child(4n){background:linear-gradient(145deg,#232326,#141416);border-color:var(--ui-border)}
+#app #xt-catalog .xt-category-card strong{font-size:30px;font-weight:600;letter-spacing:-.5px}
+#app #xt-catalog .xt-category-card small{color:var(--ui-muted-foreground)}
+#app #xt-catalog .xt-category-symbol{color:#d4d4d8;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:12px}
+#app.tv-shell-ready #xt-catalog .xt-category-grid button.xt-category-card.selected{background:#27272a;color:var(--ui-foreground);border-color:var(--ui-ring);outline:0;box-shadow:inset 0 0 0 2px var(--ui-ring),var(--ui-shadow)}
+#app.tv-header-focus.tv-shell-ready #xt-catalog .xt-category-grid button.xt-category-card.selected{background:linear-gradient(145deg,#232326,#141416);border-color:var(--ui-border);outline:0;box-shadow:var(--ui-shadow-sm)}
+#app.tv-shell-ready #xt-catalog .xt-catalog-card,#app.tv-shell-ready #xt-catalog .xt-discovery-card{background:transparent;color:var(--ui-foreground);border:1px solid transparent;border-radius:14px;box-shadow:none}
+#app #xt-catalog .xt-poster-frame{border-radius:12px;background:var(--ui-card);border:1px solid var(--ui-border);box-shadow:var(--ui-shadow-sm)}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame{background:linear-gradient(145deg,#27272a,#111113)}
+#app #xt-catalog .xt-catalog-card.selected,#app #xt-catalog .xt-discovery-card.selected{background:var(--ui-accent)!important;color:var(--ui-accent-foreground)!important;border-color:var(--ui-ring)!important;outline:0!important;box-shadow:inset 0 0 0 2px var(--ui-ring),var(--ui-shadow);transform:none}
+#app.tv-header-focus #xt-catalog .xt-catalog-card.selected,#app.tv-header-focus #xt-catalog .xt-discovery-card.selected{background:transparent!important;border-color:transparent!important;box-shadow:none}
+#app #xt-catalog .xt-discovery-card small,#app #xt-catalog .xt-catalog-card small,#app #xt-catalog .xt-watch-episode{color:var(--ui-muted-foreground)}
+#app #xt-catalog .xt-watch-progress{background:#3f3f46;border-radius:0 0 10px 10px}
+/* Sheet / dialog / input patterns. No backdrop blur or animation work. */
+#app .xt-search-workspace,#app .xt-keyboard,#app .xt-filter-menu,#app .xt-confirm,#app .xt-continue-menu,#app .xt-vod-recovery,#app .xt-live-tracks,#app .xt-diagnostics-cards{background:var(--ui-popover);border-color:var(--ui-border);border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.42);color:var(--ui-popover-foreground)}
+#app .xt-search-workspace>header>span,#app .xt-search-workspace>header p,#app .xt-search-workspace>footer,#app .xt-keyboard p{color:var(--ui-muted-foreground)}
+#app .xt-search-input,#app .xt-search-picker{background:var(--ui-card);border-color:var(--ui-border);border-radius:14px}
+#app .xt-search-criteria button,#app .xt-search-workspace .xt-keyboard-row button,#app .xt-search-picker button{background:var(--ui-secondary);color:var(--ui-secondary-foreground);border-color:var(--ui-input);border-radius:10px;box-shadow:var(--ui-shadow-sm)}
+#app .xt-search-workspace .xt-search-term,#app .xt-keyboard-value{background:var(--ui-background);color:var(--ui-foreground);border:1px solid #52525b;border-radius:12px}
+#app .xt-search-workspace .xt-search-scope.checked{background:#3f3f46;color:var(--ui-foreground);border-color:#71717a}
+#app .xt-search-workspace .xt-search-submit{background:var(--ui-primary);color:var(--ui-primary-foreground);border-color:var(--ui-primary);text-align:center}
+#app .xt-search-criteria button.selected,#app .xt-search-workspace .xt-keyboard-row button.selected,#app .xt-search-picker button.selected,#app .xt-confirm button.selected,#app .xt-continue-menu button.selected,#app .xt-vod-recovery button.selected{background:var(--ui-accent);color:var(--ui-foreground);outline:0;border-color:var(--ui-ring);box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#app .xt-search-workspace .xt-keyboard.is-inactive button.selected{background:var(--ui-secondary);color:var(--ui-muted-foreground);border-color:var(--ui-border);box-shadow:none}
+#app input,#app select{background:var(--ui-background);color:var(--ui-foreground);border-color:var(--ui-input);border-radius:10px}
+/* Settings cards, badges, radio options and scroll areas. */
+#screen-settings .settings-menu,#screen-settings .settings-right{background:var(--ui-card);border-color:var(--ui-border);border-radius:18px;box-shadow:var(--ui-shadow-sm)}
+#screen-settings .settings-group,#screen-settings .settings-desc,#screen-settings .xt-setting-body,#screen-settings .xt-setting-footnote{color:var(--ui-muted-foreground)}
+#screen-settings .settings-item{border:1px solid transparent;border-radius:12px;color:var(--ui-foreground)}
+#screen-settings .settings-item.is-selected{background:var(--ui-secondary);border-color:var(--ui-border);color:var(--ui-foreground)}
+#screen-settings .settings-item.is-focused,#screen-settings .settings-item.is-selected.is-focused{background:var(--ui-primary);border-color:var(--ui-primary);color:var(--ui-primary-foreground);box-shadow:var(--ui-shadow-sm)}
+#screen-settings .settings-item.is-focused .settings-desc{color:#3f3f46}
+#screen-settings .xt-setting-kicker{color:var(--ui-muted-foreground);letter-spacing:2px}
+#screen-settings .xt-setting-title{font-size:46px;font-weight:600;letter-spacing:-1px;color:var(--ui-foreground)}
+#screen-settings .pb-opt{background:var(--ui-secondary);color:var(--ui-secondary-foreground);border-color:var(--ui-input);border-radius:10px;box-shadow:var(--ui-shadow-sm)}
+#screen-settings .pb-opt.is-checked{background:#3f3f46;border-color:#71717a;color:var(--ui-foreground)}
+#screen-settings .pb-opt.is-focused{background:var(--ui-accent);color:var(--ui-foreground);border-color:var(--ui-ring);outline:0;box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#screen-settings .xt-catalog-stat-card,#screen-settings .xt-catalog-stat-row,#app .xt-diag-card{background:var(--ui-card);border:1px solid var(--ui-border);border-radius:14px;box-shadow:var(--ui-shadow-sm)}
+#screen-settings .xt-catalog-stat-row.is-focused{background:var(--ui-accent);border-color:var(--ui-ring);box-shadow:inset 0 0 0 1px var(--ui-ring)}
+#app .xt-catalog-stat-status.is-ok,#app .xt-diag-card.is-ok{color:var(--ui-success)}
+#app .xt-catalog-stat-delta{color:var(--ui-muted-foreground)}
+#screen-settings .settings-menu::-webkit-scrollbar,#screen-settings .settings-right::-webkit-scrollbar,#app .xt-search-criteria::-webkit-scrollbar{background:var(--ui-background)}
+#screen-settings .settings-menu::-webkit-scrollbar-thumb,#screen-settings .settings-right::-webkit-scrollbar-thumb,#app .xt-search-criteria::-webkit-scrollbar-thumb{background:#52525b;border-radius:6px}
+/* Live guide and side sheets keep existing bounded rendering and key handlers. */
+#app #xt-guide{background:var(--ui-background);color:var(--ui-foreground)}
+#app #xt-guide .xt-guide-columns>section{background:var(--ui-card);border-color:var(--ui-border);border-radius:16px;box-shadow:var(--ui-shadow-sm)}
+#app #xt-guide .xt-guide-categories button,#app #xt-guide .xt-guide-channels button{background:transparent;color:var(--ui-foreground);border-color:var(--ui-border);border-radius:12px;box-shadow:none}
+#app #xt-guide .xt-guide-categories button.selected,#app #xt-guide .xt-guide-channels button.selected{background:var(--ui-accent);color:var(--ui-foreground);border-color:var(--ui-ring);box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#app #xt-guide .xt-guide-selection,#app #xt-guide .xt-guide-title{color:var(--ui-foreground);background:transparent}
+#app #xt-guide .xt-guide-count,#app #xt-guide footer,#app #xt-guide .xt-guide-status{color:var(--ui-muted-foreground)}
+#screen-player .player-channels,#screen-player #player-categories,#app .xt-live-tracks{background:rgba(17,17,19,.97);border-color:var(--ui-border);border-radius:0 18px 18px 0}
+#screen-player .pc-row,#screen-player .pcat-tile{background:var(--ui-secondary);border-color:var(--ui-border);color:var(--ui-foreground);border-radius:12px}
+#screen-player .pc-row .nm,#screen-player .pc-row .num,#screen-player .pc-row .epg{color:var(--ui-foreground)}
+#screen-player .pc-row.is-focused,#screen-player .pcat-tile.is-focused{background:var(--ui-accent);border-color:var(--ui-ring);color:var(--ui-foreground);box-shadow:inset 0 0 0 2px var(--ui-ring);outline:0}
+#screen-player .pc-row.is-focused .nm,#screen-player .pc-row.is-focused .num,#screen-player .pc-row.is-focused .epg{color:var(--ui-foreground)}
+/* Detail sheet and playback toolbar. Video surface, captions and sizing stay owned by the player. */
+#screen-detail .detail-panel,#screen-detail .detail-extra,#screen-detail .detail-episodes{background:var(--ui-card);border-color:var(--ui-border)}
+#screen-detail .detail-btn{border-radius:12px;box-shadow:var(--ui-shadow-sm)}
+#screen-detail .detail-episode{background:var(--ui-secondary);color:var(--ui-foreground);border-color:var(--ui-border);border-radius:12px;box-shadow:var(--ui-shadow-sm)}
+#screen-detail .detail-episode.is-focused{background:var(--ui-accent);color:var(--ui-foreground);border-color:var(--ui-ring);outline:0;box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#screen-player .vod-infobar-content{background:rgba(17,17,19,.97);border-color:var(--ui-border);border-radius:0;box-shadow:none}
+#screen-player #vod-format-info,#screen-player .vod-time-current,#screen-player .vod-time-total{color:var(--ui-muted-foreground)}
+#screen-player .xt-vod-controls button{background:var(--ui-secondary);color:var(--ui-foreground);border-color:var(--ui-input);border-radius:10px;box-shadow:var(--ui-shadow-sm);min-height:58px}
+#screen-player .xt-vod-controls button.is-focused{background:var(--ui-primary);color:var(--ui-primary-foreground);border-color:var(--ui-ring);box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#screen-player .vod-seek-progress{background:var(--ui-primary)}
+#screen-player .player-playsetting-view,#dialog-playsettings{background:var(--ui-popover);border-color:var(--ui-border);border-radius:16px}
+#screen-player .psv-header-sub,#screen-player .psv-title{color:var(--ui-muted-foreground)}
+#app .history-card{background:var(--ui-card);border-color:var(--ui-border);border-radius:14px}
+#app .history-card.is-focused{background:var(--ui-accent);outline-color:var(--ui-ring);transform:none}
+#app .xt-continue-menu button:last-child{color:#fca5a5}
+#app .xt-exit-toast{background:var(--ui-popover);border-color:var(--ui-border);color:var(--ui-foreground);border-radius:12px;box-shadow:var(--ui-shadow)}
+@media (prefers-reduced-motion:reduce){#app .xt-topnav button,#app .xt-panel button,#screen-settings .pb-opt{transition:none}}
+/* Higher-specificity bridges for legacy focus rules; selected text stays aligned. */
+#app #screen-settings .xt-setting-action.is-focused,#app #screen-settings .pb-opt.is-focused,#app #screen-settings .account-action-btn.is-focused,#app #screen-detail .detail-btn.is-focused{background:var(--ui-accent);color:var(--ui-accent-foreground);border-color:var(--ui-ring);outline:0;box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#app #screen-detail .detail-btn span{background:transparent;color:inherit;line-height:1.2}
+#app #screen-detail .detail-btn:first-child{background:var(--ui-primary);color:var(--ui-primary-foreground);border-color:var(--ui-primary)}
+#app #screen-detail .detail-btn:first-child.is-focused{box-shadow:inset 0 0 0 3px #71717a}
+#app #screen-detail .detail-more,#app #screen-detail .detail-season,#app #screen-detail .detail-badge{background:var(--ui-secondary);color:var(--ui-secondary-foreground);border:1px solid var(--ui-border);border-radius:10px;box-shadow:var(--ui-shadow-sm)}
+#app #screen-detail .detail-meta,#app #screen-detail .detail-update,#app #screen-detail .detail-row,#app #screen-detail .detail-row .val,#app #screen-detail .detail-genres .chip{color:var(--ui-muted-foreground)}
+#app #screen-detail .detail-synopsis .text{color:#d4d4d8}
+#app #screen-detail .detail-season.is-focused,#app #screen-detail .detail-more.is-focused{background:var(--ui-accent);color:var(--ui-foreground);border-color:var(--ui-ring);box-shadow:inset 0 0 0 2px var(--ui-ring)}
+#app #screen-detail .detail-season .season-text{color:inherit}
+#app #screen-detail .detail-bottom>.detail-episodes{background:transparent}
+#app #screen-detail .episode-placeholder{background:linear-gradient(145deg,#27272a,#18181b);color:#d4d4d8}
+#app #screen-detail .episode-placeholder:before,#app #screen-detail .episode-placeholder:after{color:#d4d4d8;border-left-color:#d4d4d8}
+/* Continue watching: landscape cards leave space for title, episode and time. */
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card{width:390px;min-width:390px;height:360px;min-height:360px;margin-right:22px}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame{height:219px;padding-bottom:0;background:linear-gradient(145deg,#27272a,#111113)}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame img{object-fit:contain;object-position:center}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card strong{height:58px;line-height:29px;font-size:25px;margin:10px 4px 0;font-weight:600}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-watch-episode{font-size:21px;line-height:26px;margin:0 4px;color:#d4d4d8}
+#app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card small{font-size:20px;line-height:26px;height:26px;margin:0 4px;color:var(--ui-muted-foreground)}
+.xt-portal-version-card{padding:24px 28px;margin:20px 0;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-card);box-shadow:var(--ui-shadow-sm)}
+.xt-portal-version-card h2{font-size:28px;margin:0 0 16px;font-weight:600}.xt-portal-version-card p{font-size:23px;line-height:1.45;margin:8px 0;color:var(--ui-muted-foreground);overflow-wrap:break-word}
+.xt-portal-version-badge{display:inline-block;padding:6px 12px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-secondary);color:var(--ui-muted-foreground);font-size:21px}.xt-portal-version-badge.is-same{color:var(--ui-success);border-color:#14532d}.xt-portal-version-badge.is-different{color:var(--ui-warning);border-color:#713f12}
+#screen-settings .xt-portal-version-card.is-focused{border-color:var(--ui-ring);box-shadow:inset 0 0 0 2px var(--ui-ring);outline:0;background:var(--ui-accent)}

@@ -16,7 +16,7 @@ def build(output=None):
     out.mkdir(parents=True, exist_ok=True)
     app = ROOT / 'app'
     info = json.loads((app / 'vendor/build-info.json').read_text())
-    sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs', 'companion/lib/magis.js', 'companion/lib/audio-language.js']
+    sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs', 'companion/lib/magis.js', 'companion/lib/audio-language.js', 'app/css/shadcn-tv.css', 'design/shadcn-tv.json', 'data/portal-client-watch.json']
     sources += [str(p.relative_to(ROOT)) for p in (ROOT / 'browser').glob('*.js')]
     digest = hashlib.sha256()
     for name in sorted(sources):
@@ -51,7 +51,7 @@ def build(output=None):
         provisioned.replace(widget)
     kit = out / f'XuperTizen-{version}-source.zip'
     with zipfile.ZipFile(kit, 'w') as archive:
-        for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github']:
+        for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github', 'design', 'data']:
             for file in sorted((ROOT / name).rglob('*')):
                 if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult', 'ux-tour-0.6.6', 'ux-redesign', 'ux-usability', 'qa-security-0.7'}:
                     add(archive, file, Path('XuperTizen') / file.relative_to(ROOT))
@@ -62,7 +62,7 @@ def build(output=None):
     (out / 'SHA256SUMS.json').write_text(json.dumps(sums, indent=2) + '\n')
     (out / 'release-info.json').write_text(json.dumps({
         'name': 'XuperTizen', 'version': version, 'channel': channel, 'minimumTizen': '4.0',
-        'hardwareValidation': '0.10.18-beta-pending-on-Samsung-TV', 'providerValidation': '0.10.18-beta-pending-with-live-provider',
+        'hardwareValidation': '0.10.19-beta-pending-on-Samsung-TV', 'providerValidation': '0.10.19-beta-pending-with-live-provider',
         'standalone': True, 'pcRequiredAtRuntime': False, 'signed': False,
         'tmdbConfigured': bool(tmdb_key), 'tmdbCredentialInPublicWidget': bool(tmdb_key),
         'artifact': widget.name, 'sha256': sums[widget.name], 'hlsVersion': info['hlsVersion'],

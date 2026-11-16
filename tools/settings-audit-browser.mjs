@@ -10,7 +10,7 @@ try{
  for(const width of [1920,3840]){
  await browser.command('Emulation.setDeviceMetricsOverride',{width,height:width*9/16,screenWidth:width,screenHeight:width*9/16,deviceScaleFactor:1,mobile:false});
  await browser.evaluate('__xuper.openSettings()');
- for(const id of ['profile','history','addons','share','playback','parent','display','netdiag','feedback','storage','about']){
+ for(const id of ['profile','history','addons','share','playback','parent','display','netdiag','feedback','portalversions','catalogstats','storage','about']){
  await browser.evaluate('__xuper.settingsPanel('+JSON.stringify(id)+');__xuper.focus(document.querySelector(".settings-item.is-selected"))');
  await browser.evaluate('__xuper.key(39)');
  if(id==='playback'){
@@ -31,10 +31,10 @@ try{
  if(id==='display')await browser.evaluate('__xuper.key(39);__xuper.key(13);__xuper.key(37);__xuper.key(13)');
  await browser.screenshot(path.join(out,"menu-"+id+"-"+width+".png"));audit.push({width,id});
  }
- await browser.evaluate('__xuper.focus(document.querySelector(".settings-item"))');for(let i=0;i<12;i++)await browser.evaluate('__xuper.key(40)');
+ await browser.evaluate('__xuper.focus(document.querySelector(".settings-item"))');for(let i=0,count=await browser.evaluate('document.querySelectorAll(".settings-item").length');i<count+1;i++)await browser.evaluate('__xuper.key(40)');
  assert.equal(await browser.evaluate('__xuper.state.focus._index'),await browser.evaluate('document.querySelectorAll(".settings-item").length-1'));
  assert.ok(await browser.evaluate('document.getElementById("settings-menu").scrollTop>0'));
  }
  const saved=await browser.evaluate('JSON.stringify(__xuper.state.playback)');await browser.command('Page.reload');await browser.waitFor('!!window.__xuper&&__xuper.state.screen==="home"');assert.equal(await browser.evaluate('JSON.stringify(__xuper.state.playback)'),saved,'Playback preferences survive reload');
- assert.deepEqual(browser.errors,[]);console.log('PASS settings: independent column scrolling at 1080p/4K; all eleven panels; all playback groups, switches and display mode. '+JSON.stringify(audit));
+ assert.deepEqual(browser.errors,[]);console.log('PASS settings: independent column scrolling at 1080p/4K; all thirteen panels; all playback groups, switches and display mode. '+JSON.stringify(audit));
 }finally{if(browser)await browser.close();server.closeAllConnections();server.close();}

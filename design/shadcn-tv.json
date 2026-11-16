@@ -1,0 +1,56 @@
+{
+  "name": "shadcn-zinc-tv",
+  "integration": "TV adaptation of official shadcn/ui theme tokens and component styling; no React runtime or shadcn CLI installation",
+  "sources": [
+    "https://ui.shadcn.com/docs/theming",
+    "https://ui.shadcn.com/docs/installation/manual",
+    "https://ui.shadcn.com/r/themes/zinc.json",
+    "https://ui.shadcn.com/r/styles/new-york/button.json",
+    "https://ui.shadcn.com/r/styles/new-york/card.json",
+    "https://ui.shadcn.com/r/styles/new-york/badge.json"
+  ],
+  "accessed": "2026-11-16",
+  "license": "MIT",
+  "minimumEngine": "Chromium 56 (Tizen 4.0)",
+  "tokens": {
+    "background": "#09090b",
+    "foreground": "#fafafa",
+    "card": "#111113",
+    "card-foreground": "#fafafa",
+    "popover": "#151518",
+    "popover-foreground": "#fafafa",
+    "primary": "#fafafa",
+    "primary-foreground": "#18181b",
+    "secondary": "#27272a",
+    "secondary-foreground": "#fafafa",
+    "muted": "#27272a",
+    "muted-foreground": "#a1a1aa",
+    "accent": "#27272a",
+    "accent-foreground": "#fafafa",
+    "destructive": "#7f1d1d",
+    "destructive-foreground": "#fafafa",
+    "border": "#27272a",
+    "input": "#27272a",
+    "ring": "#d4d4d8",
+    "radius": "12px",
+    "success": "#86efac",
+    "warning": "#fcd34d",
+    "shadow-sm": "0 2px 4px rgba(0,0,0,.18)",
+    "shadow": "0 8px 20px rgba(0,0,0,.22)"
+  },
+  "componentPatterns": [
+    "Button default/secondary/outline/destructive",
+    "Card",
+    "Badge",
+    "Tabs",
+    "Input",
+    "Dialog/Sheet",
+    "Progress"
+  ],
+  "adaptations": [
+    "Hex colors instead of OKLCH for old TV browsers",
+    "Remote focus uses existing selected/is-focused classes",
+    "Larger typography and targets for TV",
+    "Static shadows; no backdrop-filter, shimmer or new animation loops"
+  ]
+}

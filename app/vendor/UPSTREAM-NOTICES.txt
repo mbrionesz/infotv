@@ -61,3 +61,9 @@ These modules remultiplex containers; they do not transcode audio/video.
 - Official source URLs and SHA-256 pins: `native/dependencies.json`. The narrow Samsung nonblocking-socket adaptation is in `native/patches/curl-nonblock-tizen.patch`.
 
 These libraries provide HTTP/TLS and DoH; they do not transcode media or mine cryptocurrency. Samsung hardware validation remains required.
+
+## shadcn/ui · adaptación visual para TV
+
+Paleta Zinc y patrones Button/Card/Badge adaptados desde shadcn/ui (MIT).
+Fuente: https://ui.shadcn.com/ y https://github.com/shadcn-ui/ui.
+Licencia incluida en `vendor/shadcn-ui-LICENSE.txt`. No se incluyen React ni Radix como runtime del tema.
