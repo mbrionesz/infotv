@@ -38,7 +38,8 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
-      "createDesktopShortcut": true
+      "createDesktopShortcut": true,
+      "buildUniversalInstaller": false
     },
     "compression": "normal"
   }
