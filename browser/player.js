@@ -47,7 +47,7 @@ export function createPlayer(getStream) {
     if (restored) { const restore=restored;restored=null;try{restore();}catch(_){diagnostics.detail="native-restore-error";} }
     if(document.documentElement?.classList)document.documentElement.classList.remove('xt-avplay');
     if (video) { try { video.pause(); video.removeAttribute('src'); video.load(); } catch (_) {} }
-    engine = ''; diagnostics.engine = '';diagnostics.stage='idle';diagnostics.sequenceRestartPending=false; paused = true; ready = started = false;
+    engine = ''; diagnostics.engine = '';diagnostics.stage='idle';diagnostics.vodMemory=null;diagnostics.vodBufferPolicy=null;diagnostics.sequenceRestartPending=false; paused = true; ready = started = false;
   }
   function capabilities() {
     const v = document.createElement('video');

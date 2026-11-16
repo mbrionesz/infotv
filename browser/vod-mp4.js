@@ -1,3 +1,4 @@
+import {releaseMp4Parser} from './vod-session-cleanup.js';
 import {releaseUnusedMp4Tracks,mp4Memory} from './mp4-unused-tracks.js';
 import {createVodBufferWindow} from './vod-buffer-window.js';
 import MP4Box from 'mp4box';
@@ -40,5 +41,5 @@ export function openMp4(video,url,headers,{onError,onReady,onRead,preferredAudio
  function seeking(){if(!ready||closed||failed)return;const time=video.currentTime;if(time>=media.duration-0.05)return;for(let i=0;i<video.buffered.length;i++)if(time>=video.buffered.start(i)&&time<video.buffered.end(i)-0.1)return;if(seekTime!==null&&Math.abs(seekTime-time)<0.1)return;seekTime=time;bufferWindow.reset();generation++;reader.abort();eof=false;file.stop();let seek;try{seek=file.seek(time,true);}catch(error){fail(error);return;}if(!seek||!Number.isSafeInteger(seek.offset)||seek.offset<0||seek.offset>=total){fail(new Error("Posición MP4 no disponible"));return;}offset=seek.offset;for(const track of tracks){queuedBytes-=track.queue.reduce((sum,p)=>sum+p.buffer.byteLength,0);track.queue=[];track.reset=true;if(track.sb.updating)try{track.sb.abort();}catch(_){}drain(track);}file.start();if(!pumping)pump();}
  video.addEventListener('seeking',seeking);media.addEventListener('sourceopen',()=>{if(!closed)pump();},{once:true});video.src=objectURL;
  interval=setInterval(()=>{tracks.forEach(drain);pump();},250);
- return {get memory(){return mp4Memory(file,queuedBytes);},get bufferPolicy(){bufferWindow.setPaused(video.paused&&video.currentTime>0&&!video.ended);return bufferWindow.policy;},destroy(){if(closed)return;closed=true;generation++;reader.close();clearInterval(interval);clearTimeout(timer);video.removeEventListener('seeking',seeking);file.stop();file.onReady=file.onSegment=file.onSamples=file.onError=null;for(const track of tracks)track.queue=[];URL.revokeObjectURL(objectURL);}};
+ return {get memory(){return mp4Memory(file,queuedBytes);},get bufferPolicy(){bufferWindow.setPaused(video.paused&&video.currentTime>0&&!video.ended);return bufferWindow.policy;},destroy(){if(closed)return;closed=true;generation++;reader.close();clearInterval(interval);clearTimeout(timer);video.removeEventListener('seeking',seeking);releaseMp4Parser(file,tracks);queuedBytes=0;URL.revokeObjectURL(objectURL);}};
 }
