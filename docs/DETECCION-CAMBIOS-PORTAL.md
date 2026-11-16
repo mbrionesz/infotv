@@ -1,6 +1,6 @@
 # Comprobación interna del portal
 
-Corrección en borrador posterior a 0.10.19 beta.1: se retiró el monitor de clientes externos por aclaración del usuario. La tarea GitHub Actions que consultaba otras apps fue desactivada. El código de consulta de GitHub, sus datos y su workflow se retiran de la app.
+Corrección incluida en Tizen 0.10.20 beta y Windows 0.1.1 beta: se retiró el monitor de clientes externos por aclaración del usuario. La tarea GitHub Actions que consultaba otras apps fue desactivada. El código de consulta de GitHub, sus datos y su workflow se retiran de la app.
 
 Ajustes → Estado del portal usa directamente `catalogFullPage` para Películas y Series, con actualización fresca, una página de un título por sección y la sesión/transportes existentes. Revisa cada siete días en la app cuando está abierta y fuera de reproducción; tiene botón manual y guarda la fecha local. No consulta otros clientes o repositorios.
 

@@ -38,3 +38,5 @@ npm run dist --prefix desktop
 GitHub Actions construye ambos `.exe` en Windows, ejecuta un arranque real de Electron y adjunta los instaladores y sus hashes a `v0.10.20-beta.1`. La prueba de arranque comprueba el protocolo local, preload aislado, Worker, puente de DNS, encabezado compartido, rechazo de URL no admitida y pantalla completa. No equivale a reproducción prolongada contra el proveedor ni a una prueba en Windows de 32 bits físico.
 
 Antes de promover a estable: pruebas de sesiones largas y reanudación en Windows 10 x86/x64 y Windows 11 x64, selección de audio/subtítulos y decodificación HEVC, medición de RAM en PC modesto y comprobación de instalación/actualización con perfiles existentes.
+
+Código de la beta Windows: etiqueta `v0.1.1-beta.3`. Los instaladores conservan la versión de producto `0.1.1`; las revisiones de empaquetado se validaron antes de adjuntar sus archivos a la publicación compartida.
