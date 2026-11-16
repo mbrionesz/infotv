@@ -23,9 +23,9 @@ var audioLanguage = require("./audio-language"),
   ],
   PORTAL_CODE = "masnew",
   APP_ID = "com.android.msandroid",
-  APK_VERSION = "49902",
-  SPKG_VER = "2024-09-10 06:25:30_33_13_",
-  APK_VER_HEADER = "43404",
+  APK_VERSION = "49920",
+  SPKG_VER = "2025-08-07 05:40:11_36_16_",
+  APK_VER_HEADER = "49920",
   USER_AGENT = "okhttp/3.12.12",
   CONTENT_TYPE = "application/json;charset=utf-8",
   SNTOKEN_SALT = "ntFT65w6itH!lHCPw7D=@qnsFC5adD28",
@@ -55,6 +55,7 @@ var audioLanguage = require("./audio-language"),
     aaa100080: 1,
     aaa100082: 1,
     aaa100083: 1,
+    portal200001: 1,
   },
   SESSION_MAX_AGE_MS = 216e5,
   ROOT_CODES = {
@@ -455,6 +456,25 @@ function call(e, r, t, n) {
       for (a in r) Object.prototype.hasOwnProperty.call(r, a) && (o[a] = r[a]);
       post(e, o, function (a, o) {
         s();
+        // No reiniciar una autenticación que todavía está en curso.
+if (a && t.baseFields === false) {
+  console.warn(
+    "[magis] Error de autenticación inicial:",
+    e,
+    a.portalCode || a.message
+  );
+  return n(a);
+}
+
+// Una versión descontinuada no se recupera renovando la sesión.
+if (a && a.portalCode === "portal200001") {
+  console.warn(
+    "[magis] Versión rechazada por el portal:",
+    e,
+    a.portalCode
+  );
+  return n(a);
+}
         var i = a && a.portalCode,
           l = i && SESSION_DEAD[i],
           u =
@@ -1900,7 +1920,7 @@ function resolveLive(e, r, options) {
             )
               m.push({url:"http://" + t[p].cflHost + "/live/" + s + ".m3u8",headers:{
                 "Content-Auth":signLiveCdn(t[p].authBase),"Content-License":a,
-                "User-Agent":"Ranger/4.9.4-17294ac0",App:"com.android.msandroid","App-Version":"49902","X-Buffer":"0"
+                "User-Agent":"Ranger/4.9.4-17294ac0",App:"com.android.msandroid","App-Version":"49920","X-Buffer":"0"
               }});
             var v = {
               url: i,
@@ -1911,7 +1931,7 @@ function resolveLive(e, r, options) {
                 "Content-License": a,
                 "User-Agent": "Ranger/4.9.4-17294ac0",
                 App: "com.android.msandroid",
-                "App-Version": "49902",
+                "App-Version": "49920",
                 "X-Buffer": "0",
               },
               name: text(
