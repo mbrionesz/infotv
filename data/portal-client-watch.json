@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-11-16T19:48:52.252711Z",
+  "checkedAt": "2026-11-16T20:01:51.316335Z",
   "sources": [
     {
       "id": "lg",
@@ -13,7 +13,7 @@
         "apkVer": "43404",
         "spkgVer": "2024-09-10 06:25:30_33_13_"
       },
-      "lastSuccessAt": "2026-11-16T19:48:52.252711Z"
+      "lastSuccessAt": "2026-11-16T20:01:51.316335Z"
     },
     {
       "id": "samsung",
@@ -26,7 +26,7 @@
         "apkVer": "43404",
         "spkgVer": "2025-08-07 05:40:11_36_16_"
       },
-      "lastSuccessAt": "2026-11-16T19:48:52.252711Z"
+      "lastSuccessAt": "2026-11-16T20:01:51.316335Z"
     }
   ],
   "note": "Public client configuration only. Not a portal-server version or proof of compatibility."
