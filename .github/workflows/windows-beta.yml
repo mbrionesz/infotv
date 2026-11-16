@@ -9,7 +9,7 @@ on:
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.1-beta.1
+        default: v0.1.1-beta.2
       tmdb_public_config_b64:
         description: Owner-authorized public TMDB configuration
         required: false

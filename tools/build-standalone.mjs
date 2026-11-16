@@ -15,7 +15,7 @@ const plugin = {
   name: 'widget-runtime',
   setup(builder) {
     builder.onResolve({ filter: /^(crypto|http|https|fs|path|os|url|\.\/dnsx|\.\/upstream)$/ }, args => {
-      if (!args.importer.endsWith('/magis.js')) return;
+      if (!args.importer.replace(/\\/g,'/').endsWith('/magis.js')) return;
       if (aliases[args.path]) return { path: aliases[args.path], namespace: 'widget-alias' };
       if (env.has(args.path)) return { path: args.path.replace('./', ''), namespace: 'widget-env' };
     });
@@ -25,7 +25,7 @@ const plugin = {
     builder.onLoad({ filter: /.*/, namespace: 'widget-alias' }, args => ({
       contents: `module.exports = require(${JSON.stringify(path.join(root, 'browser', args.path))}).default;`, resolveDir: root
     }));
-    builder.onLoad({ filter: /\/magis\.js$/ }, args => {
+    builder.onLoad({ filter: /[\\/]magis\.js$/ }, args => {
       let source = readFileSync(args.path, 'utf8');
       // No borrowed-session download or rescue is included in the TV widget.
       const start = source.indexOf('function refreshSeeds(e) {');
@@ -61,10 +61,10 @@ await build({entryPoints:[path.join(root,'browser/native-worker.js')],outfile:pa
 await build({entryPoints:[path.join(root,'node_modules/hls.js/dist/hls.worker.js')],outfile:path.join(root,'app/vendor/hls-worker.js'),bundle:false,format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
 const tsLanguagePlugin={name:'ts-language-selection',setup(builder){
   builder.onResolve({filter:/^mpegts\.js$/},()=>({path:path.join(root,'node_modules/mpegts.js/src/mpegts.js')}));
-  builder.onLoad({filter:/mpegts\.js\/src\/.*\.(?:ts|js)$/},args=>{
+  builder.onLoad({filter:/mpegts\.js[\\/]src[\\/].*\.(?:ts|js)$/},args=>{
     let source=readFileSync(args.path,'utf8').replace(/import \* as EventEmitter from 'events';/g,"import EventEmitter from 'events';").replace(/import \* as work from 'webworkify-webpack';/g,"import work from 'webworkify-webpack';");
-    if(args.path.endsWith('/player/loading-controller.ts'))source=patchTsLoading(source);
-    if(args.path.endsWith('/demux/ts-demuxer.ts')){
+    if(args.path.replace(/\\/g,'/').endsWith('/player/loading-controller.ts'))source=patchTsLoading(source);
+    if(args.path.replace(/\\/g,'/').endsWith('/demux/ts-demuxer.ts')){
       const durationAnchor='this.config_ = config;';if(source.split(durationAnchor).length!==2)throw new Error('Unexpected TS constructor');source=source.replace(durationAnchor,durationAnchor+'\nthis.duration_ = Math.max(0, Number(config.xuperTsDuration)||0);this.media_info_.duration=this.duration_;');
       const anchor='this.pmt_ = pmt;';if(source.split(anchor).length!==2)throw new Error('Unexpected MPEG-TS PMT parser; review language selection adapter');
       source='import {selectTsAudioPmt} from '+JSON.stringify(path.join(root,'browser/ts-audio-pmt.js'))+';\n'+source.replace(anchor,'selectTsAudioPmt(pmt, data, this.config_);\n'+anchor);
@@ -72,7 +72,7 @@ const tsLanguagePlugin={name:'ts-language-selection',setup(builder){
       for(const call of ['this.onDataAvailable(null, this.video_track_);','this.onDataAvailable(this.audio_track_, null);','this.onDataAvailable(this.audio_track_, this.video_track_);']){if(source.split(call).length!==2)throw new Error('Unexpected TS sample dispatch');source=source.replace(call,'observeTsSeek(this, '+(call.includes('null,')?'null, this.video_track_':call.includes(', null')?'this.audio_track_, null':'this.audio_track_, this.video_track_')+');\n'+call);}
       source=source.replace(/this\.onMediaInfo\(mi\);/g,'attachTsSeek(this, mi);this.onMediaInfo(mi);');
     }
-    if(args.path.endsWith('/core/transmuxing-controller.js')){const anchor='let segmentInfo = Object.assign({}, mediaInfo);';if(source.split(anchor).length!==2)throw new Error('Unexpected TS media-info adapter');source=source.replace(anchor,'if(this._config.xuperTsSeek)this._mediaInfo.hasKeyframesIndex=mediaInfo.hasKeyframesIndex;\n'+anchor);}
+    if(args.path.replace(/\\/g,'/').endsWith('/core/transmuxing-controller.js')){const anchor='let segmentInfo = Object.assign({}, mediaInfo);';if(source.split(anchor).length!==2)throw new Error('Unexpected TS media-info adapter');source=source.replace(anchor,'if(this._config.xuperTsSeek)this._mediaInfo.hasKeyframesIndex=mediaInfo.hasKeyframesIndex;\n'+anchor);}
     return {contents:source,loader:args.path.endsWith('.ts')?'ts':'js',resolveDir:path.dirname(args.path)};
   });
 }};
