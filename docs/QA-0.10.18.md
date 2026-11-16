@@ -2,7 +2,7 @@
 
 Verificación previa a publicación, 16 de noviembre de 2026.
 
-- Compilación y 340 pruebas unitarias aprobadas tras recuperar el entorno.
+- Compilación y 340 pruebas unitarias aprobadas tras recuperar el entorno y repetidas después de integrar los cinco commits remotos de magis.js. La publicación final usa v0.10.18-beta.2.
 - Transporte Samsung WASM: TLS, Host/SNI y los 17 resolutores DoH por IP aprobados.
 - Resultados de navegador recuperados del mismo código: salida al 96 % en MP4 y MPEG-TS con minuto, temporada y episodio conservados; más de 285 s en pausa; controles en 720p/1080p/4K.
 - Transición automática MP4/TS, recuperación de enlaces, retorno al catálogo y salida ante error aprobados con proveedor simulado.
