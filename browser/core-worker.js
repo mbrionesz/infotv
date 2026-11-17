@@ -1,3 +1,4 @@
+import {fetchPosterBlob} from './poster-transport.js';
 import {portalEvidence} from './portal-evidence.js';
 import {canPersistRequest} from './search-privacy.js';
 import {createCatalogCounter} from './catalog-counter.js';
@@ -72,8 +73,11 @@ function poster(url,size='card') {
 function pump(){
   while(postersActive<2 && postersQueue.length){
     const job=postersQueue.shift();postersActive++;
-    const xhr=new XMLHttpRequest();xhr.open('GET',job.url,true);xhr.responseType='blob';xhr.timeout=6000;
     let ended=false;function end(error){if(ended)return;ended=true;postersActive--;if(error)job.reject(error);pump();}
+    if(typeof __XUPER_DESKTOP__!=='undefined'&&__XUPER_DESKTOP__&&/^https?:\/\//i.test(job.url)){
+      fetchPosterBlob(job.url,job.size,options=>self.__xuperNativeRequest(options)).then(async original=>{const blob=await thumbnail(original,job.size);job.resolve(blob);end();if(job.generation===cacheGeneration)cache.put('posters',job.key,blob,7*86400000).then(()=>cache.prune('posters',48,6*1024*1024)).catch(()=>{});},end);continue;
+    }
+    const xhr=new XMLHttpRequest();xhr.open('GET',job.url,true);xhr.responseType='blob';xhr.timeout=6000;
     xhr.onprogress=event=>{if(event.loaded>(job.size==='hero'?2*1024*1024:512*1024)){xhr.abort();end(new Error('Imagen fuera del límite'));}};
     xhr.onerror=xhr.ontimeout=()=>end(new Error('No se pudo cachear imagen'));
     xhr.onload=async()=>{

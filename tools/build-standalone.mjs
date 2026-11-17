@@ -58,7 +58,7 @@ await build({ entryPoints: [path.join(root, 'browser/standalone.js')], outfile: 
   inject: [path.join(root, 'browser/globals.js')], define: { __dirname: '"/embedded"', __PORTAL_CLIENT_CONFIG__:JSON.stringify(portalClientConfig) }, plugins: [plugin], legalComments: 'eof' });
 await build({ entryPoints: [path.join(root,'browser/core-worker.js')], outfile:path.join(root,'app/vendor/core-worker.js'),
   bundle:true,platform:'browser',format:'iife',target:['chrome56'],minify:true,
-  banner:{js:'var globalThis = self;'},inject:[path.join(root,'browser/globals.js')],define:{__dirname:'"/embedded"'},plugins:[plugin],legalComments:'eof' });
+  banner:{js:'var globalThis = self;'},inject:[path.join(root,'browser/globals.js')],define:{__dirname:'"/embedded"',__XUPER_DESKTOP__:JSON.stringify(desktopBuild)},plugins:[plugin],legalComments:'eof' });
 await build({entryPoints:[path.join(root,'browser/native-worker.js')],outfile:path.join(root,'app/vendor/native-worker.js'),bundle:true,format:'iife',target:['chrome56'],minify:true});
 await build({entryPoints:[path.join(root,'node_modules/hls.js/dist/hls.worker.js')],outfile:path.join(root,'app/vendor/hls-worker.js'),bundle:false,format:'iife',target:['chrome56'],minify:true,legalComments:'eof'});
 const tsLanguagePlugin={name:'ts-language-selection',setup(builder){

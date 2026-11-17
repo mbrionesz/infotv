@@ -1,3 +1,7 @@
+# Controlador propio XuperWindows 0.1.8
+
+El ejecutable XuperMediaHost se compila desde `desktop/media-host.cs`. Enlaza dinámicamente los libVLC oficiales siguientes y no modifica sus binarios. Utiliza la API de reproducción/HWND; no inicia la interfaz Lua/HTTP ni una interfaz gráfica de VLC. Permanecen incluidas las licencias y avisos de la distribución oficial y sus fuentes correspondientes.
+
 # XuperWindows 0.1.5: VLC 3.0.24 integrado (x64 y x86)
 
 La distribución 0.1.5 utiliza los binarios oficiales sin modificar de VideoLAN en ambas arquitecturas. Se incluyen las licencias, plugins y avisos de sus archivos oficiales. La interfaz dummy permite incrustar el vídeo mediante HWND y no muestra la interfaz de VLC. Checksums y descargas: `native-dependencies.json`.
