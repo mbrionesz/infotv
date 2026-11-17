@@ -11,3 +11,14 @@ html.xt-desktop .xt-guide-categories,html.xt-desktop .xt-guide-channels{overflow
 
 html.xt-desktop #player-vod-infobar .xt-vod-controls,html.xt-desktop #player-vod-infobar .vod-seekbar{pointer-events:auto}
 html.xt-desktop #player-vod-infobar .vod-seekbar{cursor:pointer!important;min-height:14px}
+
+/* Full portrait artwork, no empty landscape container, only on Windows. */
+html.xt-desktop #app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card{box-sizing:border-box;flex:0 0 220px;width:220px;min-width:220px;height:465px;min-height:465px;padding:0 0 14px;border:1px solid #33333b;border-radius:16px;overflow:hidden;background:#17171c;box-shadow:0 8px 22px #0005;text-align:left}
+html.xt-desktop #app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame{height:330px;border-radius:0;background:#202026;overflow:hidden}
+html.xt-desktop #app.tv-shell-ready #xt-catalog .xt-continue-row .xt-poster-frame img{object-fit:contain;object-position:center}
+html.xt-desktop #app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card strong{height:32px;line-height:32px;font-size:24px;white-space:nowrap;display:block;margin:12px 14px 4px;overflow:hidden;text-overflow:ellipsis}
+html.xt-desktop #app.tv-shell-ready #xt-catalog .xt-continue-row .xt-watch-episode,html.xt-desktop #app.tv-shell-ready #xt-catalog .xt-continue-row .xt-discovery-card small{margin:3px 14px;font-size:20px;line-height:26px}
+html.xt-desktop #xt-vod-pause-card{display:none!important}
+#xw-vod-cache-info{order:4;margin:10px 0 0;font:18px/1.4 system-ui,sans-serif;color:#b7c7d8;pointer-events:auto}
+.xw-seek-form{order:3;display:flex;align-items:center;gap:12px;margin-top:12px;pointer-events:auto;font:19px/1.4 system-ui,sans-serif;color:#ddd}
+.xw-seek-form label{display:flex;align-items:center;gap:10px;white-space:nowrap}.xw-seek-form input{width:170px;padding:9px 12px;border:1px solid #666;border-radius:8px;background:#17171c;color:white;font:inherit}.xw-seek-form button{padding:9px 18px;background:#ddd;color:#111;border:0;border-radius:8px;font:inherit}.xw-seek-form span{font-size:17px;line-height:1.25;overflow-wrap:anywhere}

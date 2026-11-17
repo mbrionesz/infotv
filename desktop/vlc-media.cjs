@@ -4,7 +4,7 @@ const {createMediaProxy}=require('./media-proxy.cjs');
 function isVlcComplete(state,eofSeen){return !!(state.ready&&state.duration>0&&!state.refreshRequired&&(state.time>=state.duration-1||eofSeen&&state.time>=Math.max(0,state.duration-3)));}
 function vlcEnvironment(executable,source=process.env){const env={...source};for(const key of Object.keys(env))if(/^(VLC_(?:PLUGIN_PATH|DATA_PATH|LIB_PATH)|LUA_PATH|LUA_CPATH)$/i.test(key))delete env[key];env.VLC_PLUGIN_PATH=path.join(path.dirname(executable),'plugins');env.VLC_DATA_PATH=path.dirname(executable);return env;}
 function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=createMediaProxy,outputOptions=[],onDiagnostic=()=>{},getWindowHandle=()=>null,spawnProcess=spawn,controlTimeoutMs=10000,decoderRetryMs=8000,startupTimeoutMs=45000,pollMs=250,nativeInitRetryMs=8000,nativeInitTimeoutMs=60000}){
- let session=null,lastClosed=null;
+ let session=null,lastClosed=null,preferCompatibility=false;
  const copy=value=>JSON.parse(JSON.stringify(value));
  function current(id){if(!session||session.id!==id||session.closed)throw Error('Sesión de reproducción caducada');return session;}
  function network(item){return item.proxy?.snapshot?.()||{phase:'unknown',httpStatus:0,bytes:0,error:''};}
@@ -12,7 +12,7 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
   const state=item.state;item.lastReplyAt=Date.now();state.controlReady=true;if(data.length>0)state.duration=data.length;
   if(data.time>=0&&data.state!=='stopped'&&(data.stats?.decodedvideo>0||data.stats?.displayedpictures>0))state.time=Math.max(Number(data.time)||0,data.position>0&&data.length>0?data.position*data.length:0);
   state.position=Number(data.position)||0;state.vlcState=data.state;state.paused=data.state==='paused';state.stats={decodedvideo:data.stats?.decodedvideo||0,decodedaudio:data.stats?.decodedaudio||0,displayedpictures:data.stats?.displayedpictures||0};
-  if(state.stats.displayedpictures>0){state.ready=true;state.stage='playing';}
+  if(state.stats.displayedpictures>0){state.ready=true;state.stage='playing';if(item.softwareRetried)preferCompatibility=true;}if(typeof data.seekable==='boolean')state.seekable=data.seekable;
   const tracks=[];for(const [name,stream]of Object.entries(data.information?.category||{})){
    if(name==='meta')continue;const type=String(stream.Type||stream.Tipo||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(!['audio','video','subtitle','subtitulo'].includes(type))continue;
    const id=Number(stream.ID||stream.Original_ID||(name.match(/\d+/)||[])[0]);tracks.push({id:Number.isFinite(id)?id:tracks.length,type:/subtitle|subtitulo/.test(type)?'sub':type,language:stream.Language||stream.Idioma||'',name:stream.Name||stream.Language||stream.Idioma||stream.Codec||'',codec:stream.Codec||stream['Códec']||'',selected:type==='audio'&&(typeof stream.Selected==='boolean'?stream.Selected:item.audioId===undefined?!tracks.some(track=>track.type==='audio'):id===item.audioId)});
@@ -24,7 +24,7 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
   const generation=item.generation,requestId=++item.serial,command=params.command;let payload={action:'status'};
   if(command==='open'||command==='in_play')payload={action:'open',url:item.proxy.url,time:item.state.time,language:item.language,hwnd:item.hwnd?String(item.hwnd):'',compatibility:!!item.softwareRetried,software:!!item.softwareRetried||outputOptions.includes('--avcodec-hw=none'),videoOutput:outputOptions.includes('--vout=wingdi')?'wingdi':'',silent:outputOptions.includes('--aout=dummy'),diagnostic:outputOptions.includes('--verbose=2')};
   else if(command==='pl_forcepause'||command==='pl_forceresume')payload={action:'pause',paused:command==='pl_forcepause'};
-  else if(command==='seek')payload={action:'seek',time:Number(params.val)};
+  else if(command==='seek')payload={action:'seek',time:Number(params.val)};else if(command==='seek-position')payload={action:'seek-position',position:Number(params.val)};
   else if(command==='audio_track')payload={action:'audio',track:Number(params.val)};
   else if(command==='subtitle_track')payload={action:'subtitle-off'};
   else if(command==='addsubtitle')payload={action:'subtitle',url:params.val};
@@ -64,7 +64,7 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
   try{await launch(item,true);}finally{item.retrying=false;}
  }
  async function monitor(item){
-  if(item.closed||item.retrying)return;
+  if(item.closed||item.retrying||item.seeking)return;
   const phase=item.state.nativeStep?.phase,initAge=Date.now()-(item.nativeInitStartedAt||item.startedAt),phaseAge=Date.now()-(item.phaseStartedAt||item.startedAt);
   if(!item.state.ready&&!item.softwareRetried&&(['creating-player-audio','binding-window','configuring-input','starting-playback'].includes(phase)||['reading-state','reading-statistics'].includes(phase)&&Date.now()-(item.lastReplyAt||item.nativeInitStartedAt)>=nativeInitRetryMs)&&phaseAge>=nativeInitRetryMs){item.state.fallbackReason='native-init:'+phase;await softwareFallback(item).catch(error=>fail(item,error.message));return;}
   if(!item.state.ready&&!item.mediaPlayRequested&&initAge>=nativeInitTimeoutMs){fail(item,'La preparación nativa no terminó ('+(phase||'initializing')+').');return;}
@@ -83,10 +83,10 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
  }
  async function open(options){
   close();const id=crypto.randomBytes(16).toString('hex'),item=session={id,closed:false,generation:0,options,port:0,password:'',proxy:null,process:null,pending:new Map(),serial:0,timer:null,busy:false,controlFailures:0,startedAt:Date.now(),subtitleChoice:options.subtitle||null,state:{id,engine:'vlc',stage:'starting-engine',controlReady:false,time:Number(options.startTime)||0,duration:Number(options.duration)||0,ready:false,paused:false,ended:false,tracks:[],width:0,height:0,stats:{},softwareFallbacks:0}};
-  try{item.proxy=await proxyFactory({stream:options,resolver,onAuthFailure:()=>{item.state.refreshRequired=true;}});if(item.closed){item.proxy.close();throw Error('Reproducción cancelada');}await launch(item,false);if(item.closed)throw Error(item.state.error||'Reproducción cancelada');item.timer=setInterval(()=>monitor(item),pollMs);return {id};}
+  try{item.proxy=await proxyFactory({stream:options,resolver,onAuthFailure:()=>{item.state.refreshRequired=true;}});if(item.closed){item.proxy.close();throw Error('Reproducción cancelada');}item.state.compatibilityCached=preferCompatibility;await launch(item,preferCompatibility);if(item.closed)throw Error(item.state.error||'Reproducción cancelada');item.timer=setInterval(()=>monitor(item),pollMs);return {id};}
   catch(error){if(!item.closed){item.state.error=error.message;close(id);}throw error;}
  }
- async function command(id,action,value){const item=current(id);if(action==='pause'){if(!value&&!item.state.ready){item.startedAt=Date.now();item.receivedAt=Date.now();}return request(item,{command:value?'pl_forcepause':'pl_forceresume'});}if(action==='seek'&&Number.isFinite(value)&&value>=0)return request(item,{command:'seek',val:value});if(action==='audio'&&Number.isInteger(value)){item.audioId=value;return request(item,{command:'audio_track',val:value});}throw Error('Comando no permitido');}
+ async function command(id,action,value){const item=current(id);if(action==='pause'){if(!value&&!item.state.ready){item.startedAt=Date.now();item.receivedAt=Date.now();}return request(item,{command:value?'pl_forcepause':'pl_forceresume'});}if(action==='seek'&&Number.isFinite(value)&&value>=0){if(item.seeking)throw Error('Espera a que termine el salto anterior.');if(!item.state.ready)throw Error('Espera a que el vídeo termine de abrir.');if(item.state.seekable===false)throw Error('La fuente no permite buscar por tiempo.');const target=item.state.duration>0?Math.min(value,Math.max(0,item.state.duration-.5)):value;item.seeking=true;item.state.seek={target,status:'pending'};try{await request(item,{command:'seek',val:target});async function confirmed(){const until=Date.now()+2200;while(!item.closed&&Date.now()<until){if(Math.abs(item.state.time-target)<=3)return true;await new Promise(r=>setTimeout(r,100));await request(item);}return false;}let ok=await confirmed();if(!ok&&item.state.duration>0){await request(item,{command:'seek-position',val:target/item.state.duration});ok=await confirmed();item.state.seek.approximate=ok;}if(!ok)throw Error('El servidor o el archivo no confirmó el salto solicitado.');item.state.seek.status='confirmed';return copy(item.state);}catch(error){item.state.seek.status='failed';throw error;}finally{item.seeking=false;}}if(action==='audio'&&Number.isInteger(value)){item.audioId=value;return request(item,{command:'audio_track',val:value});}throw Error('Comando no permitido');}
  function subtitle(id,choice){const item=current(id);item.subtitleChoice=choice||null;return choice?.url?request(item,{command:'addsubtitle',val:item.proxy.subtitle(choice.url)}):request(item,{command:'subtitle_track',val:-1});}
  async function refresh(id,stream){
   const item=current(id),now=Date.now();if(!item.lastRefresh||now-item.lastRefresh>60000)item.refreshes=0;if((item.refreshes||0)>=2)throw Error('No se pudo renovar el vídeo');item.refreshes=(item.refreshes||0)+1;item.lastRefresh=now;item.startedAt=now;item.proxy.update(stream);item.state.refreshRequired=false;item.subtitleApplied=false;item.state.ready=false;item.receivedAt=0;

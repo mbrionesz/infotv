@@ -82,10 +82,10 @@ function request(method, payload, callback) {
     if (method === 'liveChannels') return core.getLiveChannels(payload.columnId, payload.pageNum, payload.pageSize, (error, channels, hasMore) => done(error, { channels: channels || [], hasMore: !!hasMore, pageNum: Number(payload.pageNum) || 1 }));
     if (method === 'fetchM3u') return core.fetchM3u(payload.url, (error, channels) => done(error, { channels: channels || [] }));
     if (method === 'resolve') {
-      const options={trackIndex:payload.trackIndex,trackExplicit:payload.trackExplicit,preferredAudio:payload.preferredAudio,force:true};
-      const renew=createVodRenewal(callback=>core.resolve(payload.contentId,payload.seriesContentId,options,(error,fresh)=>{if(error)return callback(error);try{fresh.refreshStream=refresh;remember(fresh);callback(null,fresh);}catch(failure){callback(failure);}}));
+      const options={trackIndex:payload.trackIndex,trackExplicit:payload.trackExplicit,preferredAudio:payload.preferredAudio,force:window.XuperDesktop?.platform!=='windows'||payload.force===true};const resolveAt=performance.now();
+      const renew=createVodRenewal(callback=>core.resolve(payload.contentId,payload.seriesContentId,{...options,force:true},(error,fresh)=>{if(error)return callback(error);try{fresh.refreshStream=refresh;remember(fresh);callback(null,fresh);}catch(failure){callback(failure);}}));
       const refresh=callback=>renew().then(value=>callback(null,value),callback);
-      return core.resolve(payload.contentId,payload.seriesContentId,options,(error,stream)=>{if(error)return done(error);try{stream.refreshStream=refresh;done(null,remember(stream));}catch(failure){done(failure);}});
+      return core.resolve(payload.contentId,payload.seriesContentId,options,(error,stream)=>{if(error)return done(error);try{stream.resolveMs=Math.round(performance.now()-resolveAt);stream.refreshStream=refresh;done(null,remember(stream));}catch(failure){done(failure);}});
     }
     if (method === 'resolveLive') {
       const resolveAt=performance.now();
