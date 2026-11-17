@@ -6,7 +6,7 @@ La versión de PC pasa a llamarse XuperWindows. El icono original se conserva. E
 
 El error `addSourceBuffer ... hvc1 ... unsupported` es una ausencia del decodificador HEVC en MediaSource/Chromium. Cambiar DNS, servidor o aumentar el búfer no añade ese decodificador.
 
-XuperWindows incluye un mpv nativo de respaldo (binarios x86 y x64 fijados y verificados por SHA-256). Se usa para VOD HEVC cuando Chromium no admite el códec, o cuando el decodificador del navegador rechaza el formato. H264 y TV que funcionan en el motor actual conservan su camino.
+XuperWindows incluye un mpv nativo de respaldo (mpv x64 y VLC x86 fijados y verificados por SHA-256). Se usa para VOD HEVC cuando Chromium no admite el códec, o cuando el decodificador del navegador rechaza el formato. H264 y TV que funcionan en el motor actual conservan su camino.
 
 El motor de respaldo abre su propia ventana de vídeo con título XuperWindows. No es un reproductor incrustado en la superficie HTML. Usa aceleración segura cuando está disponible y decodificación por software en caso contrario; no recodifica ni reduce artificialmente resolución/FPS. La fluidez depende de CPU/GPU y del flujo. El búfer nativo se limita a 32 MiB hacia delante y 8 MiB hacia atrás.
 
@@ -28,11 +28,11 @@ Los nombres antiguos se conservan únicamente donde son necesarios para migraci�
 
 ## Validación
 
-Pruebas unitarias: códec HEVC, proxy/rangos/cabeceras/DNS, migración sin pérdida y reloj/limpieza del motor. En Windows se ejecuta decodificación real del fixture HEVC/AAC de tres segundos con ambos ejecutables, más una prueba de control nativo a través del proxy (pausa, seek, reanudación y EOF). El fixture es generado con patrones y tono de FFmpeg, sin contenido de terceros.
+Pruebas unitarias: códec HEVC, proxy/rangos/cabeceras/DNS, migración sin pérdida y reloj/limpieza del motor. En Windows se ejecuta decodificación real del fixture HEVC/AAC de diez segundos con ambos ejecutables, más una prueba de control nativo a través del proxy (pausa, seek, reanudación y EOF). El fixture es generado con patrones y tono de FFmpeg, sin contenido de terceros.
 
 Estas pruebas no garantizan todas las señales del proveedor. La comprobación de sesiones largas y rendimiento del equipo del usuario sigue siendo necesaria.
 
-Estado de esta preparación: 345 pruebas del núcleo y 11 de escritorio aprobadas, más regresión de interfaz en navegador. La prueba de HEVC real en Windows, los instaladores y su publicación están en validación autorizada en GitHub Actions.
+Estado de esta preparación: 345 pruebas del núcleo y 14 de escritorio aprobadas, más regresión de interfaz en navegador. La prueba de HEVC real en Windows, los instaladores y su publicación están en validación autorizada en GitHub Actions.
 
 TMDB retirado de Windows por petición del usuario: sin configuración de clave, panel, cliente API ni enriquecimiento de imágenes. Se borra la clave heredada del perfil y se muestran imágenes del portal. La compilación Windows no recibe la configuración TMDB de Tizen.
 
