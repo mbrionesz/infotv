@@ -1,0 +1,33 @@
+name: Copy verified Tizen assets to clean release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified existing Tizen version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir tizen
+          gh release download v0.10.21-beta.1 --pattern 'XuperTizen-0.10.21-beta-Tizen4plus-UNSIGNED.wgt' --pattern 'XuperTizen-0.10.21-source.zip' --pattern SHA256SUMS.json --pattern release-info.json --dir tizen
+      - name: Verify identical widget and sources
+        run: |
+          cd tizen
+          python3 - <<'PY'
+          import json,hashlib
+          expected={'XuperTizen-0.10.21-beta-Tizen4plus-UNSIGNED.wgt':'a9041cc7ba17dffdd34d933f005da81927a23093caffaa26ebc45e418c7c2727','XuperTizen-0.10.21-source.zip':'2acdae03272dc7635c46a68fde6142deb6ac90a727ff1188126ed991c6cfa852'}
+          assert json.load(open('SHA256SUMS.json'))==expected
+          for name,digest in expected.items():
+              assert hashlib.sha256(open(name,'rb').read()).hexdigest()==digest
+          assert json.load(open('release-info.json'))['sha256']==expected['XuperTizen-0.10.21-beta-Tizen4plus-UNSIGNED.wgt']
+          print('Verified unchanged Tizen widget and sources')
+          PY
+      - name: Attach verified Tizen assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload v0.10.21-beta.2 tizen/*
