@@ -6,11 +6,11 @@ La versión de PC pasa a llamarse XuperWindows. El icono original se conserva. E
 
 El error `addSourceBuffer ... hvc1 ... unsupported` es una ausencia del decodificador HEVC en MediaSource/Chromium. Cambiar DNS, servidor o aumentar el búfer no añade ese decodificador.
 
-XuperWindows incluye un mpv nativo de respaldo (mpv x64 y VLC x86 fijados y verificados por SHA-256). Se usa para VOD HEVC cuando Chromium no admite el códec, o cuando el decodificador del navegador rechaza el formato. H264 y TV que funcionan en el motor actual conservan su camino.
+XuperWindows incluye motores nativos de respaldo: mpv en x64 y VLC oficial de VideoLAN en x86, fijados y verificados por SHA-256. Se usa para VOD HEVC cuando Chromium no admite el códec, o cuando el decodificador del navegador rechaza el formato. H264 y TV que funcionan en el motor actual conservan su camino.
 
-El motor de respaldo abre su propia ventana de vídeo con título XuperWindows. No es un reproductor incrustado en la superficie HTML. Usa aceleración segura cuando está disponible y decodificación por software en caso contrario; no recodifica ni reduce artificialmente resolución/FPS. La fluidez depende de CPU/GPU y del flujo. El búfer nativo se limita a 32 MiB hacia delante y 8 MiB hacia atrás.
+El motor de respaldo abre su propia ventana de vídeo con título XuperWindows. No es un reproductor incrustado en la superficie HTML. Usa aceleración segura cuando está disponible y decodificación por software en caso contrario; no recodifica ni reduce artificialmente resolución/FPS. La fluidez depende de CPU/GPU y del flujo. En x64, el búfer de mpv se limita a 32 MiB hacia delante y 8 MiB hacia atrás; VLC x86 usa su caché de red propia.
 
-- Espacio: pausa; flechas: avance/retroceso; `f`: pantalla completa; cerrar la ventana o `q`: regresar a la app.
+- Espacio: pausa; flechas: avance/retroceso; `f`: pantalla completa; cerrar la ventana: regresar a la app (`q` en mpv; `Ctrl+Q` en VLC).
 - El reproductor nativo ofrece sus controles de audio/subtítulos. La selección que realiza la app y sus subtítulos externos se envían también al motor.
 - El reloj y la duración se transmiten a la app para seguir guardando el progreso. Al terminar vuelve a la app; sus controles HTML no se superponen a la ventana nativa.
 
@@ -32,7 +32,7 @@ Pruebas unitarias: códec HEVC, proxy/rangos/cabeceras/DNS, migración sin pérd
 
 Estas pruebas no garantizan todas las señales del proveedor. La comprobación de sesiones largas y rendimiento del equipo del usuario sigue siendo necesaria.
 
-Estado de esta preparación: 345 pruebas del núcleo y 14 de escritorio aprobadas, más regresión de interfaz en navegador. La prueba de HEVC real en Windows, los instaladores y su publicación están en validación autorizada en GitHub Actions.
+Validación completada: GitHub Actions 44002833770. HEVC/AAC real, pausa, seek, reanudación y EOF en ambos motores; reproducción a través del puente real de Electron; ambos instaladores y hashes publicados. Las pruebas x86 se ejecutaron bajo WOW64; no sustituyen una sesión prolongada en Windows 10 de 32 bits físico.
 
 TMDB retirado de Windows por petición del usuario: sin configuración de clave, panel, cliente API ni enriquecimiento de imágenes. Se borra la clave heredada del perfil y se muestran imágenes del portal. La compilación Windows no recibe la configuración TMDB de Tizen.
 
