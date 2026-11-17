@@ -7579,6 +7579,7 @@
         var formatInfo=document.getElementById("vod-format-info");if(formatInfo)formatInfo.textContent="";
         window.XuperPlayer.open(xe, e, { onCheckpoint:function(){if(checkpointContext)checkpointVod(checkpointContext);}, mime: s, live: "live" === X.playerMode,
           startTime:resumeRecord?XuperStandalone.resumeClock(resumeRecord):0,
+          declaredDuration:(function(){var hint=ii(X.playerEpisode&&X.playerEpisode.duration||0);if(!(hint>0)&&!x(X.playerItem))hint=ii(X.playerItem&&X.playerItem.duration||0);return hint>0&&hint<=43200?hint:0;})(),
           preferredAudio: preferredVodAudio(),
           audioIndex: X.playerMode==="vod"&&$i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
