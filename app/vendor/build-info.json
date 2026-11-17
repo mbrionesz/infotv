@@ -1,4 +1,5 @@
 {
+  "targetPlatform": "tizen",
   "version": "0.10.21",
   "minimumTizen": "4.0",
   "target": "chrome56",
@@ -6,5 +7,5 @@
   "hlsWorkerVersion": "1.7.4",
   "vodSha256": "eaf7b219f8d0222cb50d0e1c4175619625ae2bfc0e3f6dca6ef101e5e297743d",
   "hlsWorkerSha256": "d2abaf948030a86a4cd9b4a2a66e7c0694f53c7aa3c698f1772d098bdcbc7d89",
-  "sourceSha256": "d7fa95de77dd4b8cb4426fadf0604f6ee6c2b3aa09bfe27a90c17fa16c01e54c"
+  "sourceSha256": "fe1036640df34932d3109f961fe0d11ac6912188834a8649d39e37940d7eff1f"
 }

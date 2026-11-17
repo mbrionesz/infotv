@@ -1,6 +1,7 @@
 /* Same TV interface; desktop-only keyboard, pointer and lifecycle adaptations. */
 (function(){
  document.documentElement.classList.add('xt-desktop');
+ try{localStorage.removeItem('xt.tmdbToken');localStorage.removeItem('xt.tmdbProvision');delete window.XuperTmdbDefaultToken;}catch(_){}
  window.webOSTV={platformBack:function(){window.XuperDesktop.exit();}};
  document.addEventListener('keydown',function(event){if(event.key==='Backspace'&&!/INPUT|TEXTAREA/.test(event.target.tagName)){event.preventDefault();if(window.__xuper)window.__xuper.key(461);}},true);
  // Hover is visual only. Focusing on pointerover scrolled TV lists on incidental mouse movement.

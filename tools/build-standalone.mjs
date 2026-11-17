@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
+const desktopBuild=process.env.XUPER_BUILD_TARGET==='windows';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const portalSource=readFileSync(path.join(root,'companion/lib/magis.js'),'utf8');
 const portalField=name=>{const found=portalSource.match(new RegExp(name+'\\s*=\\s*\"([^\"]+)\"'));if(!found)throw Error('Portal field missing: '+name);return found[1];};
@@ -14,6 +15,7 @@ const env = new Set(['fs', 'path', 'os', 'url', './dnsx', './upstream']);
 const plugin = {
   name: 'widget-runtime',
   setup(builder) {
+    if(desktopBuild)builder.onLoad({filter:/[\\/]artwork-settings\.js$/},()=>({contents:'export function createArtworkSettings(){return {open(){},close(){},handle(){return false;},enrich(){},poster(url,fetcher,done){fetcher(url,done,\"hero\");}}}',loader:'js'}));
     builder.onResolve({ filter: /^(crypto|http|https|fs|path|os|url|\.\/dnsx|\.\/upstream)$/ }, args => {
       if (!args.importer.replace(/\\/g,'/').endsWith('/magis.js')) return;
       if (aliases[args.path]) return { path: aliases[args.path], namespace: 'widget-alias' };
@@ -88,4 +90,4 @@ const sources = ['package.json','package-lock.json','tools/build-standalone.mjs'
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}
 const hlsVersion=JSON.parse(readFileSync(path.join(root,'node_modules/hls.js/package.json'),'utf8')).version;
-writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({version:JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version,minimumTizen:'4.0',target:'chrome56',hlsVersion,hlsWorkerVersion:hlsVersion,vodSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/vod.js'))).digest('hex'),hlsWorkerSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/hls-worker.js'))).digest('hex'),sourceSha256:hash.digest('hex')},null,2)+'\n');
+writeFileSync(path.join(root,'app/vendor/build-info.json'),JSON.stringify({targetPlatform:desktopBuild?'windows':'tizen',version:JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).version,minimumTizen:'4.0',target:'chrome56',hlsVersion,hlsWorkerVersion:hlsVersion,vodSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/vod.js'))).digest('hex'),hlsWorkerSha256:createHash('sha256').update(readFileSync(path.join(root,'app/vendor/hls-worker.js'))).digest('hex'),sourceSha256:hash.digest('hex')},null,2)+'\n');

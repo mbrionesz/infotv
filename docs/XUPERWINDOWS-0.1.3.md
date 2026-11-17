@@ -32,4 +32,6 @@ Pruebas unitarias: códec HEVC, proxy/rangos/cabeceras/DNS, migración sin pérd
 
 Estas pruebas no garantizan todas las señales del proveedor. La comprobación de sesiones largas y rendimiento del equipo del usuario sigue siendo necesaria.
 
-Estado de esta preparación: 345 pruebas del núcleo y 11 de escritorio aprobadas, más regresión de interfaz en navegador. La prueba de HEVC real en Windows, los instaladores y su publicación están pendientes de autorización para subir el cambio y ejecutar GitHub Actions.
+Estado de esta preparación: 345 pruebas del núcleo y 11 de escritorio aprobadas, más regresión de interfaz en navegador. La prueba de HEVC real en Windows, los instaladores y su publicación están en validación autorizada en GitHub Actions.
+
+TMDB retirado de Windows por petición del usuario: sin configuración de clave, panel, cliente API ni enriquecimiento de imágenes. Se borra la clave heredada del perfil y se muestran imágenes del portal. La compilación Windows no recibe la configuración TMDB de Tizen.

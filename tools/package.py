@@ -16,6 +16,7 @@ def build(output=None):
     out.mkdir(parents=True, exist_ok=True)
     app = ROOT / 'app'
     info = json.loads((app / 'vendor/build-info.json').read_text())
+    assert info.get('targetPlatform', 'tizen') == 'tizen', 'Windows UI must not be packaged as a Samsung WGT'
     sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs', 'companion/lib/magis.js', 'companion/lib/audio-language.js', 'app/css/shadcn-tv.css', 'design/shadcn-tv.json']
     sources += [str(p.relative_to(ROOT)) for p in (ROOT / 'browser').glob('*.js')]
     digest = hashlib.sha256()
