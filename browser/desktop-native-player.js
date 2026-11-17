@@ -23,7 +23,7 @@ export function openDesktopNative(video,stream,options){
    if(selector==='#player-vod-infobar'||selector==='.xt-player-chrome'||selector==='.xt-next-episode')bottom=Math.min(bottom,box.top);
    else hidden=true;
   }
-  bridge.mediaLayout({x:rect.left,y:rect.top,width:rect.width,height:Math.max(0,bottom-rect.top),hidden});
+  bridge.mediaLayout({x:rect.left,y:rect.top,width:rect.width,height:rect.height,clipHeight:Math.max(0,bottom-rect.top),hidden});
  }
  const layoutTimer=setInterval(layout,150);window.addEventListener?.('resize',layout);layout();
  const ready=Promise.resolve().then(()=>bridge.startMedia({url:stream.url,headers:stream.headers||{},name:stream.name||'Reproducción',preferredAudio:options.preferredAudio,startTime:state.time,duration:state.duration,subtitle:window.__xuper?.subtitleForPlayback?.()||null})).then(result=>{id=result.id;if(closed){bridge.stopMedia(id);return;}off=bridge.onMediaClosed(next=>{if(next.id!==id||closed)return;finishState(next);});timer=setInterval(poll,500);poll();},error=>{if(!closed)options.onError(error.message||'No pudo iniciar el motor compatible.');});

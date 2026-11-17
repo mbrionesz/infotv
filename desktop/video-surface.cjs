@@ -7,8 +7,8 @@ function createVideoSurface({BrowserWindow,parent,platform=process.platform}){
   if(!surface||surface.isDestroyed()||!layout||parent.isDestroyed())return;
   const bounds=parent.getContentBounds(),x=Math.max(0,Math.round(layout.x)),y=Math.max(0,Math.round(layout.y));
   const width=Math.max(0,Math.min(Math.round(layout.width),bounds.width-x)),height=Math.max(0,Math.min(Math.round(layout.height),bounds.height-y));
-  if(parent.isMinimized()||!parent.isVisible()||width<2||height<2||layout.hidden){surface.hide();return;}
-  surface.setBounds({x:bounds.x+x,y:bounds.y+y,width,height});if(!surface.isVisible())surface.showInactive();
+  if(parent.isMinimized()||!parent.isVisible()||width<2||height<2||layout.clipHeight===0||layout.hidden){surface.hide();return;}
+  surface.setBounds({x:bounds.x+x,y:bounds.y+y,width,height});surface.setShape([{x:0,y:0,width,height:Math.min(height,Math.max(1,Math.round(layout.clipHeight??height)))}]);if(!surface.isVisible())surface.showInactive();
  }
  function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;}
  function handle(){
@@ -22,7 +22,8 @@ function createVideoSurface({BrowserWindow,parent,platform=process.platform}){
  }
  function update(value){
   if(!value||!['x','y','width','height'].every(key=>Number.isFinite(value[key])&&Math.abs(value[key])<32768))throw Error('Área de vídeo inválida');
-  layout={x:value.x,y:value.y,width:value.width,height:value.height,hidden:!!value.hidden};sync();
+  if(value.clipHeight!==undefined&&(!Number.isFinite(value.clipHeight)||value.clipHeight<0||value.clipHeight>32768))throw Error('Recorte de vídeo inválido');
+  layout={clipHeight:value.clipHeight,x:value.x,y:value.y,width:value.width,height:value.height,hidden:!!value.hidden};sync();
  }
  for(const event of ['move','resize','restore','show','enter-full-screen','leave-full-screen'])parent.on(event,sync);
  parent.on('minimize',()=>surface?.hide());parent.on('hide',()=>surface?.hide());parent.on('closed',close);
