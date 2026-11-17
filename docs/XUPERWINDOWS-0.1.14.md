@@ -17,3 +17,14 @@ La prueba estricta detectó un fallo de lectura de prefetch al buscar con la ent
 El lector MPEG-TS habitual de VLC requiere `STREAM_CAN_FASTSEEK` para su búsqueda por tiempo (`SeekToTime`), mientras el acceso HTTP declara esa capacidad como falsa. La ruta Windows TS usa ahora el demultiplexor avformat (FFmpeg) incluido en VLC, que utiliza rangos sin exigir esa capacidad. La prueba confirma la selección efectiva de avformat, no solo la opción solicitada.
 
 La distribución oficial VLC Windows se compila con `--enable-merge-ffmpeg`; el módulo que implementa avformat puede identificarse como `avcodec` en el registro. La validación acepta esos dos nombres de implementación, pero no el lector TS anterior. El registro de diagnóstico de las pruebas conserva los bloques completos; la ejecución normal mantiene el límite anterior.
+
+Validación final: 347 pruebas generales, 33 de escritorio, prueba local Chromium de tarjetas/entrada de tiempo/copia de estado y prueba Windows con fuente HEVC TS sintética de dos horas. Los saltos a 2400, 6600 y 3600 segundos se confirmaron con procesamiento de vídeo y rangos HTTP, tanto en x64 como x86 y en motores empaquetados. [Ejecución final](https://github.com/mbrionesz/infotv/actions/runs/44189361975), fuente inmutable `v0.1.14-beta.6`.
+
+Tiempos del entorno CI para los saltos empaquetados: 629–635 ms. Arranque de la fuente corta empaquetada: 693 ms x64 / 933 ms x86. Son mediciones de una fuente sintética en red local, no una predicción para el portal ni un ensayo de alto bitrate. Falta confirmar los títulos del usuario.
+
+SHA256 descargados coincidentes con los activos públicos:
+
+- x64: `4c571d35126c6bc519dc8f8cf2da80775704738974cc99b80d8e2906357fc28d`
+- x86: `f5b1eca3ca1df00f82186e85708a6707b7071e898df4c7aab0fcc79d5723e777`
+
+Publicación conjunta limpia: https://github.com/mbrionesz/infotv/releases/tag/v0.10.21-beta.6 . La publicación se asoció a la etiqueta final sin reescribir etiquetas anteriores. Tizen se verificó idéntico y la publicación anterior se retiró tras comprobar los archivos nuevos.
