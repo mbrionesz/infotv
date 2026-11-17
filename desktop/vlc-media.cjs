@@ -3,13 +3,13 @@ const {spawn}=require('node:child_process'),crypto=require('node:crypto'),path=r
 const {createMediaProxy}=require('./media-proxy.cjs');
 function isVlcComplete(state,eofSeen){return !!(state.ready&&state.duration>0&&!state.refreshRequired&&(state.time>=state.duration-1||eofSeen&&state.time>=Math.max(0,state.duration-3)));}
 function vlcEnvironment(executable,source=process.env){const env={...source};for(const key of Object.keys(env))if(/^(VLC_(?:PLUGIN_PATH|DATA_PATH|LIB_PATH)|LUA_PATH|LUA_CPATH)$/i.test(key))delete env[key];env.VLC_PLUGIN_PATH=path.join(path.dirname(executable),'plugins');env.VLC_DATA_PATH=path.dirname(executable);return env;}
-function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=createMediaProxy,outputOptions=[],onDiagnostic=()=>{},getWindowHandle=()=>null,spawnProcess=spawn,controlTimeoutMs=10000,decoderRetryMs=8000,startupTimeoutMs=45000,pollMs=250}){
+function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=createMediaProxy,outputOptions=[],onDiagnostic=()=>{},getWindowHandle=()=>null,spawnProcess=spawn,controlTimeoutMs=10000,decoderRetryMs=8000,startupTimeoutMs=45000,pollMs=250,nativeInitRetryMs=8000,nativeInitTimeoutMs=60000}){
  let session=null,lastClosed=null;
  const copy=value=>JSON.parse(JSON.stringify(value));
  function current(id){if(!session||session.id!==id||session.closed)throw Error('Sesión de reproducción caducada');return session;}
  function network(item){return item.proxy?.snapshot?.()||{phase:'unknown',httpStatus:0,bytes:0,error:''};}
  function update(item,data){
-  const state=item.state;state.controlReady=true;if(data.length>0)state.duration=data.length;
+  const state=item.state;item.lastReplyAt=Date.now();state.controlReady=true;if(data.length>0)state.duration=data.length;
   if(data.time>=0&&data.state!=='stopped'&&(data.stats?.decodedvideo>0||data.stats?.displayedpictures>0))state.time=Math.max(Number(data.time)||0,data.position>0&&data.length>0?data.position*data.length:0);
   state.position=Number(data.position)||0;state.vlcState=data.state;state.paused=data.state==='paused';state.stats={decodedvideo:data.stats?.decodedvideo||0,decodedaudio:data.stats?.decodedaudio||0,displayedpictures:data.stats?.displayedpictures||0};
   if(state.stats.displayedpictures>0){state.ready=true;state.stage='playing';}
@@ -22,7 +22,7 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
  function request(item,params={}){return new Promise((resolve,reject)=>{
   if(item.closed||!item.process?.stdin||item.pending.size>=16)return reject(Error('Control privado no disponible'));
   const generation=item.generation,requestId=++item.serial,command=params.command;let payload={action:'status'};
-  if(command==='open'||command==='in_play')payload={action:'open',url:item.proxy.url,time:item.state.time,language:item.language,hwnd:item.hwnd?String(item.hwnd):'',software:!!item.softwareRetried||outputOptions.includes('--avcodec-hw=none'),videoOutput:outputOptions.includes('--vout=wingdi')?'wingdi':'',silent:outputOptions.includes('--aout=dummy')};
+  if(command==='open'||command==='in_play')payload={action:'open',url:item.proxy.url,time:item.state.time,language:item.language,hwnd:item.hwnd?String(item.hwnd):'',compatibility:!!item.softwareRetried,software:!!item.softwareRetried||outputOptions.includes('--avcodec-hw=none'),videoOutput:outputOptions.includes('--vout=wingdi')?'wingdi':'',silent:outputOptions.includes('--aout=dummy')};
   else if(command==='pl_forcepause'||command==='pl_forceresume')payload={action:'pause',paused:command==='pl_forcepause'};
   else if(command==='seek')payload={action:'seek',time:Number(params.val)};
   else if(command==='audio_track')payload={action:'audio',track:Number(params.val)};
@@ -36,7 +36,7 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
  function finish(item){if(item.closed)return;item.state.network=network(item);item.closed=true;clearInterval(item.timer);item.proxy?.close();lastClosed={...item.state,closed:true};onClosed(copy(lastClosed));}
  function close(id){const item=session;if(!item||id&&item.id!==id)return;finish(item);stopChild(item);if(session===item)session=null;}
  async function launch(item,software){
-  stopChild(item);const generation=item.generation;item.state.controlReady=false;item.state.control={transport:'private-pipe',protocol:1};item.logTail='';item.eofSeen=false;
+  stopChild(item);const generation=item.generation;item.state.controlReady=false;item.nativeInitStartedAt=Date.now();item.mediaPlayRequested=false;item.phaseStartedAt=Date.now();item.state.nativeStep={phase:'starting-host',elapsedMs:0};item.state.control={transport:'private-pipe',protocol:1};item.logTail='';item.eofSeen=false;
   if(item.closed)throw Error('Reproducción cancelada');
   const pref=String(typeof item.options.preferredAudio==='object'?item.options.preferredAudio?.language:item.options.preferredAudio||'es');item.language=/^en|^eng/.test(pref)?'en,eng':/^pt|^por/.test(pref)?'pt,por':'es,spa';
   if(item.hwnd===undefined)item.hwnd=getWindowHandle();item.softwareRetried=!!software;item.state.decoder=software?'software':'automatic';
@@ -44,7 +44,12 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
   const timer=setTimeout(()=>readyReject(Error('El controlador privado del motor no pudo iniciar.')),controlTimeoutMs);
   const child=item.process=spawnProcess(path.join(path.dirname(executable),'XuperMediaHost.exe'),[],{shell:false,windowsHide:true,stdio:['pipe','pipe','pipe'],cwd:path.dirname(executable),env:vlcEnvironment(executable)});
   let buffer='';child.stdout.setEncoding('utf8');child.stdout.on('error',()=>{});child.stdin.on('error',()=>{});
-  child.stdout.on('data',chunk=>{if(item.closed||generation!==item.generation)return;buffer+=chunk;if(buffer.length>1024*1024){fail(item,'El motor envió una respuesta inválida.');return;}let at;while((at=buffer.indexOf('\n'))>=0){const line=buffer.slice(0,at);buffer=buffer.slice(at+1);try{const message=JSON.parse(line);if(message.event==='ready'&&message.protocol===1){clearTimeout(timer);item.protocolReady=null;item.state.controlReady=true;readyResolve();continue;}const pending=item.pending.get(message.requestId);if(!pending)continue;clearTimeout(pending.timer);item.pending.delete(message.requestId);if(message.error)pending.reject(Error('Motor de vídeo: '+String(message.error).replace(/https?:\/\/\S+/g,'[medio]').slice(0,120)));else pending.resolve(message.result);}catch(_){}}});
+  child.stdout.on('data',chunk=>{if(item.closed||generation!==item.generation)return;buffer+=chunk;if(buffer.length>1024*1024){fail(item,'El motor envió una respuesta inválida.');return;}let at;while((at=buffer.indexOf('\n'))>=0){const line=buffer.slice(0,at);buffer=buffer.slice(at+1);try{const message=JSON.parse(line);if(message.event==='native-progress'){
+ const allowed=['initializing-native','stopping-previous','loading-library','initializing-engine','engine-ready','creating-media','creating-player-audio','binding-window','configuring-input','starting-playback','play-requested','reading-state','reading-statistics','first-frame'];
+ if(allowed.includes(message.phase)){if(item.state.nativeStep?.phase!==message.phase)item.phaseStartedAt=Date.now();item.state.nativeStep={phase:message.phase,elapsedMs:Math.max(0,Number(message.elapsedMs)||0)};if(message.phase==='play-requested'){item.mediaPlayRequested=true;item.startedAt=Date.now();}if(!item.state.ready)item.state.stage='native-'+message.phase;}continue;}
+ if(message.event==='native-version'){item.state.nativeVersion=String(message.version||'').slice(0,80);continue;}
+ if(message.event==='native-error'){item.state.nativeFailure=String(message.code||'NATIVE_ERROR').replace(/https?:\/\/\S+/g,'[medio]').slice(0,100);fail(item,'No se pudo preparar el motor de vídeo ('+item.state.nativeFailure+').');continue;}
+ if(message.event==='ready'&&message.protocol===1){clearTimeout(timer);item.protocolReady=null;item.state.controlReady=true;readyResolve();continue;}const pending=item.pending.get(message.requestId);if(!pending)continue;clearTimeout(pending.timer);item.pending.delete(message.requestId);if(message.error)pending.reject(Error('Motor de vídeo: '+String(message.error).replace(/https?:\/\/\S+/g,'[medio]').slice(0,120)));else pending.resolve(message.result);}catch(_){}}});
   child.stderr?.on('data',chunk=>{if(item.closed||generation!==item.generation)return;const text=chunk.toString();item.logTail=(item.logTail+text).slice(-2048);onDiagnostic(text.replace(/https?:\/\/\S+/g,'[media]').slice(0,4096));});
   child.once('error',error=>{if(item.closed||generation!==item.generation)return;clearTimeout(timer);item.state.error=error.code==='ENOENT'?'No se encontró el controlador incluido. Reinstala XuperWindows.':'Windows no pudo iniciar el controlador de vídeo ('+(error.code||'SPAWN_ERROR')+').';readyReject(Error(item.state.error));finish(item);});
   child.once('exit',code=>{if(item.closed||generation!==item.generation)return;clearTimeout(timer);item.state.exitCode=code;readyReject(Error('El controlador de vídeo terminó antes de iniciar.'));if(!item.state.ready&&!item.softwareRetried&&network(item).bytes>0&&network(item).httpStatus<400&&!network(item).error){item.pendingFallback=true;item.process=null;item.state.stage='software-decoder';return;}if(!item.state.ended)item.state.error=item.state.error||'Se cerró el controlador de vídeo ('+code+').';finish(item);});
@@ -58,10 +63,15 @@ function createVlcMedia({executable,resolver,onClosed=()=>{},proxyFactory=create
   try{await launch(item,true);}finally{item.retrying=false;}
  }
  async function monitor(item){
-  if(item.closed||item.busy||item.retrying)return;if(item.pendingFallback){item.pendingFallback=false;await softwareFallback(item).catch(error=>fail(item,error.message));return;}if(item.waitingRefresh){if(Date.now()-item.startedAt>startupTimeoutMs)fail(item,'No se pudo renovar la autorización del vídeo.');return;}item.busy=true;
+  if(item.closed||item.retrying)return;
+  const phase=item.state.nativeStep?.phase,initAge=Date.now()-(item.nativeInitStartedAt||item.startedAt),phaseAge=Date.now()-(item.phaseStartedAt||item.startedAt);
+  if(!item.state.ready&&!item.softwareRetried&&(['creating-player-audio','binding-window','configuring-input','starting-playback'].includes(phase)||['reading-state','reading-statistics'].includes(phase)&&Date.now()-(item.lastReplyAt||item.nativeInitStartedAt)>=nativeInitRetryMs)&&phaseAge>=nativeInitRetryMs){item.state.fallbackReason='native-init:'+phase;await softwareFallback(item).catch(error=>fail(item,error.message));return;}
+  if(!item.state.ready&&!item.mediaPlayRequested&&initAge>=nativeInitTimeoutMs){fail(item,'La preparación nativa no terminó ('+(phase||'initializing')+').');return;}
+  if(item.busy)return;if(item.pendingFallback){item.pendingFallback=false;await softwareFallback(item).catch(error=>fail(item,error.message));return;}if(item.waitingRefresh){if(Date.now()-item.startedAt>startupTimeoutMs)fail(item,'No se pudo renovar la autorización del vídeo.');return;}item.busy=true;
   try{await request(item);item.controlFailures=0;if(item.state.vlcState==='ended'){item.state.ended=true;if(item.state.duration>0)item.state.time=item.state.duration;finish(item);stopChild(item);return;}if(item.state.vlcState==='error'&&!item.state.refreshRequired){if(!item.state.ready&&!item.softwareRetried&&network(item).bytes>0&&network(item).httpStatus<400){await softwareFallback(item).catch(error=>fail(item,error.message));return;}fail(item,startupError(item));return;}
    if(item.state.ready){if(!item.subtitleApplied){item.subtitleApplied=true;await request(item,{command:'subtitle_track',val:-1});if(item.subtitleChoice?.url)await subtitle(item.id,item.subtitleChoice).catch(()=>{});}return;}
    if(item.state.paused)return;
+   if(item.state.nativeStep?.phase&&item.state.nativeStep.phase!=='starting-host'&&!item.mediaPlayRequested)return;
    const net=network(item),elapsed=Date.now()-item.startedAt;item.state.network=net;if(net.bytes>0&&!item.receivedAt)item.receivedAt=Date.now();const decoderElapsed=item.receivedAt?Date.now()-item.receivedAt:0;item.state.stage=net.bytes>0?(item.softwareRetried?'software-decoder':'decoding'):'waiting-network';
    if(item.state.refreshRequired){if(elapsed>startupTimeoutMs)fail(item,'No se pudo renovar la autorización del vídeo.');return;}
    if(net.httpStatus>=400||net.error){fail(item,startupError(item));return;}
