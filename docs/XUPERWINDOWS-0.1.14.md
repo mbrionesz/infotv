@@ -13,3 +13,5 @@ La prueba Windows añade MPEG-TS HEVC sintético de dos horas, mayor que la cach
 Se conserva el WGT Tizen 0.10.21 idéntico en una publicación conjunta limpia. No se modificó magis.js.
 
 La prueba estricta detectó un fallo de lectura de prefetch al buscar con la entrada pausada. Se reanuda temporalmente la entrada, silenciando el audio si el usuario estaba en pausa; se espera actividad del decodificador y tiempo estable antes de restaurar pausa y silencio anteriores. No se confirma solo porque libVLC haya actualizado su variable de tiempo al recibir el comando.
+
+El lector MPEG-TS habitual de VLC requiere `STREAM_CAN_FASTSEEK` para su búsqueda por tiempo (`SeekToTime`), mientras el acceso HTTP declara esa capacidad como falsa. La ruta Windows TS usa ahora el demultiplexor avformat (FFmpeg) incluido en VLC, que utiliza rangos sin exigir esa capacidad. La prueba confirma la selección efectiva de avformat, no solo la opción solicitada.

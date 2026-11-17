@@ -76,7 +76,7 @@ class XuperMediaHost {
    Trace("initializing-engine");instance=NewInstance(args);if(instance==IntPtr.Zero)throw new Exception("LIBVLC_INIT");Trace("engine-ready");
   }
   string url=Text(r,"url");Uri parsed;if(!Uri.TryCreate(url,UriKind.Absolute,out parsed)||parsed.Scheme!="http"||parsed.Host!="127.0.0.1")throw new Exception("INVALID_LOCAL_MEDIA");
-  Trace("creating-media");media=libvlc_media_new_location(instance,url);if(media==IntPtr.Zero)throw new Exception("MEDIA_INIT");double start=Number(r,"time");if(start>0)libvlc_media_add_option(media,":start-time="+start.ToString(CultureInfo.InvariantCulture));
+  Trace("creating-media");media=libvlc_media_new_location(instance,url);if(media==IntPtr.Zero)throw new Exception("MEDIA_INIT");if(Text(r,"demux")=="avformat"){libvlc_media_add_option(media,":demux=avformat");Emit(Obj("event","native-demux","name","avformat"));}double start=Number(r,"time");if(start>0)libvlc_media_add_option(media,":start-time="+start.ToString(CultureInfo.InvariantCulture));
   if(Flag(r,"software"))libvlc_media_add_option(media,":avcodec-hw=none");string requestedOutput=Text(r,"videoOutput");if(requestedOutput=="wingdi"||requestedOutput=="direct3d9")libvlc_media_add_option(media,":vout="+requestedOutput);
   Trace("creating-player-audio");player=libvlc_media_player_new_from_media(media);if(player==IntPtr.Zero)throw new Exception("PLAYER_INIT");
   string hwnd=Text(r,"hwnd");if(hwnd!=""){Trace("binding-window");ulong value=ulong.Parse(hwnd,CultureInfo.InvariantCulture);libvlc_media_player_set_hwnd(player,IntPtr.Size==8?new IntPtr(unchecked((long)value)):new IntPtr(unchecked((int)value)));}
