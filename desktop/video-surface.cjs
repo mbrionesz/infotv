@@ -13,7 +13,7 @@ function createVideoSurface({BrowserWindow,parent,platform=process.platform}){
  function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;}
  function handle(){
   if(platform!=='win32')return null;
-  close();surface=new BrowserWindow({parent,frame:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000',webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
+  close();surface=new BrowserWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000',webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
   surface.setIgnoreMouseEvents(true,{forward:true});
   surface.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   surface.webContents.on('will-navigate',event=>event.preventDefault());
