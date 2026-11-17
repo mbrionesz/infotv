@@ -4,7 +4,7 @@
 
 TV, Películas, Series y búsqueda con filtros. Mismo diseño oscuro inspirado en shadcn, favoritos, seguir viendo, idiomas y subtítulos. DNS seguro y comprobaciones internas del portal.
 
-[Descargas](https://github.com/mbrionesz/infotv/releases/tag/v0.10.21-beta.5)
+[Descargas](https://github.com/mbrionesz/infotv/releases/tag/v0.10.21-beta.6)
 
 - **Samsung Tizen 4.0+:** instala el `.wgt` UNSIGNED con Apps2Samsung.
 - **XuperWindows · Windows 10/11:** instalador `.exe` x64 o x86 según tu sistema. Ventana maximizable y F11 para pantalla completa. Windows 11 es de 64 bits.

@@ -5,11 +5,11 @@ on:
       tag:
         description: Shared Tizen release receiving the Windows installers
         required: true
-        default: v0.10.21-beta.5
+        default: v0.10.21-beta.6
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.14-beta.5
+        default: v0.1.14-beta.6
 
       tizen_source_tag:
         description: Published release containing the current verified Tizen files
