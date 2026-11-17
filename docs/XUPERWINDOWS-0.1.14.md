@@ -11,3 +11,5 @@ La información de descarga y límites de caché está en la barra inferior, vis
 La prueba Windows añade MPEG-TS HEVC sintético de dos horas, mayor que la caché x64, y saltos a 40, 110 y 60 minutos por el proxy autorizado con rangos HTTP. Prueba la ruta y la línea temporal; no demuestra que todos los CDN del portal admitan seek ni reproduce su bitrate.
 
 Se conserva el WGT Tizen 0.10.21 idéntico en una publicación conjunta limpia. No se modificó magis.js.
+
+La prueba estricta detectó un fallo de lectura de prefetch al buscar con la entrada pausada. Se reanuda temporalmente la entrada, silenciando el audio si el usuario estaba en pausa; se espera actividad del decodificador y tiempo estable antes de restaurar pausa y silencio anteriores. No se confirma solo porque libVLC haya actualizado su variable de tiempo al recibir el comando.
