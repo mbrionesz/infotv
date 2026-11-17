@@ -15,3 +15,14 @@ Fuentes oficiales revisadas:
 - https://github.com/videolan/vlc/blob/3.0.x/modules/access/http/access.c
 
 Tizen 0.10.21 se conserva byte por byte en una publicación conjunta limpia.
+
+Validación completada: 345 pruebas generales, 28 de escritorio y prueba real de filtro prefetch/decodificación/pausa/seek/EOF en x64 y x86, incluyendo recursos empaquetados. [Ejecución Windows](https://github.com/mbrionesz/infotv/actions/runs/44177736183), fuente inmutable `v0.1.12-beta.1`.
+
+Arranque de la fuente de prueba: 2636 ms x64 y 7234 ms x86 en la primera prueba; 672 ms y 899 ms con los recursos empaquetados. Son mediciones del entorno CI con una fuente pequeña y condiciones distintas de calentamiento, no una comparación controlada contra 0.1.11 ni una predicción para el portal. Falta medir cortes de red y reserva real en el PC del usuario.
+
+SHA256 descargados coincidentes con los activos públicos:
+
+- x64: `53eb2d126e92c98196572d4d6a36d02fd4f7bb6c0dfd73d161e93d398c17e61d`
+- x86: `0b9941cf1f5f8ea7cb5da7621ef0032e85cf2a8e9bd4d0c5842c1fc07cde4920`
+
+Publicación limpia: https://github.com/mbrionesz/infotv/releases/tag/v0.10.21-beta.3 . La publicación anterior se retiró después de verificar la nueva; Tizen permanece idéntico y las etiquetas Git se conservan.

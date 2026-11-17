@@ -14,7 +14,7 @@ on:
       tizen_source_tag:
         description: Published release containing the current verified Tizen files
         required: true
-        default: v0.10.21-beta.2
+        default: v0.10.21-beta.3
 
 permissions:
   contents: write
