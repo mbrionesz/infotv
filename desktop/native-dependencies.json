@@ -1,11 +1,19 @@
 {
-  "name":"mpv","version":"20261111-bcde6b93cc","license":"GPL-2.0-or-later (bundled build; review included upstream notices)",
-  "buildSource":"https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261111",
-  "mpvSource":"https://github.com/mpv-player/mpv/tree/bcde6b93cc",
-  "ffmpegSource":"https://github.com/FFmpeg/FFmpeg/tree/cd4e96eb3",
-  "release":"20261111",
-  "assets":{
-    "ia32":{"name":"mpv-i686-20261111-git-bcde6b93cc.7z","sha256":"07f75382ab7420b565a4db2c249402c1fa9b67d99760742fd82cb644c6a5b934"},
-    "x64":{"name":"mpv-x86_64-20261111-git-bcde6b93cc.7z","sha256":"f259b5fd4b5c395617c948a4fadcdf55bba1c5282fb7c13e88626b3f71072baf"}
+  "name": "mpv",
+  "version": "20261003-3186d369f9",
+  "license": "GPL-2.0-or-later (bundled build; review included upstream notices)",
+  "buildSource": "https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261003",
+  "mpvSource": "https://github.com/mpv-player/mpv/tree/3186d369f9",
+  "ffmpegSource": "https://github.com/FFmpeg/FFmpeg/tree/98e92563a",
+  "release": "20261003",
+  "assets": {
+    "ia32": {
+      "name": "mpv-i686-20261003-git-3186d369f9.7z",
+      "sha256": "1925ca8a5f866603e0d20129dfabeb067aa93796017865ad673dbdb43b070e90"
+    },
+    "x64": {
+      "name": "mpv-x86_64-20261003-git-3186d369f9.7z",
+      "sha256": "0f616bde3216dd14a0e460892f346406ad976163c47fb49a8e2ea079cca73699"
+    }
   }
 }

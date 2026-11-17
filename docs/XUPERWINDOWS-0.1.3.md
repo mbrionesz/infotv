@@ -18,7 +18,7 @@ El motor de respaldo abre su propia ventana de vídeo con título XuperWindows. 
 
 mpv recibe una URL de capacidad aleatoria, únicamente de loopback. Un proxy de Node conecta al CDN usando el mismo resolutor DoH que la app, conserva Host/SNI, valida TLS y añade las cabeceras de la sesión. No se entregan credenciales al argumento de proceso. El proxy admite rangos, usa streaming con contrapresión, limita concurrencia y se destruye al detener/cerrar.
 
-El control del proceso se limita a comandos permitidos por IPC local. No se cargan configuraciones ni scripts del usuario, ni se usa shell para lanzarlo. Se incluyen hashes y avisos de los componentes libres; fuentes correspondientes: [recetas](https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261111), [mpv](https://github.com/mpv-player/mpv/tree/bcde6b93cc), [FFmpeg](https://github.com/FFmpeg/FFmpeg/tree/cd4e96eb3).
+El control del proceso se limita a comandos permitidos por IPC local. No se cargan configuraciones ni scripts del usuario, ni se usa shell para lanzarlo. Se incluyen hashes y avisos de los componentes libres; fuentes correspondientes: [recetas](https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261003), [mpv](https://github.com/mpv-player/mpv/tree/3186d369f9), [FFmpeg](https://github.com/FFmpeg/FFmpeg/tree/98e92563a).
 
 ## Datos y actualización
 
