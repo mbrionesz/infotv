@@ -1,6 +1,6 @@
 {
-  "name": "mpv",
-  "version": "20261003-3186d369f9",
+  "name": "VLC",
+  "version": "3.0.24",
   "license": "GPL-2.0-or-later (bundled build; review included upstream notices)",
   "buildSource": "https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261003",
   "mpvSource": "https://github.com/mpv-player/mpv/tree/3186d369f9",
@@ -15,8 +15,11 @@
       "source": "https://download.videolan.org/pub/videolan/vlc/3.0.24/vlc-3.0.24.tar.xz"
     },
     "x64": {
-      "name": "mpv-x86_64-20261003-git-3186d369f9.7z",
-      "sha256": "0f616bde3216dd14a0e460892f346406ad976163c47fb49a8e2ea079cca73699"
+      "engine": "vlc",
+      "name": "vlc-3.0.24-win64.7z",
+      "url": "https://download.videolan.org/pub/videolan/vlc/3.0.24/win64/vlc-3.0.24-win64.7z",
+      "sha256": "1ed59c09152e78aff84663fa76efab26057716576db74332858810e5ef54ae1f",
+      "source": "https://download.videolan.org/pub/videolan/vlc/3.0.24/vlc-3.0.24.tar.xz"
     }
   }
 }

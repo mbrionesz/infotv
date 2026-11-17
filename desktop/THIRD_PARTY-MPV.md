@@ -1,3 +1,12 @@
+# XuperWindows 0.1.5: VLC 3.0.24 integrado (x64 y x86)
+
+La distribución 0.1.5 utiliza los binarios oficiales sin modificar de VideoLAN en ambas arquitecturas. Se incluyen las licencias, plugins y avisos de sus archivos oficiales. La interfaz dummy permite incrustar el vídeo mediante HWND y no muestra la interfaz de VLC. Checksums y descargas: `native-dependencies.json`.
+
+Fuente correspondiente: https://download.videolan.org/pub/videolan/vlc/3.0.24/vlc-3.0.24.tar.xz
+Repositorio: https://code.videolan.org/videolan/vlc/-/tree/3.0.24
+
+## Información conservada sobre versiones anteriores que incluían mpv
+
 # mpv / FFmpeg — XuperWindows native decoder
 
 mpv is a separate executable, launched only as a codec-compatible playback backup. It is not modified. Upstream copyright, license and documentation files from its distribution are retained alongside the executable. This component is free software; no warranty is provided.
