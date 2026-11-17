@@ -1,3 +1,4 @@
+import {needsDesktopDecoder,openDesktopNative} from './desktop-native-player.js';
 import {applyAvHeaders} from './avplay-auth.js';
 import {retainVodSources} from './vod-sources.js';
 import {createPlaybackJournal} from './playback-journal.js';
@@ -22,7 +23,7 @@ export function toAvDisplayRect(rect,width=1920,height=1080){
 }
 
 export function createPlayer(getStream) {
-  let progressive=null,lifecycle=null,selectProgressiveAudio=null;const journal=createPlaybackJournal();
+  let desktopSession=null,progressive=null,lifecycle=null,selectProgressiveAudio=null;const journal=createPlaybackJournal();
   let video = null, hls = null, av = null, avObject = null, engine = '', url = '', serial = 0;
   let paused = true, currentTime = 0, ready = false, started = false, deadline = null, cleanupTimer = null, nativeTimer = null, totalDeadline=null;
   let manualAudio=null,manualSubtitle=-1,textTrackCleanup=null,checkpoint=null;
@@ -32,6 +33,7 @@ export function createPlayer(getStream) {
   function stop() {
     if(textTrackCleanup){textTrackCleanup();textTrackCleanup=null;}
     if(checkpoint){const save=checkpoint;checkpoint=null;try{save();}catch(_){}}
+    if(desktopSession){const previous=desktopSession;desktopSession=null;previous.destroy();}
     selectProgressiveAudio=null;manualAudio=null;manualSubtitle=-1;
     if(lifecycle)lifecycle.cancel();
     if(frameMeter){frameMeter.destroy();frameMeter=null;}
@@ -385,6 +387,16 @@ export function createPlayer(getStream) {
 
       } catch (error) { fallback(error.message||'native-property-error'); }
     }
+    function useDesktopNative(){
+      if(serial!==run||desktopSession)return;++attempt;
+      clearTimeout(deadline);clearTimeout(totalDeadline);if(lifecycle)lifecycle.cancel();
+      if(progressive){progressive.destroy();progressive=null;}if(hls){hls.destroy();hls=null;}
+      if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;video.onerror=null;
+      engine=diagnostics.engine='mpv';diagnostics.stage='native-opening';diagnostics.nativeFallbackReason='codec-not-supported-by-chromium';
+      const nativeSource=candidates.find(candidate=>candidate.url===playbackSource)||candidates[0];
+      desktopSession=openDesktopNative(video,{...stream,url:nativeSource.url,headers:nativeSource.headers},{...options,onClosed:()=>{options.onCheckpoint?.();if(window.__xuper?.state.screen==='player')window.__xuper.key(461);},onError:fail,onState:state=>{if(serial!==run)return;ready=state.ready;if(ready&&!started){started=true;options.onStarted?.();emit('playing');}diagnostics.stage=state.paused?'paused':ready?'playing':'native-opening';diagnostics.audioTracks=state.tracks.filter(track=>track.type==='audio').map(audioLanguage.describe);diagnostics.selectedAudio=state.tracks.filter(track=>track.type==='audio').findIndex(track=>track.selected);diagnostics.media={time:state.time,width:state.width,height:state.height,paused:state.paused,bufferSeconds:0};options.onInfo?.(diagnostics);}});
+      if(options.onNotice)options.onNotice('Este vídeo usa el reproductor compatible de XuperWindows. Cierra su ventana para volver a la ficha.');
+    }
     function clockInBuffer(time){for(let i=0;i<video.buffered.length;i++)if(time>=video.buffered.start(i)&&time<video.buffered.end(i))return true;return false;}
     function useProgressive(index=0,audioIndex=options.audioIndex,resume=null){
       if(!window.MediaSource)return fail('Este TV no ofrece MediaSource para vídeo autorizado MP4/TS.');
@@ -408,6 +420,7 @@ export function createPlayer(getStream) {
       function progressiveError(message){
         if(serial!==run||generation!==attempt)return;
         diagnostics.detail='vod-route-failed';record('vod-route-failed',diagnostics.httpStatus,true);
+        if(!options.live&&window.XuperDesktop?.startMedia&&/unsupported|not supported|codec|decodificar/i.test(message)){useDesktopNative();return;}
         const network=/HTTP|servidor|conectar|tardó|network|timeout/i.test(message);
         if(started&&network&&index+1<candidates.length&&diagnostics.vodFailovers<2){const time=video.currentTime,hint=progressive&&progressive.bookmark?progressive.bookmark(time):null;if(!ts||time<=2||hint){diagnostics.vodFailovers++;if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;useProgressive(index+1,audioIndex,{time,paused:false,hint,recovery:true});return;}}
         if(!started&&index+1<candidates.length&&!(resume&&resume.recovery&&diagnostics.vodFailovers>=2)){if(resume&&resume.recovery)diagnostics.vodFailovers++;if(canPlayListener)video.removeEventListener('canplay',canPlayListener);canPlayListener=null;useProgressive(index+1,audioIndex,resume);}else fail(message);
@@ -421,6 +434,7 @@ export function createPlayer(getStream) {
     }
     function begin(){
       if(serial!==run)return;
+    if(!options.live&&window.XuperDesktop?.startMedia&&needsDesktopDecoder(stream,window.MediaSource)){useDesktopNative();return;}
     let vodNative=true;try{vodNative=localStorage.getItem('xt.vodEngine')!=='doh';}catch(_){}
     if(!options.live&&vodNative&&window.webapis&&webapis.avplay){avplay();return;}
     if (custom.length) {
@@ -454,6 +468,7 @@ export function createPlayer(getStream) {
   }
 
   function selectAudio(index) {
+    if(desktopSession)return desktopSession.selectAudio(index);
     if(selectProgressiveAudio)return selectProgressiveAudio(index);
     if (hls) { if (index < 0 || index >= hls.audioTracks.length) return false; manualAudio=audioLanguage.describe(hls.audioTracks[index],index);hls.audioTrack = index; return true; }
     if (av && ready) {

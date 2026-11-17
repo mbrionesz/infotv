@@ -22,3 +22,6 @@ docs/discovery-preview/
 # Windows build staging
 desktop/ui/
 desktop/node_modules/
+
+# Downloaded, verified Windows decoder binaries
+desktop/native/

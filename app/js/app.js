@@ -5511,6 +5511,7 @@
       : 0;
   }
   function mn(e) {
+    if(window.XuperWindowsMedia&&window.XuperWindowsMedia.subtitle)window.XuperWindowsMedia.subtitle(e);
     var t = ++Yi;subtitleLoadedUrl="";subtitleFailureUrl="";
     if(subtitleTask){subtitleTask.cancel();subtitleTask=null;}pn=[];
     if(e&&e.url&&window.XuperStandalone&&XuperStandalone.loadSubtitles){
@@ -8169,6 +8170,7 @@
           ba(l[e] || l[0]);
         },
         openSearch: La,
+        subtitleForPlayback:function(){return Qi||null;},
         openSettings: Ha,
         openPlayer: function (e, t) {
           Yr(e || "live", l[t] || null);

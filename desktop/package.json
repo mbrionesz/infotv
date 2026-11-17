@@ -1,8 +1,8 @@
 {
-  "name": "xupertizen-windows",
-  "version": "0.1.2",
+  "name": "xuperwindows",
+  "version": "0.1.3",
   "private": true,
-  "description": "XuperTizen para Windows 10/11 \u2014 beta",
+  "description": "XuperWindows para Windows 10/11 \u2014 beta",
   "author": "MatiasB",
   "license": "UNLICENSED",
   "main": "main.cjs",
@@ -16,8 +16,8 @@
     "electron-builder": "26.18.0"
   },
   "build": {
-    "appId": "com.matiasb.xupertizen.windows",
-    "productName": "XuperTizen",
+    "appId": "com.matiasb.xuperwindows",
+    "productName": "XuperWindows",
     "asar": true,
     "directories": {
       "output": "../dist/windows"
@@ -29,7 +29,7 @@
     ],
     "win": {
       "target": "nsis",
-      "artifactName": "XuperTizen-Windows-${version}-beta-${arch}-Setup.${ext}",
+      "artifactName": "XuperWindows-${version}-beta-${arch}-Setup.${ext}",
       "requestedExecutionLevel": "asInvoker",
       "icon": "icon.ico"
     },
@@ -39,8 +39,19 @@
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
-      "buildUniversalInstaller": false
+      "buildUniversalInstaller": false,
+      "guid": "1c34ecb8-f5b3-550a-82d4-579ad83249d6"
     },
-    "compression": "normal"
-  }
+    "compression": "normal",
+    "extraResources": [
+      {
+        "from": "native/${arch}",
+        "to": "mpv",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  },
+  "productName": "XuperWindows"
 }

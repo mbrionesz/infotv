@@ -148,6 +148,7 @@ const exitGate=createExitGate({prompt:()=>{window.XuperShell.focusHeader();if(!e
  const result=await window.XuperStandalone.cleanTemporaryData();
  if(!result.saved){if(exitToast)exitToast.textContent='No se pudo guardar el progreso. Vuelve a intentar salir.';return;}
  nativeTransport.dispose();exitToast?.remove();exitToast=null;
+ if(window.XuperDesktop?.exit){window.XuperDesktop.exit();return;}
  try{if(window.tizen?.application){window.tizen.application.getCurrentApplication().exit();return;}}catch(_){}
  window.location.reload();
 }});
