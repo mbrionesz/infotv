@@ -13,3 +13,5 @@ XuperDesktop.mediaDiagnostics().then(function(r){console.log(JSON.stringify(r,nu
 ```
 
 Favoritos, biblioteca y progreso se conservan. El WGT publicado de Tizen no cambia.
+
+Validación aprobada: https://github.com/mbrionesz/infotv/actions/runs/44124036474 . Fuente de instaladores `v0.1.7-beta.1`. Pasaron 345 pruebas del núcleo, 20 de escritorio, scroll y paginación con touchpad, vídeo HEVC/AAC incrustado x64/x86 y decodificación/controles/EOF con recursos empaquetados desde un directorio ajeno. El proceso x86 se probó bajo WOW64; no se ha reproducido el fallo original en el PC Windows 10 del usuario.
