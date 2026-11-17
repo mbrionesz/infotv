@@ -10,6 +10,7 @@ export function openDesktopNative(video,stream,options){
  function apply(next){if(closed)return;Object.assign(state,next);options.onState(state);if(state.ended&&!ended){ended=true;video.dispatchEvent(new Event('ended'));}}
  function finishState(next){if(closed||notifiedClosed)return;notifiedClosed=true;apply(next);if(next.error)options.onError(next.error);else if(!next.ended)options.onClosed();}
  async function poll(){if(closed||!id||busy)return;busy=true;try{const next=await bridge.mediaState(id);if(next.closed){finishState(next);return;}apply(next);if(next.error&&!next.refreshRequired){options.onError(next.error);return;}if(next.refreshRequired&&!refreshing&&typeof stream.refreshStream==='function'){refreshing=true;stream.refreshStream((error,fresh)=>{if(!closed&&!error&&fresh)bridge.refreshMedia(id,{url:fresh.url,headers:fresh.headers||{}}).catch(()=>options.onError('El motor compatible no pudo renovar la conexión.'));refreshing=false;});}}catch(_){}finally{busy=false;}}
+ let previousLayout='';
  function layout(){
   if(closed||!bridge.mediaLayout)return;
   const rect=video.getBoundingClientRect(),screen=document.getElementById('screen-player');
@@ -23,7 +24,8 @@ export function openDesktopNative(video,stream,options){
    if(selector==='#player-vod-infobar'||selector==='.xt-player-chrome'||selector==='.xt-next-episode')bottom=Math.min(bottom,box.top);
    else hidden=true;
   }
-  bridge.mediaLayout({x:rect.left,y:rect.top,width:rect.width,height:rect.height,clipHeight:Math.max(0,bottom-rect.top),hidden});
+  const bounds={x:rect.left,y:rect.top,width:rect.width,height:rect.height,clipHeight:Math.max(0,bottom-rect.top),hidden},key=JSON.stringify(bounds);
+  if(key!==previousLayout){previousLayout=key;bridge.mediaLayout(bounds);}
  }
  const layoutTimer=setInterval(layout,150);window.addEventListener?.('resize',layout);layout();
  const ready=Promise.resolve().then(()=>bridge.startMedia({url:stream.url,headers:stream.headers||{},name:stream.name||'Reproducción',preferredAudio:options.preferredAudio,startTime:state.time,duration:state.duration,subtitle:window.__xuper?.subtitleForPlayback?.()||null})).then(result=>{id=result.id;if(closed){bridge.stopMedia(id);return;}off=bridge.onMediaClosed(next=>{if(next.id!==id||closed)return;finishState(next);});timer=setInterval(poll,500);poll();},error=>{if(!closed)options.onError(error.message||'No pudo iniciar el motor compatible.');});
