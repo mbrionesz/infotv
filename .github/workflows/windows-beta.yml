@@ -9,7 +9,7 @@ on:
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.5-beta.5
+        default: v0.1.5-beta.6
 
 permissions:
   contents: write
