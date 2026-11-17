@@ -11,3 +11,5 @@ Validación local: pruebas de control de superficie, proxy/códecs e interfaz; r
 La prueba Windows exige píxeles de color del clip sintético dentro de la superficie, además del reloj y la decodificación. Las pruebas de decodificación aisladas usan GDI; la prueba de imagen incrustada utiliza la selección gráfica normal de VLC. Solo la prueba fuerza decodificación por software para el servidor sin GPU HEVC.
 
 Se eliminó la indicación antigua de cerrar una ventana externa. La superficie utiliza BaseWindow sin un renderizador Chromium adicional.
+
+Validación final aprobada: https://github.com/mbrionesz/infotv/actions/runs/44114817011 . Fuente de instaladores: `v0.1.6-beta.2`. Imagen HEVC/AAC visible incrustada en x64 y x86, controles y EOF; 345 pruebas del núcleo y 15 de escritorio; rueda/touchpad real, clic secundario para eliminar y paginación conservando la categoría cargada. La prueba x86 ejecutó un proceso de 32 bits en Windows x64 (WOW64). Falta una sesión prolongada con el portal y hardware del usuario.

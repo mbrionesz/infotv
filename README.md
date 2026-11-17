@@ -1,4 +1,4 @@
-# XuperTizen · Tizen 0.10.21 beta / XuperWindows 0.1.3 beta
+# XuperTizen · Tizen 0.10.21 beta / XuperWindows 0.1.6 beta
 
 **XuperTizen by Matias · By MatiasB**
 
@@ -11,4 +11,4 @@ TV, Películas, Series y búsqueda con filtros. Mismo diseño oscuro inspirado e
 
 Beta; reproducción según fuentes y códecs disponibles. Instaladores Windows sin firma Authenticode.
 
-[XuperWindows](docs/XUPERWINDOWS-0.1.3.md) · [Instalar en Samsung](docs/INSTALAR-WINDOWS.md) · [Notas](docs/RELEASE-0.10.21-beta.1.md)
+[XuperWindows](docs/XUPERWINDOWS-0.1.6.md) · [Instalar en Samsung](docs/INSTALAR-WINDOWS.md) · [Notas](docs/RELEASE-0.10.21-beta.1.md)
