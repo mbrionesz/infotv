@@ -2,14 +2,16 @@
 const {spawn}=require('node:child_process'),net=require('node:net'),crypto=require('node:crypto');
 const {createMediaProxy}=require('./media-proxy.cjs');
 const {nativeEnvironment}=require('./native-environment.cjs');
-function createNativeMedia({executable,resolver,onClosed=()=>{},spawnProcess=spawn,connect=net.createConnection,platform=process.platform,proxyFactory=createMediaProxy,outputOptions=[],onDiagnostic=()=>{}}){
+function createNativeMedia({executable,resolver,onClosed=()=>{},spawnProcess=spawn,connect=net.createConnection,platform=process.platform,proxyFactory=createMediaProxy,outputOptions=[],onDiagnostic=()=>{},getWindowHandle=()=>null}){
  let session=null,lastClosed=null;
  async function open(options){close();const id=crypto.randomBytes(16).toString('hex'),pipe=platform==='win32'?'\\\\.\\pipe\\XuperWindows-'+id:'/tmp/xuperwindows-'+id;
   const state={id,time:Math.max(0,Number(options.startTime)||0),duration:Math.max(0,Number(options.duration)||0),paused:false,ready:false,ended:false,tracks:[],width:0,height:0,errors:0};
   const item=session={id,state,process:null,socket:null,proxy:null,queue:[],pending:new Map(),serial:0,closed:false,authFailure:false};
   try{item.proxy=await proxyFactory({stream:options,resolver,onAuthFailure:()=>{if(!item.authFailure){item.authFailure=true;state.refreshRequired=true;}}});if(item.closed){item.proxy.close();throw Error('Reproducción cancelada');}
   const preferred=String(typeof options.preferredAudio==='object'?options.preferredAudio?.language:options.preferredAudio||'es').toLowerCase();const alang=/^es|^spa/.test(preferred)?'es-419,spa,es':/^en|^eng/.test(preferred)?'en,eng':/^pt|^por/.test(preferred)?'pt,por':/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/.test(preferred)?preferred:'es-419,spa,es';
-  const args=['--no-config','--load-scripts=no','--ytdl=no','--terminal=no','--force-window=yes','--keep-open=yes','--idle=no','--hwdec=auto-safe','--cache=yes','--network-timeout=15','--demuxer-max-bytes=32MiB','--demuxer-max-back-bytes=8MiB','--vd-lavc-threads=2','--ad-lavc-threads=2','--input-ipc-server='+pipe,'--title=XuperWindows · '+String(options.name||'Reproducción').replace(/[\r\n]/g,' ').slice(0,120),'--start='+state.time,'--alang='+alang,'--sub-auto=no','--sid=no',...outputOptions,item.proxy.url];
+  const hwnd=getWindowHandle();
+  const embedding=hwnd?['--wid='+hwnd,'--osc=no','--input-default-bindings=no','--input-vo-keyboard=no']:[];
+  const args=['--no-config','--load-scripts=no','--ytdl=no','--terminal=no','--force-window=yes','--keep-open=yes','--idle=no','--hwdec=auto-safe','--cache=yes','--network-timeout=15','--demuxer-max-bytes=32MiB','--demuxer-max-back-bytes=8MiB','--vd-lavc-threads=2','--ad-lavc-threads=2','--input-ipc-server='+pipe,'--title=XuperWindows · '+String(options.name||'Reproducción').replace(/[\r\n]/g,' ').slice(0,120),'--start='+state.time,'--alang='+alang,'--sub-auto=no','--sid=no',...embedding,...outputOptions,item.proxy.url];
   item.process=spawnProcess(executable,args,{windowsHide:false,stdio:['ignore','ignore','pipe'],shell:false,env:nativeEnvironment(executable)});item.process.stderr?.on('data',chunk=>onDiagnostic(chunk.toString().replace(/https?:\/\/\S+/g,'[media]').slice(0,4096)));item.process.once('error',()=>{state.error='No pudo iniciar el motor nativo';finish(item);});item.process.once('exit',code=>{item.state.exitCode=code;if(code&& !item.closed)item.state.error='El motor nativo terminó con error '+code;finish(item);});
   for(let attempt=0;attempt<80;attempt++){if(item.closed)throw Error(state.error||'Reproductor cerrado');try{await attach(item,pipe);break;}catch(_){await new Promise(resolve=>setTimeout(resolve,100));}}
   if(!item.socket){close();throw Error('El motor nativo no respondió');}
