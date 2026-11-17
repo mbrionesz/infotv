@@ -46,7 +46,7 @@
     "extraResources": [
       {
         "from": "native/${arch}",
-        "to": "mpv",
+        "to": "decoder",
         "filter": [
           "**/*"
         ]

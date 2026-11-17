@@ -13,3 +13,5 @@ Corresponding source and build instructions for this distribution:
 - mpv GPL text: https://github.com/mpv-player/mpv/blob/3186d369f9/LICENSE.GPL
 
 These source locations are provided next to the downloadable Windows release as well. XuperWindows does not claim ownership of these components. Proprietary media or a source's authorization are not supplied by this decoder.
+
+Windows x86 incluye VLC 3.0.24 oficial de VideoLAN, tras fallar la inicialización del otro binario x86. Se conservan sus licencias dentro del directorio del motor. Fuente correspondiente y recetas contrib: https://download.videolan.org/pub/videolan/vlc/3.0.24/vlc-3.0.24.tar.xz . Windows x64 usa mpv. Ambos se conectan mediante el proxy con DNS seguro.

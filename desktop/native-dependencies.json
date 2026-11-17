@@ -8,8 +8,11 @@
   "release": "20261003",
   "assets": {
     "ia32": {
-      "name": "mpv-i686-20261003-git-3186d369f9.7z",
-      "sha256": "1925ca8a5f866603e0d20129dfabeb067aa93796017865ad673dbdb43b070e90"
+      "engine": "vlc",
+      "name": "vlc-3.0.24-win32.7z",
+      "url": "https://download.videolan.org/pub/videolan/vlc/3.0.24/win32/vlc-3.0.24-win32.7z",
+      "sha256": "80b61c03a5c7c4d4b44a79a2db34eda244ad6b09f1e0f44fcf6183f4c10e9966",
+      "source": "https://download.videolan.org/pub/videolan/vlc/3.0.24/vlc-3.0.24.tar.xz"
     },
     "x64": {
       "name": "mpv-x86_64-20261003-git-3186d369f9.7z",
