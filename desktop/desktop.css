@@ -6,3 +6,8 @@ html.xt-desktop button:hover,html.xt-desktop .focusable:hover{outline:2px solid 
 
 /* Recycling a virtual list must not let browser anchoring undo touchpad scroll. */
 html.xt-desktop .xt-guide-categories,html.xt-desktop .xt-guide-channels{overflow-anchor:none;overscroll-behavior:contain}
+
+.xw-keyboard-hint{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);max-width:calc(100% - 48px);box-sizing:border-box;padding:14px 22px;border:1px solid #52525b;border-radius:12px;background:#18181bf2;color:#fafafa;box-shadow:0 8px 28px #0008;font:15px/1.5 system-ui,sans-serif;z-index:99999;pointer-events:none;text-align:center}
+
+html.xt-desktop #player-vod-infobar .xt-vod-controls,html.xt-desktop #player-vod-infobar .vod-seekbar{pointer-events:auto}
+html.xt-desktop #player-vod-infobar .vod-seekbar{cursor:pointer!important;min-height:14px}

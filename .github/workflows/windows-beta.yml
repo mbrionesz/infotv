@@ -1,4 +1,4 @@
-name: XuperWindows 0.1.9 beta
+name: XuperWindows 0.1.10 beta
 on:
   workflow_dispatch:
     inputs:
@@ -9,7 +9,7 @@ on:
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.9-beta.1
+        default: v0.1.10-beta.1
 
 permissions:
   contents: write
@@ -46,8 +46,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperWindows-0.1.9-visual
-          path: dist/xuperwindows-0.1.9-*.png
+          name: XuperWindows-0.1.10-visual
+          path: dist/xuperwindows-0.1.10-*.png
           if-no-files-found: ignore
       - name: Build separate x64 and x86 installers
         env:
@@ -64,14 +64,14 @@ jobs:
           if ($files.Count -ne 2) { throw 'Expected two Windows installers' }
           $sums=@{}
           foreach ($file in $files) { $sums[$file.Name]=(Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower() }
-          $sums | ConvertTo-Json | Set-Content dist/windows/SHA256SUMS-XuperWindows-0.1.9.json
+          $sums | ConvertTo-Json | Set-Content dist/windows/SHA256SUMS-XuperWindows-0.1.10.json
       - uses: actions/upload-artifact@v4
         with:
-          name: XuperWindows-0.1.9-beta
+          name: XuperWindows-0.1.10-beta
           path: |
             dist/windows/*-Setup.exe
-            dist/windows/SHA256SUMS-XuperWindows-0.1.9.json
-            dist/xuperwindows-0.1.9-*.png
+            dist/windows/SHA256SUMS-XuperWindows-0.1.10.json
+            dist/xuperwindows-0.1.10-*.png
       - name: Attach Windows installers to the shared beta release
         shell: pwsh
         env:
@@ -80,7 +80,7 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Publish the Tizen release first' }
-          git archive --format=zip --prefix=XuperWindows-source/ -o dist/windows/XuperWindows-0.1.9-source.zip HEAD
-          $assets=@('dist/windows/XuperWindows-0.1.9-source.zip')+@((Get-ChildItem dist/windows/*-Setup.exe).FullName)+@('dist/windows/SHA256SUMS-XuperWindows-0.1.9.json')
+          git archive --format=zip --prefix=XuperWindows-source/ -o dist/windows/XuperWindows-0.1.10-source.zip HEAD
+          $assets=@('dist/windows/XuperWindows-0.1.10-source.zip')+@((Get-ChildItem dist/windows/*-Setup.exe).FullName)+@('dist/windows/SHA256SUMS-XuperWindows-0.1.10.json')
           gh release upload $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY @assets
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
