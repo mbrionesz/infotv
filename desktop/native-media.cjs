@@ -1,6 +1,7 @@
 'use strict';
 const {spawn}=require('node:child_process'),net=require('node:net'),crypto=require('node:crypto');
 const {createMediaProxy}=require('./media-proxy.cjs');
+const {nativeEnvironment}=require('./native-environment.cjs');
 function createNativeMedia({executable,resolver,onClosed=()=>{},spawnProcess=spawn,connect=net.createConnection,platform=process.platform,proxyFactory=createMediaProxy,outputOptions=[]}){
  let session=null;
  async function open(options){close();const id=crypto.randomBytes(16).toString('hex'),pipe=platform==='win32'?'\\\\.\\pipe\\XuperWindows-'+id:'/tmp/xuperwindows-'+id;
@@ -8,8 +9,8 @@ function createNativeMedia({executable,resolver,onClosed=()=>{},spawnProcess=spa
   const item=session={id,state,process:null,socket:null,proxy:null,queue:[],pending:new Map(),serial:0,closed:false,authFailure:false};
   try{item.proxy=await proxyFactory({stream:options,resolver,onAuthFailure:()=>{if(!item.authFailure){item.authFailure=true;state.refreshRequired=true;}}});if(item.closed){item.proxy.close();throw Error('Reproducción cancelada');}
   const preferred=String(typeof options.preferredAudio==='object'?options.preferredAudio?.language:options.preferredAudio||'es').toLowerCase();const alang=/^es|^spa/.test(preferred)?'es-419,spa,es':/^en|^eng/.test(preferred)?'en,eng':/^pt|^por/.test(preferred)?'pt,por':/^[a-z]{2,3}(?:-[a-z0-9]{2,8})?$/.test(preferred)?preferred:'es-419,spa,es';
-  const args=['--no-config','--load-scripts=no','--ytdl=no','--terminal=no','--force-window=yes','--keep-open=yes','--idle=no','--hwdec=auto-safe','--cache=yes','--demuxer-max-bytes=32MiB','--demuxer-max-back-bytes=8MiB','--vd-lavc-threads=2','--ad-lavc-threads=2','--input-ipc-server='+pipe,'--title=XuperWindows · '+String(options.name||'Reproducción').replace(/[\r\n]/g,' ').slice(0,120),'--start='+state.time,'--alang='+alang,'--sub-auto=no','--sid=no',...outputOptions,item.proxy.url];
-  item.process=spawnProcess(executable,args,{windowsHide:false,stdio:'ignore',shell:false});item.process.once('error',()=>{state.error='No pudo iniciar el motor nativo';finish(item);});item.process.once('exit',()=>finish(item));
+  const args=['--no-config','--load-scripts=no','--ytdl=no','--terminal=no','--force-window=yes','--keep-open=yes','--idle=no','--hwdec=auto-safe','--cache=yes','--network-timeout=15','--demuxer-max-bytes=32MiB','--demuxer-max-back-bytes=8MiB','--vd-lavc-threads=2','--ad-lavc-threads=2','--input-ipc-server='+pipe,'--title=XuperWindows · '+String(options.name||'Reproducción').replace(/[\r\n]/g,' ').slice(0,120),'--start='+state.time,'--alang='+alang,'--sub-auto=no','--sid=no',...outputOptions,item.proxy.url];
+  item.process=spawnProcess(executable,args,{windowsHide:false,stdio:'ignore',shell:false,env:nativeEnvironment(executable)});item.process.once('error',()=>{state.error='No pudo iniciar el motor nativo';finish(item);});item.process.once('exit',()=>finish(item));
   for(let attempt=0;attempt<80;attempt++){if(item.closed)throw Error(state.error||'Reproductor cerrado');try{await attach(item,pipe);break;}catch(_){await new Promise(resolve=>setTimeout(resolve,100));}}
   if(!item.socket){close();throw Error('El motor nativo no respondió');}
   const properties=['time-pos','duration','pause','eof-reached','track-list','video-params','idle-active'];for(let i=0;i<properties.length;i++)await send(item,['observe_property',i+1,properties[i]]);
