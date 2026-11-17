@@ -1,7 +1,7 @@
 'use strict';
 // A frameless, non-focusable child surface belongs to the app window. Only the
 // main process creates its HWND; the renderer can request bounded layout only.
-function createVideoSurface({BrowserWindow,parent,platform=process.platform}){
+function createVideoSurface({NativeWindow,parent,platform=process.platform}){
  let surface=null,layout=null;
  function sync(){
   if(!surface||surface.isDestroyed()||!layout||parent.isDestroyed())return;
@@ -13,10 +13,8 @@ function createVideoSurface({BrowserWindow,parent,platform=process.platform}){
  function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;}
  function handle(){
   if(platform!=='win32')return null;
-  close();surface=new BrowserWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000',webPreferences:{sandbox:true,contextIsolation:true,nodeIntegration:false}});
+  close();surface=new NativeWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000'});
   surface.setIgnoreMouseEvents(true,{forward:true});
-  surface.webContents.setWindowOpenHandler(()=>({action:'deny'}));
-  surface.webContents.on('will-navigate',event=>event.preventDefault());
   const hwnd=surface.getNativeWindowHandle();sync();
   return (hwnd.length===8?hwnd.readBigUInt64LE():BigInt(hwnd.readUInt32LE())).toString();
  }

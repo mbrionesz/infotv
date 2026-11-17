@@ -1,11 +1,8 @@
 {
   "name": "VLC",
   "version": "3.0.24",
-  "license": "GPL-2.0-or-later (bundled build; review included upstream notices)",
-  "buildSource": "https://github.com/shinchiro/mpv-winbuild-cmake/tree/20261003",
-  "mpvSource": "https://github.com/mpv-player/mpv/tree/3186d369f9",
-  "ffmpegSource": "https://github.com/FFmpeg/FFmpeg/tree/98e92563a",
-  "release": "20261003",
+  "license": "GPL-2.0-or-later; see bundled upstream COPYING and component notices",
+  "buildSource": "https://code.videolan.org/videolan/vlc/-/tree/3.0.24",
   "assets": {
     "ia32": {
       "engine": "vlc",
