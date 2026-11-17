@@ -38,7 +38,8 @@ html,body{background:var(--ui-background);color:var(--ui-foreground);font-family
 #app .xt-topnav{color:var(--ui-foreground)}
 #app .xt-top-brand{font-weight:600;letter-spacing:-.6px}
 #app .xt-top-brand small{color:var(--ui-muted-foreground);letter-spacing:.6px}
-#app .xt-top-symbol{color:var(--ui-foreground)}
+#app .xt-top-symbol{display:flex;align-items:center;justify-content:center;flex:0 0 64px;width:64px;height:64px;margin-right:18px}
+#app .xt-top-symbol img{width:64px;height:64px;object-fit:contain;border-radius:12px}
 #app .xt-top-thin{color:#d4d4d8}
 #app .xt-topnav nav{background:var(--ui-secondary);border:1px solid var(--ui-border);border-radius:16px;box-shadow:var(--ui-shadow-sm);padding:6px}
 #app .xt-topnav nav button{background:transparent;color:var(--ui-muted-foreground);border:1px solid transparent;border-radius:10px;font-size:28px;font-weight:500;box-shadow:none}

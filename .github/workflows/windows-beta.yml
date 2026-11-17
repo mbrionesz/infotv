@@ -1,15 +1,15 @@
-name: Windows 0.1.1 beta
+name: Windows 0.1.2 beta
 on:
   workflow_dispatch:
     inputs:
       tag:
         description: Shared Tizen release receiving the Windows installers
         required: true
-        default: v0.10.20-beta.1
+        default: v0.10.21-beta.1
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.1-beta.3
+        default: v0.1.2-beta.1
       tmdb_public_config_b64:
         description: Owner-authorized public TMDB configuration
         required: false
@@ -59,11 +59,11 @@ jobs:
           $sums | ConvertTo-Json | Set-Content dist/windows/SHA256SUMS-Windows.json
       - uses: actions/upload-artifact@v4
         with:
-          name: XuperTizen-Windows-0.1.1-beta
+          name: XuperTizen-Windows-0.1.2-beta
           path: |
             dist/windows/*-Setup.exe
             dist/windows/SHA256SUMS-Windows.json
-            dist/windows-0.1.1-smoke.png
+            dist/windows-0.1.2-smoke.png
       - name: Attach Windows installers to the shared beta release
         shell: pwsh
         env:

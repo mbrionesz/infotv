@@ -1,0 +1,5 @@
+/* Native OS pointer stays visible; TV keeps its remote-only cursor policy. */
+html.xt-desktop,html.xt-desktop body,html.xt-desktop #app,html.xt-desktop .screen{cursor:default!important}
+html.xt-desktop button,html.xt-desktop .focusable,html.xt-desktop [role=button],html.xt-desktop input[type=range]{cursor:pointer!important}
+html.xt-desktop input:not([type=range]),html.xt-desktop textarea{cursor:text!important}
+html.xt-desktop button:hover,html.xt-desktop .focusable:hover{outline:2px solid #a1a1aa;outline-offset:2px}
