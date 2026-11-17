@@ -65,7 +65,8 @@ class XuperMediaHost {
  static void Open(Dictionary<string,object> r){
   Trace("stopping-previous");Stop();nativeDisplayed=false;
   if(instance==IntPtr.Zero){Trace("loading-library");string version=Utf8(libvlc_get_version());Emit(Obj("event","native-version","version",version));
-   var args=new List<string>{"--ignore-config","--no-media-library","--no-metadata-network-access","--no-sub-autodetect-file","--no-video-title-show","--network-caching=2000","--http-proxy=","--avcodec-threads=2","--audio-language="+Text(r,"language","es,spa")};
+   var args=new List<string>{"--ignore-config","--no-media-library","--no-metadata-network-access","--no-sub-autodetect-file","--no-video-title-show","--network-caching=2000","--prefetch-buffer-size="+(IntPtr.Size==8?32768:16384),"--prefetch-read-size=262144","--prefetch-seek-threshold=16384","--http-proxy=","--avcodec-threads=2","--audio-language="+Text(r,"language","es,spa")};
+   Emit(Obj("event","cache-policy","targetMs",2000,"prefetchBytes",IntPtr.Size==8?33554432:16777216,"readBytes",262144));if(Flag(r,"diagnostic"))args.Add("--verbose=2");
    string videoOutput=Text(r,"videoOutput");if(videoOutput=="wingdi"||videoOutput=="direct3d9")args.Add("--vout="+videoOutput);
    if(Flag(r,"software"))args.Add("--avcodec-hw=none");if(Flag(r,"silent"))args.Add("--aout=dummy");else if(Flag(r,"compatibility"))args.Add("--aout=directsound,waveout");
    Trace("initializing-engine");instance=NewInstance(args);if(instance==IntPtr.Zero)throw new Exception("LIBVLC_INIT");Trace("engine-ready");

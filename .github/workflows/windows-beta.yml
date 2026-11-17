@@ -1,15 +1,20 @@
-name: XuperWindows 0.1.11 beta
+name: XuperWindows 0.1.12 beta
 on:
   workflow_dispatch:
     inputs:
       tag:
         description: Shared Tizen release receiving the Windows installers
         required: true
-        default: v0.10.21-beta.2
+        default: v0.10.21-beta.3
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.11-beta.1
+        default: v0.1.12-beta.1
+
+      tizen_source_tag:
+        description: Published release containing the current verified Tizen files
+        required: true
+        default: v0.10.21-beta.2
 
 permissions:
   contents: write
@@ -46,8 +51,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperWindows-0.1.11-visual
-          path: dist/xuperwindows-0.1.11-*.png
+          name: XuperWindows-0.1.12-visual
+          path: dist/xuperwindows-0.1.12-*.png
           if-no-files-found: ignore
       - name: Build separate x64 and x86 installers
         env:
@@ -64,14 +69,33 @@ jobs:
           if ($files.Count -ne 2) { throw 'Expected two Windows installers' }
           $sums=@{}
           foreach ($file in $files) { $sums[$file.Name]=(Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower() }
-          $sums | ConvertTo-Json | Set-Content dist/windows/SHA256SUMS-XuperWindows-0.1.11.json
+          $sums | ConvertTo-Json | Set-Content dist/windows/SHA256SUMS-XuperWindows-0.1.12.json
       - uses: actions/upload-artifact@v4
         with:
-          name: XuperWindows-0.1.11-beta
+          name: XuperWindows-0.1.12-beta
           path: |
             dist/windows/*-Setup.exe
-            dist/windows/SHA256SUMS-XuperWindows-0.1.11.json
-            dist/xuperwindows-0.1.11-*.png
+            dist/windows/SHA256SUMS-XuperWindows-0.1.12.json
+            dist/xuperwindows-0.1.12-*.png
+      - name: Attach unchanged latest Tizen files to the clean release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          TIZEN_SOURCE: ${{ inputs.tizen_source_tag }}
+        run: |
+          mkdir -p dist/tizen-latest
+          gh release download "$TIZEN_SOURCE" --pattern 'XuperTizen-0.10.21-beta-Tizen4plus-UNSIGNED.wgt' --pattern 'XuperTizen-0.10.21-source.zip' --pattern SHA256SUMS.json --pattern release-info.json --dir dist/tizen-latest
+          python - <<'PYTHON'
+          import json,hashlib,pathlib
+          root=pathlib.Path('dist/tizen-latest')
+          expected={'XuperTizen-0.10.21-beta-Tizen4plus-UNSIGNED.wgt':'a9041cc7ba17dffdd34d933f005da81927a23093caffaa26ebc45e418c7c2727','XuperTizen-0.10.21-source.zip':'2acdae03272dc7635c46a68fde6142deb6ac90a727ff1188126ed991c6cfa852'}
+          assert json.loads((root/'SHA256SUMS.json').read_text())==expected
+          for name,digest in expected.items():
+              assert hashlib.sha256((root/name).read_bytes()).hexdigest()==digest
+          PYTHON
+          gh release upload "$RELEASE_TAG" dist/tizen-latest/*
       - name: Attach Windows installers to the shared beta release
         shell: pwsh
         env:
@@ -80,7 +104,7 @@ jobs:
         run: |
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Publish the Tizen release first' }
-          git archive --format=zip --prefix=XuperWindows-source/ -o dist/windows/XuperWindows-0.1.11-source.zip HEAD
-          $assets=@('dist/windows/XuperWindows-0.1.11-source.zip')+@((Get-ChildItem dist/windows/*-Setup.exe).FullName)+@('dist/windows/SHA256SUMS-XuperWindows-0.1.11.json')
+          git archive --format=zip --prefix=XuperWindows-source/ -o dist/windows/XuperWindows-0.1.12-source.zip HEAD
+          $assets=@('dist/windows/XuperWindows-0.1.12-source.zip')+@((Get-ChildItem dist/windows/*-Setup.exe).FullName)+@('dist/windows/SHA256SUMS-XuperWindows-0.1.12.json')
           gh release upload $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY @assets
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }

@@ -15,7 +15,7 @@ export function createDiagnosticCards({playback={},signal,internet,cdns,dns,clos
  card('stability','Estabilidad','Sin medir','Se estima con tres muestras de latencia.');
  card('dns','DNS seguro','Sin comprobar','Se conserva la configuración de DNS de la app.');
  card('playback','Reproducción',media.width?media.width+' × '+media.height:'Sin señal activa',playback.engine||'Abre un canal o vídeo para ver su formato.');
- card('buffer',playback.nativeCache?'Caché de reproducción':'Reserva de vídeo',playback.nativeCache?(Math.max(0,playback.nativeCache.downloadedBytes||0)/1048576).toFixed(1)+' MiB descargados':Number.isFinite(media.bufferSeconds)?media.bufferSeconds.toFixed(1)+' s':'—',playback.nativeCache?'libVLC · objetivo '+playback.nativeCache.targetMs/1000+' s; reserva acumulada no disponible. Los datos descargados no equivalen a RAM ocupada.':'Datos de la reproducción al abrir el panel.');
+ card('buffer',playback.nativeCache?'Caché de reproducción':'Reserva de vídeo',playback.nativeCache?(Math.max(0,playback.nativeCache.downloadedBytes||0)/1048576).toFixed(1)+' MiB descargados':Number.isFinite(media.bufferSeconds)?media.bufferSeconds.toFixed(1)+' s':'—',playback.nativeCache?'libVLC · objetivo '+playback.nativeCache.targetMs/1000+' s'+(playback.nativeCache.prefetchBytes?' · límite de lectura '+Math.round(playback.nativeCache.prefetchBytes/1048576)+' MiB':'')+'; reserva acumulada no disponible. Los datos descargados no equivalen a RAM ocupada.':'Datos de la reproducción al abrir el panel.');
  const alive=()=>!signal.aborted&&panel.isConnected;
  panel.querySelector('.xt-diag-close').onclick=close;
  panel.querySelector('.xt-diag-speed').onclick=async()=>{
