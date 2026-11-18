@@ -1,3 +1,4 @@
+import {portalErrorMessage} from './portal-errors.js';
 import {requestSignal} from './request-signal.js';
 export function createCoreClient() {
   let worker=null,serial=0,failure='',workerSignal=null;const pending=new Map();
@@ -18,7 +19,7 @@ export function createCoreClient() {
         }
         const entry=pending.get(message.id);
         if(!entry)return;pending.delete(message.id);clearTimeout(entry.timer);
-        const error=message.error?new Error(message.error):null;if(error){error.portalCode=message.code;if(message.categoryFailure)error.categoryFailure=message.categoryFailure;}
+        const error=message.error?new Error(portalErrorMessage(message.error,message.code)):null;if(error){error.portalCode=message.code;if(message.categoryFailure)error.categoryFailure=message.categoryFailure;}
         entry.callback(error,message.result);
       };
       target.onerror=()=>{

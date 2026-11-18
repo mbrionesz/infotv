@@ -1,3 +1,4 @@
+import {patchPortalProfile,portalClientProfile} from './portal-profile-adapter.mjs';
 import {patchTsLoading} from './ts-buffer-adapter.mjs';
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
@@ -7,9 +8,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync } from 'node:fs';
 const desktopBuild=process.env.XUPER_BUILD_TARGET==='windows';
 const root = fileURLToPath(new URL('../', import.meta.url));
-const portalSource=readFileSync(path.join(root,'companion/lib/magis.js'),'utf8');
-const portalField=name=>{const found=portalSource.match(new RegExp(name+'\\s*=\\s*\"([^\"]+)\"'));if(!found)throw Error('Portal field missing: '+name);return found[1];};
-const portalClientConfig={apkVersion:portalField('APK_VERSION'),apkVer:portalField('APK_VER_HEADER'),spkgVer:portalField('SPKG_VER')};
+const portalClientConfig={apkVersion:portalClientProfile.apkVersion,apkVer:portalClientProfile.apkVer,spkgVer:portalClientProfile.spkgVer};
 const aliases = { crypto: 'crypto.js', http: 'network.js', https: 'network.js' };
 const env = new Set(['fs', 'path', 'os', 'url', './dnsx', './upstream']);
 const plugin = {
@@ -28,7 +27,7 @@ const plugin = {
       contents: `module.exports = require(${JSON.stringify(path.join(root, 'browser', args.path))}).default;`, resolveDir: root
     }));
     builder.onLoad({ filter: /[\\/]magis\.js$/ }, args => {
-      let source = readFileSync(args.path, 'utf8');
+      let source = patchPortalProfile(readFileSync(args.path, 'utf8'));
       // No borrowed-session download or rescue is included in the TV widget.
       const start = source.indexOf('function refreshSeeds(e) {');
       const end = source.indexOf('\nfunction ', start + 1);
