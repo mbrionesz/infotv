@@ -16,6 +16,14 @@ The hosted Windows visual runner has no hardware video device or audio endpoint.
 
 The mpv surface avoids Electron's layered-window mouse passthrough style, which prevents Direct3D presentation on some systems. The native surface is clipped away from the HTML controls and hidden for menus, and pointer polling still reveals the playback controls. The normal VLC surface is unchanged.
 
-The tester uses mpv's Direct3D 11 GPU renderer inside the owned surface. Decoder, audio, subtitles, cache and seeking remain libmpv; no VLC code is loaded by the tester. Parent window child clipping prevents the host background from painting over native video.
+The tester uses mpv's Direct3D 11 GPU renderer inside the owned surface. Decoder, audio, subtitles, cache and seeking remain libmpv; no libVLC library is loaded by the tester. Parent window child clipping prevents the host background from painting over native video.
 
 The native mpv child is kept above Electron's internal `Intermediate D3D Window`. Without this sibling Z-order correction, the host backing window can cover decoded video with a black rectangle. Position, size, menu clipping and focus stay under the application's control.
+
+## Verified tester build
+
+Source: `v0.1.14-test-libmpv.10`. [Windows validation and packaging run](https://github.com/mbrionesz/infotv/actions/runs/44228544595) completed successfully. 347 core tests and 34 desktop tests passed. The real DLL passed HEVC/AAC, Spanish/English tracks, SRT on/off, font/size/color, paused seeks, resume checkpoint and EOF checks. A two-hour synthetic source confirmed 40/110/60-minute seeks, including from packaged resources. The Electron screen capture showed the native video visibly rendered inside the owned window after the sibling Z-order correction.
+
+[Download Windows x64 tester](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-x64-Setup.exe).
+
+Installer SHA256: `1360eafcf6bf3bbababfcd9c55e192ecbb2dadc3515d593f34f0513734c5ae99`. Downloaded artifact matched the workflow checksum and published asset digest. Existing production installers and Tizen WGT remained unchanged. Compare actual provider startup and buffering on the user's PC; local fixture seek timings are not provider latency measurements.
