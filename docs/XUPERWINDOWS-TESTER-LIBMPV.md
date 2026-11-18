@@ -20,14 +20,17 @@ The tester uses mpv's Direct3D 11 GPU renderer inside the owned surface. Decoder
 
 The native mpv child is kept above Electron's internal `Intermediate D3D Window`. Without this sibling Z-order correction, the host backing window can cover decoded video with a black rectangle. Position, size, menu clipping and focus stay under the application's control.
 
-## Verified tester build
+## Original tester validation (superseded by revision 2)
 
 Source: `v0.1.14-test-libmpv.10`. [Windows validation and packaging run](https://github.com/mbrionesz/infotv/actions/runs/44228544595) completed successfully. 347 core tests and 34 desktop tests passed. The real DLL passed HEVC/AAC, Spanish/English tracks, SRT on/off, font/size/color, paused seeks, resume checkpoint and EOF checks. A two-hour synthetic source confirmed 40/110/60-minute seeks, including from packaged resources. The Electron screen capture showed the native video visibly rendered inside the owned window after the sibling Z-order correction.
 
-[Download Windows x64 tester](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-x64-Setup.exe).
+[Download Windows x64 tester](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-r2-x64-Setup.exe).
 
 Installer SHA256: `1360eafcf6bf3bbababfcd9c55e192ecbb2dadc3515d593f34f0513734c5ae99`. Downloaded artifact matched the workflow checksum and published asset digest. Existing production installers and Tizen WGT remained unchanged. Compare actual provider startup and buffering on the user's PC; local fixture seek timings are not provider latency measurements.
 
 ## Tester revision 2: self-contained loader
 
 The first tester omitted a hard dependency of the upstream DLL: `vulkan-1.dll`. Hosted Windows had it installed, masking the packaging error. Revision 2 builds the official Khronos Vulkan loader from a pinned source revision, with static C runtime, and includes it app-local. The helper preloads this absolute local dependency and libmpv with a restricted DLL search, reports Win32 loader errors, and verifies which loader was loaded. No Vulkan GPU or driver installation is required for the Direct3D renderer. The tester keeps the same installer identity/profile for updating revision 1; the normal VLC app is unchanged.
+
+
+Revision 2 source: `v0.1.14-test-libmpv.12`. [Successful validation and packaging](https://github.com/mbrionesz/infotv/actions/runs/44230500207) additionally confirmed both missing-file classifications and the app-local Vulkan module path, including packaged resources. Downloaded installer hash matched the workflow and published asset digest: `728ea5bf40f56cc6f00db52881a7d46f4b303276761e8d22a33d88ce2deff670`. Diagnostic version is `0.1.14-test-libmpv.2`. Revision 1 release assets were superseded; production Windows and Tizen assets remain unchanged.
