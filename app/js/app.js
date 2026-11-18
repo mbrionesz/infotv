@@ -5573,6 +5573,7 @@
   }
   function gn() {
     Zi=["normal","big","small","huge"][subtitleOptionValue("size",3)];en=["white","yellow","black","cyan","lime"][subtitleOptionValue("style",4)];
+    if(window.XuperWindowsMedia&&window.XuperWindowsMedia.style)window.XuperWindowsMedia.style({font:subtitleFontValue(),size:subtitleOptionValue("size",3),color:subtitleOptionValue("style",4)});
     Bi &&
       (Bi.classList.remove("size-small", "size-normal", "size-big", "size-huge"),
       Bi.classList.add("size-" + Zi),
@@ -7584,7 +7585,7 @@
           audioIndex: X.playerMode==="vod"&&$i ? Xi : undefined,
           resumeHint:resumeRecord?resumeRecord.seek:null,
           onNotice: function (message) { Yt(message); },
-          onInfo: function (data) { updateVodChrome();if(window.XuperDesktop&&X.playerMode==="vod"){var cacheLine=document.getElementById("xw-vod-cache-info");if(cacheLine){var nc=data.nativeCache;cacheLine.textContent=nc?("Descargados "+(Math.max(0,nc.downloadedBytes||0)/1048576).toFixed(1)+" MiB · Lectura anticipada: límite "+(nc.prefetchBytes?Math.round(nc.prefetchBytes/1048576)+" MiB":"sin informar")+" · Preparación "+nc.targetMs/1000+" s · Reserva en minutos no disponible"):("Búfer disponible: "+(data.media&&Number.isFinite(data.media.bufferSeconds)?data.media.bufferSeconds.toFixed(1)+" s":"sin informar"));}var seekStatus=document.getElementById("xw-seek-status");if(seekStatus&&data.controlNotice&&seekStatus.getAttribute("data-notice")!==data.controlNotice){seekStatus.textContent=data.controlNotice;seekStatus.setAttribute("data-notice",data.controlNotice);}}if(X.playerMode==='live'&&window.XuperLiveTracks)XuperLiveTracks.sync();if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod"){var reported=un[Ln(X.playerItem)];format.textContent=window.XuperStandalone.formatMediaInfo(Object.assign({},data,{portalTrack:reported&&reported.selected||{}}));} },
+          onInfo: function (data) { updateVodChrome();if(window.XuperDesktop&&X.playerMode==="vod"){var cacheLine=document.getElementById("xw-vod-cache-info");if(cacheLine){var nc=data.nativeCache;cacheLine.textContent=nc?("Descargados "+(Math.max(0,nc.downloadedBytes||0)/1048576).toFixed(1)+" MiB · Lectura anticipada: límite "+(nc.prefetchBytes?Math.round(nc.prefetchBytes/1048576)+" MiB":"sin informar")+(data.engine==="libmpv"?" · Reserva estimada "+(Number.isFinite(nc.bufferSeconds)?Math.floor(nc.bufferSeconds/60)+":"+String(Math.floor(nc.bufferSeconds%60)).padStart(2,"0"):"sin datos")+" · Objetivo hasta 3 min":" · Preparación "+nc.targetMs/1000+" s · Reserva en minutos no disponible")):("Búfer disponible: "+(data.media&&Number.isFinite(data.media.bufferSeconds)?data.media.bufferSeconds.toFixed(1)+" s":"sin informar"));}var seekStatus=document.getElementById("xw-seek-status");if(seekStatus&&data.controlNotice&&seekStatus.getAttribute("data-notice")!==data.controlNotice){seekStatus.textContent=data.controlNotice;seekStatus.setAttribute("data-notice",data.controlNotice);}}if(X.playerMode==='live'&&window.XuperLiveTracks)XuperLiveTracks.sync();if(X.playerMode==="vod"){var media=un[Ln(X.playerItem)];if(media)An(media);} var info=we.querySelector(".xt-playback-info"); if(info)info.textContent=window.XuperStandalone.formatMediaInfo(data);var format=document.getElementById("vod-format-info");if(format&&X.playerMode==="vod"){var reported=un[Ln(X.playerItem)];format.textContent=window.XuperStandalone.formatMediaInfo(Object.assign({},data,{portalTrack:reported&&reported.selected||{}}));} },
           onStarted: function () { X.streamError = ""; jr(""); },
           onResumeRequired: function(){if(window.XuperStandalone.showVodRecovery)XuperStandalone.showVodRecovery("La TV estuvo suspendida. Reanuda con una conexión nueva.");},
           onError: function (message) { X.streamError = message; jr(message);Gn();if(X.playerMode==="vod"&&window.XuperStandalone.showVodRecovery)XuperStandalone.showVodRecovery(message); } });
@@ -8171,7 +8172,7 @@
           ba(l[e] || l[0]);
         },
         openSearch: La,
-        subtitleForPlayback:function(){return Qi||null;},
+        subtitleForPlayback:function(){return Qi||null;},subtitleStyleForPlayback:function(){return {font:subtitleFontValue(),size:subtitleOptionValue("size",3),color:subtitleOptionValue("style",4)};},
         openSettings: Ha,
         openPlayer: function (e, t) {
           Yr(e || "live", l[t] || null);

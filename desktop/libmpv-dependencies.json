@@ -1,0 +1,17 @@
+{
+  "name": "libmpv tester",
+  "release": "20261111",
+  "mpvRevision": "bcde6b93cc",
+  "ffmpegRevision": "cd4e96eb3",
+  "repository": "shinchiro/mpv-winbuild-cmake",
+  "assets": {
+    "x64": {
+      "name": "mpv-dev-x86_64-20261111-git-bcde6b93cc.7z",
+      "sha256": "273c079b11ea5575822f972756f4c9a71149a5c10130353abeb8586738938452"
+    },
+    "ia32": {
+      "name": "mpv-dev-i686-20261111-git-bcde6b93cc.7z",
+      "sha256": "f648b25096e5db9ee8e6b3a82bfa9ab57ec5634ab4820cf58c9ec71b5b033d98"
+    }
+  }
+}

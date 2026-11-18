@@ -25,3 +25,7 @@ desktop/node_modules/
 
 # Downloaded, verified Windows decoder binaries
 desktop/native/
+
+# Isolated generated libmpv tester
+desktop-tester/
+desktop/native-libmpv/

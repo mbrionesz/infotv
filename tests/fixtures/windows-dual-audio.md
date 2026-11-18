@@ -1,0 +1,1 @@
+Synthetic 10-second HEVC/AAC test bars. Derived from windows-hevc.ts by copying its AAC audio twice, with spa/eng language metadata and faststart MP4 packaging. No copyrighted programme content. Tests track selection; both synthetic audio tracks have the same signal.
