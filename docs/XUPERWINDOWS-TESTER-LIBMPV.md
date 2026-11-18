@@ -13,3 +13,5 @@ Reproducible build: `.github/workflows/windows-libmpv-tester.yml`. Pinned upstre
 Test fixtures cover HEVC/AAC, two audio track selections, SRT on/off and font/color settings, authenticated HTTP byte ranges and random seeks at 40/110/60 minutes in a synthetic two-hour stream. Separate Electron screen captures require visible colored video inside the app-owned window for x64; advancing an audio clock alone does not pass.
 
 The hosted Windows visual runner has no hardware video device or audio endpoint. Its Electron test explicitly uses software decoding and a null audio sink; it still requires visible video from the real DLL in an app-owned HWND. Normal installations retain automatic hardware selection and real audio output.
+
+The mpv surface avoids Electron's layered-window mouse passthrough style, which prevents Direct3D presentation on some systems. The native surface is clipped away from the HTML controls and hidden for menus, and pointer polling still reveals the playback controls. The normal VLC surface is unchanged.

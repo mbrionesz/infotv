@@ -1,7 +1,7 @@
 'use strict';
 // A frameless, non-focusable child surface belongs to the app window. Only the
 // main process creates its HWND; the renderer can request bounded layout only.
-function createVideoSurface({NativeWindow,parent,platform=process.platform}){
+function createVideoSurface({NativeWindow,parent,platform=process.platform,ignoreMouseEvents=true}){
  let surface=null,layout=null;
  function sync(){
   if(!surface||surface.isDestroyed()||!layout||parent.isDestroyed())return;
@@ -14,7 +14,7 @@ function createVideoSurface({NativeWindow,parent,platform=process.platform}){
  function handle(){
   if(platform!=='win32')return null;
   close();surface=new NativeWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000'});
-  surface.setIgnoreMouseEvents(true,{forward:true});
+  if(ignoreMouseEvents)surface.setIgnoreMouseEvents(true,{forward:true});
   const hwnd=surface.getNativeWindowHandle();sync();
   return (hwnd.length===8?hwnd.readBigUInt64LE():BigInt(hwnd.readUInt32LE())).toString();
  }
