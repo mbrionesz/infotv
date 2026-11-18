@@ -16,4 +16,6 @@ The hosted Windows visual runner has no hardware video device or audio endpoint.
 
 The mpv surface avoids Electron's layered-window mouse passthrough style, which prevents Direct3D presentation on some systems. The native surface is clipped away from the HTML controls and hidden for menus, and pointer polling still reveals the playback controls. The normal VLC surface is unchanged.
 
-The first tester uses mpv's Direct3D 9 compatibility renderer inside the owned surface. Decoder, audio, subtitles, cache and seeking remain libmpv; no VLC code is loaded by the tester. Parent window child clipping prevents the host background from painting over native video.
+The tester uses mpv's Direct3D 11 GPU renderer inside the owned surface. Decoder, audio, subtitles, cache and seeking remain libmpv; no VLC code is loaded by the tester. Parent window child clipping prevents the host background from painting over native video.
+
+The native mpv child is kept above Electron's internal `Intermediate D3D Window`. Without this sibling Z-order correction, the host backing window can cover decoded video with a black rectangle. Position, size, menu clipping and focus stay under the application's control.
