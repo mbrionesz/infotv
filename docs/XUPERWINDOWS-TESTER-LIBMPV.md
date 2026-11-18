@@ -27,3 +27,7 @@ Source: `v0.1.14-test-libmpv.10`. [Windows validation and packaging run](https:/
 [Download Windows x64 tester](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-x64-Setup.exe).
 
 Installer SHA256: `1360eafcf6bf3bbababfcd9c55e192ecbb2dadc3515d593f34f0513734c5ae99`. Downloaded artifact matched the workflow checksum and published asset digest. Existing production installers and Tizen WGT remained unchanged. Compare actual provider startup and buffering on the user's PC; local fixture seek timings are not provider latency measurements.
+
+## Tester revision 2: self-contained loader
+
+The first tester omitted a hard dependency of the upstream DLL: `vulkan-1.dll`. Hosted Windows had it installed, masking the packaging error. Revision 2 builds the official Khronos Vulkan loader from a pinned source revision, with static C runtime, and includes it app-local. The helper preloads this absolute local dependency and libmpv with a restricted DLL search, reports Win32 loader errors, and verifies which loader was loaded. No Vulkan GPU or driver installation is required for the Direct3D renderer. The tester keeps the same installer identity/profile for updating revision 1; the normal VLC app is unchanged.

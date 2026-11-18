@@ -13,3 +13,5 @@ Corresponding source/build recipes:
 - https://github.com/mpv-player/mpv/blob/bcde6b93cc/LICENSE.GPL
 
 The full GPL text and mpv copyright notice are included next to the DLL and controller. Source of the controller is included in the tester source archive. No proprietary programmes, licenses or authorizations are provided by the decoder.
+
+The app-local `vulkan-1.dll` is built from KhronosGroup/Vulkan-Loader at a9e72c66d5cb79911eb9a9063bf4016dd0a3a123 (vulkan-sdk-1.4.350.1), using its pinned UPDATE_DEPS and static MSVC runtime. Apache-2.0 license is included as VULKAN-LOADER-LICENSE.txt. Source/build instructions: https://github.com/KhronosGroup/Vulkan-Loader/tree/a9e72c66d5cb79911eb9a9063bf4016dd0a3a123 . No GPU driver or system runtime is installed.

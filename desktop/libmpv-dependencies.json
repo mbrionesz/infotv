@@ -9,5 +9,12 @@
       "name": "mpv-dev-x86_64-20261111-git-bcde6b93cc.7z",
       "sha256": "273c079b11ea5575822f972756f4c9a71149a5c10130353abeb8586738938452"
     }
+  },
+  "vulkanLoader": {
+    "repository": "KhronosGroup/Vulkan-Loader",
+    "revision": "a9e72c66d5cb79911eb9a9063bf4016dd0a3a123",
+    "tag": "vulkan-sdk-1.4.350.1",
+    "license": "Apache-2.0",
+    "crt": "static"
   }
 }
