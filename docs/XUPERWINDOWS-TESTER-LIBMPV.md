@@ -9,3 +9,5 @@ The controller reports measured demuxer cache duration and bytes. Forward cache 
 The existing controls support pause/resume, timeline and typed-minute seeking, audio selection, external subtitles and font/size/color. Native subtitle rendering receives the GUI preferences. Diagnostic copies identify `engine: libmpv`, measured cache, seek status, FPS and track selections.
 
 Reproducible build: `.github/workflows/windows-libmpv-tester.yml`. Pinned upstream binaries and hashes: `desktop/libmpv-dependencies.json`. Third-party license/source notices ship alongside the DLL. This test does not establish provider performance, physical audio output or decoding performance on every computer.
+
+Test fixtures cover HEVC/AAC, two audio track selections, SRT on/off and font/color settings, authenticated HTTP byte ranges and random seeks at 40/110/60 minutes in a synthetic two-hour stream. Separate Electron screen captures require visible colored video inside the app-owned window for x64 and x86; advancing an audio clock alone does not pass.
