@@ -11,3 +11,5 @@ The existing controls support pause/resume, timeline and typed-minute seeking, a
 Reproducible build: `.github/workflows/windows-libmpv-tester.yml`. Pinned upstream binaries and hashes: `desktop/libmpv-dependencies.json`. Third-party license/source notices ship alongside the DLL. This test does not establish provider performance, physical audio output or decoding performance on every computer.
 
 Test fixtures cover HEVC/AAC, two audio track selections, SRT on/off and font/color settings, authenticated HTTP byte ranges and random seeks at 40/110/60 minutes in a synthetic two-hour stream. Separate Electron screen captures require visible colored video inside the app-owned window for x64; advancing an audio clock alone does not pass.
+
+The hosted Windows visual runner has no hardware video device or audio endpoint. Its Electron test explicitly uses software decoding and a null audio sink; it still requires visible video from the real DLL in an app-owned HWND. Normal installations retain automatic hardware selection and real audio output.
