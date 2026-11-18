@@ -1,36 +1,31 @@
-# Tester 0.1.14 Test libmpv
+# Tester 0.1.14 Test libmpv · revisión 3
 
-Experimental Windows 10/11 x64 build. The i686 upstream DLL failed initialization in validation, so no 32-bit tester is distributed. The normal x86 VLC build remains available. Uses the current XuperWindows GUI, with a separate helper that links the libmpv C API. No external mpv application is opened. TV retains the existing browser playback path.
+[Descargar Windows x64](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-r3-x64-Setup.exe).
 
-The tester has its own installer identity and profile (`XuperWindows Tester`), so production favorites and progress are not migrated or overwritten. Close the normal application before comparing the same title.
+Versión del diagnóstico: `0.1.14-test-libmpv.3`. Cierra el tester e instala encima para conservar su perfil. La identidad del instalador y el directorio `XuperWindows Tester` son independientes de la versión normal. El tester utiliza la misma interfaz y un controlador propio que enlaza la API C de libmpv, sin abrir una aplicación de reproducción externa. TV mantiene su ruta de reproducción actual.
 
-The controller reports measured demuxer cache duration and bytes. Forward cache targets 180 seconds, capped at 64 MiB, with 8 MiB for backward reads. These are goals and limits, not a guarantee of three minutes at every bitrate. Playback does not wait for the entire target to fill. Authenticated requests and byte ranges still pass through the app's secure-DNS proxy with Host/SNI and TLS verification.
+## Compatibilidad del portal
 
-The existing controls support pause/resume, timeline and typed-minute seeking, audio selection, external subtitles and font/size/color. Native subtitle rendering receives the GUI preferences. Diagnostic copies identify `engine: libmpv`, measured cache, seek status, FPS and track selections.
+La revisión 3 actualiza el perfil efectivo y el manejo de hosts. El archivo histórico `companion/lib/magis.js` permanece intacto; el adaptador se aplica al compilar. Se mantienen APK `49902` y cabecera `43404`, con sistema/paquete `2025-08-07 05:40:11_36_16_` y SDK `36`, observados en Samsung 1.19.4 y probados con solicitudes propias.
 
-Reproducible build: `.github/workflows/windows-libmpv-tester.yml`. Pinned upstream binaries and hashes: `desktop/libmpv-dependencies.json`. Third-party license/source notices ship alongside the DLL. This test does not establish provider performance, physical audio output or decoding performance on every computer.
+Un host que rechaza la versión ya no cancela las respuestas de otros hosts ni se convierte en preferido. Si todos fallan, el error de versión se conserva y se muestra en español; una ruta alternativa no lo oculta con un 404. [Evidencia y límites de la comprobación](PORTAL-COMPATIBILIDAD-R3.md).
 
-Test fixtures cover HEVC/AAC, two audio track selections, SRT on/off and font/color settings, authenticated HTTP byte ranges and random seeks at 40/110/60 minutes in a synthetic two-hour stream. Separate Electron screen captures require visible colored video inside the app-owned window for x64; advancing an audio clock alone does not pass.
+## Motor y caché
 
-The hosted Windows visual runner has no hardware video device or audio endpoint. Its Electron test explicitly uses software decoding and a null audio sink; it still requires visible video from the real DLL in an app-owned HWND. Normal installations retain automatic hardware selection and real audio output.
+El controlador informa la reserva medida por el demuxer. Objetivo: 180 segundos de lectura anticipada, con límite de 64 MiB y 8 MiB hacia atrás. Son objetivos y límites, no una garantía de tres minutos a cualquier bitrate. La reproducción empieza sin esperar a llenar toda la reserva. Autorización, rangos HTTP, DNS seguro, Host/SNI y TLS verificado siguen gestionados por el proxy de la app.
 
-The mpv surface avoids Electron's layered-window mouse passthrough style, which prevents Direct3D presentation on some systems. The native surface is clipped away from the HTML controls and hidden for menus, and pointer polling still reveals the playback controls. The normal VLC surface is unchanged.
+Se conservan pausa, avance por barra/minuto, idiomas, subtítulos y fuente/tamaño/color. El diagnóstico identifica `engine: libmpv`, pistas seleccionadas, reserva, FPS y saltos confirmados.
 
-The tester uses mpv's Direct3D 11 GPU renderer inside the owned surface. Decoder, audio, subtitles, cache and seeking remain libmpv; no libVLC library is loaded by the tester. Parent window child clipping prevents the host background from painting over native video.
+La revisión 2 corrigió una dependencia omitida: `vulkan-1.dll`. El paquete incluye el cargador oficial Khronos compilado desde una revisión fija con runtime C estático. El controlador verifica la carga local e informa errores Win32. No instala controladores ni runtimes de GPU en el sistema. El vídeo usa Direct3D 11.
 
-The native mpv child is kept above Electron's internal `Intermediate D3D Window`. Without this sibling Z-order correction, the host backing window can cover decoded video with a black rectangle. Position, size, menu clipping and focus stay under the application's control.
+La ventana nativa se mantiene sobre la superficie interna `Intermediate D3D Window` de Electron, se recorta para dejar visibles los controles HTML y se oculta para los menús. Esto corrigió la pantalla negra aunque el reloj avanzara.
 
-## Original tester validation (superseded by revision 2)
+## Validación
 
-Source: `v0.1.14-test-libmpv.10`. [Windows validation and packaging run](https://github.com/mbrionesz/infotv/actions/runs/44228544595) completed successfully. 347 core tests and 34 desktop tests passed. The real DLL passed HEVC/AAC, Spanish/English tracks, SRT on/off, font/size/color, paused seeks, resume checkpoint and EOF checks. A two-hour synthetic source confirmed 40/110/60-minute seeks, including from packaged resources. The Electron screen capture showed the native video visibly rendered inside the owned window after the sibling Z-order correction.
+Fuente del instalador: `v0.1.14-test-libmpv.13`. [Compilación y pruebas](https://github.com/mbrionesz/infotv/actions/runs/44233282178). Los controles nativos prueban HEVC/AAC, español/inglés, SRT, estilos, caché, pausa, reanudación, EOF y saltos a los minutos 40/110/60 en una fuente sintética de dos horas, también desde recursos empaquetados. Una captura exige vídeo visible en la ventana; un reloj que avanza no basta. Se prueban dependencias locales ausentes y se verifica la procedencia del cargador Vulkan.
 
-[Download Windows x64 tester](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-r2-x64-Setup.exe).
+El ejecutor de Windows no tiene salida física de audio ni GPU de vídeo: usa explícitamente software y audio nulo. La instalación del usuario conserva hardware automático y audio real. La prueba directa del portal llegó al bloqueo regional `portal100024` desde este entorno, por lo que no demuestra reproducción completa desde la conexión del usuario.
 
-Installer SHA256: `1360eafcf6bf3bbababfcd9c55e192ecbb2dadc3515d593f34f0513734c5ae99`. Downloaded artifact matched the workflow checksum and published asset digest. Existing production installers and Tizen WGT remained unchanged. Compare actual provider startup and buffering on the user's PC; local fixture seek timings are not provider latency measurements.
+Solo x64: la biblioteca i686 no superó la validación inicial y no se distribuye un tester de 32 bits. El instalador normal x86 permanece disponible. Procedencia, licencias y fuentes: `desktop/libmpv-dependencies.json`, `desktop/LIBMPV-TESTER-NOTICES.md` y el archivo fuente de esta revisión.
 
-## Tester revision 2: self-contained loader
-
-The first tester omitted a hard dependency of the upstream DLL: `vulkan-1.dll`. Hosted Windows had it installed, masking the packaging error. Revision 2 builds the official Khronos Vulkan loader from a pinned source revision, with static C runtime, and includes it app-local. The helper preloads this absolute local dependency and libmpv with a restricted DLL search, reports Win32 loader errors, and verifies which loader was loaded. No Vulkan GPU or driver installation is required for the Direct3D renderer. The tester keeps the same installer identity/profile for updating revision 1; the normal VLC app is unchanged.
-
-
-Revision 2 source: `v0.1.14-test-libmpv.12`. [Successful validation and packaging](https://github.com/mbrionesz/infotv/actions/runs/44230500207) additionally confirmed both missing-file classifications and the app-local Vulkan module path, including packaged resources. Downloaded installer hash matched the workflow and published asset digest: `728ea5bf40f56cc6f00db52881a7d46f4b303276761e8d22a33d88ce2deff670`. Diagnostic version is `0.1.14-test-libmpv.2`. Revision 1 release assets were superseded; production Windows and Tizen assets remain unchanged.
+Instalador descargado y verificado contra el checksum de compilación y el digest publicado: `c3cfc93f716d51da00616566696733e115cca580d9ee5747a7eb7352e628f298`. Los assets de producción Windows/Tizen conservan sus identificadores y SHA256.
