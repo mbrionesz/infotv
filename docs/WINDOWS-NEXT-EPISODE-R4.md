@@ -7,3 +7,5 @@ Ahora el botón se comunica como una oclusión rectangular local. La superficie 
 Las pruebas verifican el área conservada, las coordenadas DOM y el cambio de tamaño. La prueba real de Electron añade una oclusión clicable sobre vídeo HEVC y exige píxeles de vídeo por debajo de la altura del botón, donde antes se producía la franja negra.
 
 La revisión conserva el perfil del portal, el cargador Vulkan local y la caché de libmpv. La versión normal publicada sigue utilizando libVLC, con perfil de instalación independiente. La reserva en tiempo se informa en el tester mediante las métricas de libmpv; los 2 segundos de preparación de libVLC no equivalen a toda su reserva disponible. El tester no crea nuevas calidades, idiomas ni subtítulos que no proporcione la fuente.
+
+Verificación publicada: https://github.com/mbrionesz/infotv/actions/runs/44431060142 . Instalador x64 SHA256 `86942b258c3fce94bf03498b31f7a2358d5e637d0909c8d6af229ad7364b69f1`, comprobado tras descargar el artefacto y contra el digest publicado.

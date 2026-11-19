@@ -1,8 +1,8 @@
-# Tester 0.1.14 Test libmpv · revisión 3
+# Tester 0.1.14 Test libmpv · revisión 4
 
-[Descargar Windows x64](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-r3-x64-Setup.exe).
+[Descargar Windows x64](https://github.com/mbrionesz/infotv/releases/download/v0.10.21-beta.6/XuperWindows-Tester-0.1.14-Test-libmpv-r4-x64-Setup.exe).
 
-Versión del diagnóstico: `0.1.14-test-libmpv.3`. Cierra el tester e instala encima para conservar su perfil. La identidad del instalador y el directorio `XuperWindows Tester` son independientes de la versión normal. El tester utiliza la misma interfaz y un controlador propio que enlaza la API C de libmpv, sin abrir una aplicación de reproducción externa. TV mantiene su ruta de reproducción actual.
+Versión del diagnóstico: `0.1.14-test-libmpv.4`. Cierra el tester e instala encima para conservar su perfil. La identidad del instalador y el directorio `XuperWindows Tester` son independientes de la versión normal. El tester utiliza la misma interfaz y un controlador propio que enlaza la API C de libmpv, sin abrir una aplicación de reproducción externa. TV mantiene su ruta de reproducción actual.
 
 ## Compatibilidad del portal
 
@@ -22,10 +22,12 @@ La ventana nativa se mantiene sobre la superficie interna `Intermediate D3D Wind
 
 ## Validación
 
-Fuente del instalador: `v0.1.14-test-libmpv.13`. [Compilación y pruebas](https://github.com/mbrionesz/infotv/actions/runs/44233282178). Los controles nativos prueban HEVC/AAC, español/inglés, SRT, estilos, caché, pausa, reanudación, EOF y saltos a los minutos 40/110/60 en una fuente sintética de dos horas, también desde recursos empaquetados. Una captura exige vídeo visible en la ventana; un reloj que avanza no basta. Se prueban dependencias locales ausentes y se verifica la procedencia del cargador Vulkan.
+Fuente del instalador: `v0.1.14-test-libmpv.14`. [Compilación y pruebas](https://github.com/mbrionesz/infotv/actions/runs/44431060142). Los controles nativos prueban HEVC/AAC, español/inglés, SRT, estilos, caché, pausa, reanudación, EOF y saltos a los minutos 40/110/60 en una fuente sintética de dos horas, también desde recursos empaquetados. Una captura exige vídeo visible en la ventana; un reloj que avanza no basta. Se prueban dependencias locales ausentes y se verifica la procedencia del cargador Vulkan.
 
 El ejecutor de Windows no tiene salida física de audio ni GPU de vídeo: usa explícitamente software y audio nulo. La instalación del usuario conserva hardware automático y audio real. La prueba directa del portal llegó al bloqueo regional `portal100024` desde este entorno, por lo que no demuestra reproducción completa desde la conexión del usuario.
 
 Solo x64: la biblioteca i686 no superó la validación inicial y no se distribuye un tester de 32 bits. El instalador normal x86 permanece disponible. Procedencia, licencias y fuentes: `desktop/libmpv-dependencies.json`, `desktop/LIBMPV-TESTER-NOTICES.md` y el archivo fuente de esta revisión.
 
-Instalador descargado y verificado contra el checksum de compilación y el digest publicado: `c3cfc93f716d51da00616566696733e115cca580d9ee5747a7eb7352e628f298`. Los assets de producción Windows/Tizen conservan sus identificadores y SHA256.
+Instalador descargado y verificado contra el checksum de compilación y el digest publicado: `86942b258c3fce94bf03498b31f7a2358d5e637d0909c8d6af229ad7364b69f1`. Los assets de producción Windows/Tizen conservan sus identificadores y SHA256.
+
+La revisión 4 corrige la franja de «Siguiente capítulo» mediante una oclusión local, conservando vídeo alrededor y debajo del botón. Pasaron 351 pruebas generales, 36 de escritorio y la prueba visual/clic en Windows. [Descripción del cambio](WINDOWS-NEXT-EPISODE-R4.md).
