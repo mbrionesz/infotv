@@ -20,17 +20,18 @@ export function openDesktopNative(video,stream,options){
  function layout(){
   if(closed||!bridge.mediaLayout)return;
   const rect=video.getBoundingClientRect(),screen=document.getElementById('screen-player');
-  let bottom=rect.bottom,hidden=!!screen&&(getComputedStyle(screen).display==='none'||screen.hidden);
+  const occlusions=[];let bottom=rect.bottom,hidden=!!screen&&(getComputedStyle(screen).display==='none'||screen.hidden);
   // Keep HTML controls visible above the native surface. Menus get the complete
   // renderer surface; video continues behind them without losing the decoder.
   for(const selector of ['#player-infobar','#player-vod-infobar','.xt-player-chrome','.xt-next-episode','#player-playsetting-view','#dialog-playsettings','.xt-vod-recovery']){
    const overlay=document.querySelector(selector);if(!overlay)continue;
    const style=getComputedStyle(overlay),box=overlay.getBoundingClientRect();
    if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0||box.height<2)continue;
-   if(selector==='#player-infobar'||selector==='#player-vod-infobar'||selector==='.xt-player-chrome'||selector==='.xt-next-episode')bottom=Math.min(bottom,box.top);
+   if(selector==='.xt-next-episode')occlusions.push({x:box.left-rect.left,y:box.top-rect.top,width:box.width,height:box.height});
+   else if(selector==='#player-infobar'||selector==='#player-vod-infobar'||selector==='.xt-player-chrome')bottom=Math.min(bottom,box.top);
    else hidden=true;
   }
-  const bounds={x:rect.left,y:rect.top,width:rect.width,height:rect.height,clipHeight:Math.max(0,bottom-rect.top),hidden},key=JSON.stringify(bounds);
+  const bounds={x:rect.left,y:rect.top,width:rect.width,height:rect.height,clipHeight:Math.max(0,bottom-rect.top),occlusions,hidden},key=JSON.stringify(bounds);
   if(key!==previousLayout){previousLayout=key;bridge.mediaLayout(bounds);}
  }
  const layoutTimer=setInterval(layout,150);window.addEventListener?.('resize',layout);layout();
