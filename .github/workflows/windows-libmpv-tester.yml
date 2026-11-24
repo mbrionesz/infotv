@@ -5,7 +5,7 @@ on:
       source_ref:
         description: Immutable tester source tag
         required: true
-        default: v0.1.15-test-libmpv.1
+        default: v0.1.16-test-libmpv.1
       tag:
         description: Existing release receiving additional tester installers
         required: true
@@ -75,21 +75,21 @@ jobs:
           if ($files.Count -ne 1) { throw 'Expected the x64 tester installer' }
           $sums=@{}
           foreach ($file in $files) { $sums[$file.Name]=(Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLower() }
-          $sums | ConvertTo-Json | Set-Content dist/windows-tester/SHA256SUMS-XuperWindows-Tester-libmpv-r1.json
-          git archive --format=zip --prefix=XuperWindows-Tester-source/ -o dist/windows-tester/XuperWindows-Tester-libmpv-r1-source.zip HEAD
+          $sums | ConvertTo-Json | Set-Content dist/windows-tester/SHA256SUMS-XuperWindows-Tester-0.1.16-libmpv-r1.json
+          git archive --format=zip --prefix=XuperWindows-Tester-source/ -o dist/windows-tester/XuperWindows-Tester-0.1.16-libmpv-r1-source.zip HEAD
       - uses: actions/upload-artifact@v4
         with:
-          name: XuperWindows-Tester-0.1.15-libmpv
+          name: XuperWindows-Tester-0.1.16-libmpv
           path: |
             dist/windows-tester/*-Setup.exe
-            dist/windows-tester/SHA256SUMS-XuperWindows-Tester-libmpv-r1.json
-            dist/windows-tester/XuperWindows-Tester-libmpv-r1-source.zip
+            dist/windows-tester/SHA256SUMS-XuperWindows-Tester-0.1.16-libmpv-r1.json
+            dist/windows-tester/XuperWindows-Tester-0.1.16-libmpv-r1-source.zip
       - name: Attach tester alternatives without replacing production
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
-          $assets=@((Get-ChildItem dist/windows-tester/*-Setup.exe).FullName)+@('dist/windows-tester/SHA256SUMS-XuperWindows-Tester-libmpv-r1.json','dist/windows-tester/XuperWindows-Tester-libmpv-r1-source.zip')
+          $assets=@((Get-ChildItem dist/windows-tester/*-Setup.exe).FullName)+@('dist/windows-tester/SHA256SUMS-XuperWindows-Tester-0.1.16-libmpv-r1.json','dist/windows-tester/XuperWindows-Tester-0.1.16-libmpv-r1-source.zip')
           gh release upload $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY @assets
           if ($LASTEXITCODE -ne 0) { throw 'Tester upload failed' }
