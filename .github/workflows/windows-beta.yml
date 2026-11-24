@@ -83,6 +83,7 @@ jobs:
             dist/xuperwindows-0.1.15-*.png
       - name: Attach unchanged latest Tizen files to the clean release
         if: inputs.tag != inputs.tizen_source_tag
+        if: inputs.tag != inputs.tizen_source_tag
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
