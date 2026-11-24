@@ -9,7 +9,7 @@ on:
       source_ref:
         description: Windows source tag (independent version)
         required: true
-        default: v0.1.16-beta.1
+        default: v0.1.16-beta.2
 
       tizen_source_tag:
         description: Published release containing the current verified Tizen files

@@ -5,7 +5,7 @@ on:
       source_ref:
         description: Immutable tester source tag
         required: true
-        default: v0.1.16-test-libmpv.1
+        default: v0.1.16-test-libmpv.2
       tag:
         description: Existing release receiving additional tester installers
         required: true
