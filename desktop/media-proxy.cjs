@@ -50,7 +50,7 @@ async function createMediaProxy({stream,resolver,modules={http,https},onAuthFail
     if(track()&&[401,403,404,410].includes(remote.statusCode))onAuthFailure(remote.statusCode);
     const safe={};for(const key of ['content-type','content-length','content-range','accept-ranges'])if(remote.headers[key])safe[key]=remote.headers[key];
     safe['Cache-Control']='no-store';response.writeHead(remote.statusCode||502,safe);
-    remote.on('data',chunk=>{if(track()){telemetry.bytes+=chunk.length;telemetry.lastDataAt=Date.now();telemetry.phase='receiving';}});
+    remote.on('data',chunk=>{if(live()&&context.media){telemetry.bytes+=chunk.length;telemetry.lastDataAt=Date.now();if(track())telemetry.phase='receiving';}});
     remote.on('error',error=>{if(track())telemetry.error=error.code||'STREAM_ERROR';response.destroy();});
     remote.pipe(response);resolve();
    });
