@@ -87,7 +87,7 @@ class MainActivity: ComponentActivity() {
    if(compact) Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically) { Brand(Modifier.weight(1f),stats);Actions(vm) }
    Row(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
     if(!compact)Brand(Modifier.weight(1f),stats)
-    Section.entries.forEach { section->NavigationButton(section.label,state.section==section,{vm.select(section)},Modifier.focusRequester(tabFocus.getValue(section)).focusProperties {canFocus=!tv||menuFocusReady||state.section==section}.weight(if(compact)1f else .65f),onFocus={if(tv&&menuFocusReady&&state.section!=section)vm.select(section)}) }
+    NavigationGroup(vm,state,tv,menuFocusReady,tabFocus,Modifier.weight(if(compact)1f else 2.2f))
     if(!compact)Actions(vm)
    }
    if(state.demo) Text("MODO DE PRUEBA · Contenido local, no es el catálogo del portal",color=Accent,fontSize=12.sp,modifier=Modifier.padding(bottom=8.dp))
@@ -104,22 +104,38 @@ class MainActivity: ComponentActivity() {
  removing?.let { title->AlertDialog(onDismissRequest={removing=null},title={Text("Quitar de Seguir viendo")},text={Text(title.name)},confirmButton={TextButton(onClick={vm.remove(title);removing=null}){Text("Eliminar")}},dismissButton={TextButton(onClick={removing=null}){Text("Cancelar")}}) }
 }
 @Composable private fun Brand(modifier: Modifier=Modifier,stats: com.matiasb.xuperandroid.data.CatalogStats=com.matiasb.xuperandroid.data.CatalogStats()) { Row(modifier,verticalAlignment=Alignment.CenterVertically) { Icon(painterResource(R.drawable.ic_xuper),null,tint=Color.Unspecified,modifier=Modifier.size(44.dp));Column { Text("XuperAndroid",fontWeight=FontWeight.Bold,fontSize=19.sp);Text("by Matias",fontSize=11.sp,color=XuperStyle.muted);stats.history.lastOrNull()?.let {Text("${it.total} títulos informados",fontSize=10.sp,color=Accent)} } } }
-@Composable private fun Actions(vm: XuperViewModel) {
- Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-  HeaderAction(Icons.Default.Search,"Buscar",vm::search)
-  HeaderAction(Icons.Default.FavoriteBorder,"Mi lista",vm::openFavorites)
-  HeaderAction(Icons.Outlined.Settings,"Ajustes",vm::settingsScreen)
+@Composable private fun NavigationGroup(vm: XuperViewModel,state: UiState,tv: Boolean,ready: Boolean,focus: Map<Section,FocusRequester>,modifier: Modifier=Modifier) {
+ Surface(modifier.testTag("navigation-group"),shape=RoundedCornerShape(16.dp),color=XuperStyle.secondary,contentColor=XuperStyle.foreground,border=BorderStroke(1.dp,XuperStyle.secondary),shadowElevation=2.dp) {
+  BoxWithConstraints(Modifier.padding(4.dp)) {
+   val stacked=maxWidth<330.dp || (maxWidth<440.dp&&LocalConfiguration.current.fontScale>1.25f)
+   Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(2.dp),verticalAlignment=Alignment.CenterVertically) {
+     Section.entries.forEach { section->NavigationButton(section.label,state.section==section,{vm.select(section)},Modifier.testTag("nav-${section.name}").focusRequester(focus.getValue(section)).focusProperties {canFocus=!tv||ready||state.section==section}.weight(1f),grouped=true,onFocus={if(tv&&ready&&state.section!=section)vm.select(section)}) }
+     if(!stacked)HeaderAction(Icons.Default.Search,"Buscar",vm::search,grouped=true)
+    }
+    if(stacked)XuperOutlinedButton(onClick=vm::search,modifier=Modifier.fillMaxWidth().testTag("header-Buscar"),colors=ButtonDefaults.outlinedButtonColors(containerColor=Color.Transparent,contentColor=XuperStyle.foreground)){Icon(Icons.Default.Search,"Buscar");Spacer(Modifier.width(8.dp));Text("Buscar")}
+   }
+  }
  }
 }
-@Composable private fun HeaderAction(icon: ImageVector,label: String,click: ()->Unit) {
+@Composable private fun Actions(vm: XuperViewModel) {
+ Surface(shape=XuperStyle.control,color=Panel,contentColor=XuperStyle.foreground,border=BorderStroke(1.dp,XuperStyle.secondary)) {
+  Row(Modifier.padding(2.dp),horizontalArrangement=Arrangement.spacedBy(2.dp)) {
+   HeaderAction(Icons.Default.FavoriteBorder,"Mi lista",vm::openFavorites,grouped=true)
+   HeaderAction(Icons.Outlined.Settings,"Ajustes",vm::settingsScreen,grouped=true)
+  }
+ }
+}
+@Composable private fun HeaderAction(icon: ImageVector,label: String,click: ()->Unit,grouped: Boolean=false) {
  var focused by remember {mutableStateOf(false)}
- Surface(onClick=click,shape=XuperStyle.control,color=if(focused)XuperStyle.secondary else Panel,contentColor=XuperStyle.foreground,border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)XuperStyle.ring else XuperStyle.secondary),modifier=Modifier.size(48.dp).testTag("header-$label").onFocusChanged {focused=it.hasFocus}) {
+ Surface(onClick=click,shape=RoundedCornerShape(10.dp),color=if(focused)XuperStyle.card else if(grouped)Color.Transparent else Panel,contentColor=XuperStyle.foreground,border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)XuperStyle.ring else if(grouped)Color.Transparent else XuperStyle.secondary),modifier=Modifier.size(48.dp).testTag("header-$label").onFocusChanged {focused=it.hasFocus}) {
   Box(contentAlignment=Alignment.Center){Icon(icon,label,Modifier.size(23.dp))}
  }
 }
-@Composable private fun NavigationButton(label: String,selected: Boolean,click: ()->Unit,modifier: Modifier=Modifier,onFocus: ()->Unit={}) {
- var focused by remember { mutableStateOf(false) }
- XuperOutlinedButton(onClick=click,modifier=modifier.shadow(if(selected||focused)4.dp else 0.dp,XuperStyle.control).onFocusChanged { focused=it.hasFocus;if(it.hasFocus)onFocus() },shape=RoundedCornerShape(12.dp),border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)Accent else if(selected)XuperStyle.foreground else XuperStyle.secondary),colors=ButtonDefaults.outlinedButtonColors(containerColor=if(selected)XuperStyle.foreground else if(focused)XuperStyle.secondary else Panel,contentColor=if(selected)XuperStyle.primaryText else XuperStyle.foreground),contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp)){Text(label,maxLines=1)}
+@Composable private fun NavigationButton(label: String,selected: Boolean,click: ()->Unit,modifier: Modifier=Modifier,grouped: Boolean=false,onFocus: ()->Unit={}) {
+ var focused by remember {mutableStateOf(false)}
+ val shape=RoundedCornerShape(if(grouped)10.dp else 12.dp)
+ XuperOutlinedButton(onClick=click,modifier=modifier.shadow(if(selected||focused)2.dp else 0.dp,shape).onFocusChanged {focused=it.hasFocus;if(it.hasFocus)onFocus()},shape=shape,border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)Accent else if(selected)XuperStyle.foreground else if(grouped)Color.Transparent else XuperStyle.secondary),colors=ButtonDefaults.outlinedButtonColors(containerColor=if(selected)XuperStyle.foreground else if(focused)XuperStyle.card else if(grouped)Color.Transparent else Panel,contentColor=if(selected)XuperStyle.primaryText else XuperStyle.foreground),contentPadding=PaddingValues(horizontal=if(grouped)6.dp else 12.dp,vertical=12.dp)){Text(label,maxLines=1,overflow=TextOverflow.Ellipsis)}
 }
 @Composable private fun CatalogHome(vm: XuperViewModel,state: UiState,history: List<WatchProgress>,compact: Boolean,tv: Boolean,remove: (Title)->Unit) {
  val cards=categoryCards(state);val grid=rememberLazyGridState();LaunchedEffect(state.section){grid.scrollToItem(0)};val pad=if(tv)20.dp else 12.dp

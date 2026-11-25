@@ -106,4 +106,14 @@ class AndroidSmokeTest {
   compose.onNodeWithContentDescription("Ajustes").performClick();assertBright("settings-heading")
  }
 
+ @Test fun groupedNavigationFitsSmallPhoneAndKeepsSearchInside() {
+  shell("wm size 880x1760");shell("wm density 440");compose.waitForIdle()
+  val group=compose.onNodeWithTag("navigation-group").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+  for(tag in listOf("nav-TV","nav-MOVIES","nav-SERIES","header-Buscar")){
+   val bounds=compose.onNodeWithTag(tag).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+   org.junit.Assert.assertTrue("$tag must stay inside the shared navigation panel",bounds.left>=group.left-1&&bounds.right<=group.right+1&&bounds.top>=group.top-1&&bounds.bottom<=group.bottom+1)
+  }
+  compose.onNodeWithContentDescription("Buscar").performClick();compose.onNode(hasSetTextAction()).assertIsDisplayed()
+ }
+
 }

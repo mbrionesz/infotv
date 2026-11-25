@@ -47,6 +47,9 @@ class AndroidScreenshotsTest {
   scenario.onActivity {model.back()};compose.waitUntil(30000){model.state.value.screen==Screen.HOME&&!model.state.value.loading}
   section(Section.MOVIES);compose.onNodeWithContentDescription("Buscar").performClick();capture("phone-busqueda")
   scenario.close();compose.waitForIdle()
+  shell("wm size 880x1760");shell("wm density 440");launch()
+  section(Section.MOVIES);capture("phone-small-peliculas")
+  scenario.close();compose.waitForIdle()
   shell("wm size 1600x1000");shell("wm density 240");launch()
   section(Section.MOVIES);capture("tablet-peliculas")
   section(Section.SERIES);capture("tablet-series")
