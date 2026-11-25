@@ -5,6 +5,8 @@ import okhttp3.dnsoverhttps.DnsOverHttps
 import java.net.InetAddress
 import java.util.concurrent.*
 import java.io.IOException
+internal data class ResolverEndpoint(val ip: String,val host: String,val path: String,val provider: String)
+
 /** Race independent secure resolvers; retain Android DNS as a bounded, delayed fallback. */
 class BoundedDns(
  private val resolvers: List<Dns> = secureResolvers(),
@@ -52,17 +54,14 @@ class BoundedDns(
  }
  companion object {
   // Separate bounded pools keep a stuck platform resolver from starving secure DNS.
-  private fun pool(size: Int,name: String)=ThreadPoolExecutor(size,size,0L,TimeUnit.MILLISECONDS,ArrayBlockingQueue<Runnable>(32),{task->Thread(task,name).apply {isDaemon=true}})
+  private fun pool(size: Int,name: String)=ThreadPoolExecutor(size,size,0L,TimeUnit.MILLISECONDS,ArrayBlockingQueue<Runnable>(128),{task->Thread(task,name).apply {isDaemon=true}})
   private val securePool=pool(6,"xuper-secure-dns")
   private val systemPool=pool(2,"xuper-system-dns")
   private fun secureResolvers(): List<Dns> {
    val http=OkHttpClient.Builder().callTimeout(2500,TimeUnit.MILLISECONDS).build()
-   return listOf(
-    "https://cloudflare-dns.com/dns-query" to listOf("1.1.1.1","1.0.0.1"),
-    "https://dns.google/dns-query" to listOf("8.8.8.8","8.8.4.4"),
-    "https://dns.quad9.net/dns-query" to listOf("9.9.9.9","149.112.112.112")
-   ).map { (url,ips)->DnsOverHttps.Builder().client(http).url(url.toHttpUrl())
-    .bootstrapDnsHosts(ips.map {InetAddress.getByName(it)})
+   return SHARED_RESOLVERS.map { endpoint->DnsOverHttps.Builder().client(http)
+    .url(("https://"+endpoint.host+endpoint.path).toHttpUrl())
+    .bootstrapDnsHosts(InetAddress.getByName(endpoint.ip))
     .includeIPv6(false).build() }
   }
  }

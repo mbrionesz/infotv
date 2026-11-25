@@ -30,4 +30,11 @@ class BoundedDnsTest {
   val calls=AtomicInteger();val resolver=BoundedDns(listOf(dns {calls.incrementAndGet();listOf(address)}),failed,500,100)
   resolver.lookup("portal.example");resolver.lookup("portal.example");assertEquals(1,calls.get())
  }
+ @Test fun lastResolverCanSucceedAfterEarlierEndpointsFail() {
+  val calls=AtomicInteger()
+  val resolvers=List(17) {index->dns {calls.incrementAndGet();if(index==16)listOf(address)else throw UnknownHostException("fixture-$index")} }
+  assertEquals(listOf(address),BoundedDns(resolvers,failed,1500,0).lookup("portal.example"))
+  assertEquals(17,calls.get())
+ }
+
 }
