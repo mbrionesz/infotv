@@ -35,12 +35,14 @@ class AndroidSmokeTest {
  }
  @Test fun tabletAndTvLayoutsSupportRemoteTabFocus() {
   shell("wm size 1600x1000");shell("wm density 160");compose.waitForIdle();screenshot("tablet-movies")
-  scenario.close();val context=ApplicationProvider.getApplicationContext<XuperApplication>()
+  scenario.close();compose.waitForIdle();val context=ApplicationProvider.getApplicationContext<XuperApplication>()
   shell("wm size 1920x1080")
   scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
   compose.waitUntil(30_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()}
   lateinit var vm: XuperViewModel;scenario.onActivity { vm=ViewModelProvider(it)[XuperViewModel::class.java] }
-  compose.onNodeWithText("TV").performSemanticsAction(SemanticsActions.RequestFocus) { it() }
+  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN)
+  compose.onNodeWithText("TV").performSemanticsAction(SemanticsActions.RequestFocus) { action -> org.junit.Assert.assertTrue("TV button must accept focus",action()) }
+  compose.onNodeWithText("TV").assertIsFocused()
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.TV};screenshot("tv-live")
   InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT)
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.MOVIES}
