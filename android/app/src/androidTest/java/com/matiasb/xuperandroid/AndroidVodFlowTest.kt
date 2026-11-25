@@ -88,4 +88,13 @@ class AndroidVodFlowTest {
   scenario.onActivity {vm.back()};SystemClock.sleep(1200)
   assertEquals(Screen.HOME,vm.state.value.screen);assertNull(vm.state.value.playing);assertNull(vm.player.player);assertFalse(vm.state.value.loading)
  }
+ @Test fun backgroundDuringResolveCannotStartPlaybackAndCanRetry() {
+  val backend=Backend(resolveDelay=700);backend(backend);val title=Title("qa-background-movie","Película: segundo plano",Kind.MOVIE,durationSeconds=12)
+  scenario.onActivity {vm.play(title)};compose.waitUntil(15000){backend.attempts.get()>0&&vm.state.value.loading}
+  scenario.onActivity {vm.background()};SystemClock.sleep(1100)
+  assertNull(vm.player.player);assertNull(vm.state.value.playing);assertFalse(vm.state.value.loading)
+  compose.onNodeWithText("Reintentar").assertIsEnabled().performClick();ready()
+  assertEquals(2,backend.attempts.get())
+ }
+
 }

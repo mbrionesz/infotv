@@ -5,6 +5,7 @@ Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identi
 ## Novedades de beta 6
 
 - Reintento disponible incluso si falla la obtención inicial del enlace; conserva título, episodio y posición solicitados. Resolución inicial limitada a 60 s y cancelación de búsquedas pendientes al abrir fichas/vídeos.
+- Salir de la app durante la obtención del enlace cancela la preparación y permite retomarla con Reintentar, evitando un inicio tardío en segundo plano.
 - Películas sin identificadores de serie/episodio; contexto de temporada actualizado al reanudar otra temporada, con siguiente episodio correspondiente.
 - Selección entre pistas autorizadas y licencias no vacías; idioma manual disponible aunque tenga otra calidad, con distinción de variantes del mismo idioma y selección visible.
 - Ficha alternativa `type=1` solo ante `portal100006`; ruta SLB alternativa ante fallos de transporte, preservando rechazos regionales/de perfil. Enlaces malformados y errores de preparación se muestran sin dejar caer la app.

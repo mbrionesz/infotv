@@ -150,7 +150,14 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  fun remove(title: Title) { viewModelScope.launch { library.remove(title) } }
  fun changeSetting(key: String,value: Int) { viewModelScope.launch { library.set(key,value) } }
  fun checkpoint() { val playing=state.value.playing?:return;val snapshot=player.snapshot.value;if(snapshot.positionMs<=0)return;viewModelScope.launch { library.checkpoint(playing,snapshot.positionMs,snapshot.durationMs) } }
- fun background() { checkpoint();player.pause() }
+ fun background() {
+  checkpoint();player.pause()
+  val current=state.value
+  if(current.screen==Screen.PLAYER&&current.loading&&current.playing==null) {
+   request?.cancel()
+   mutable.update {it.copy(loading=false,error="La preparación se interrumpió al salir. Pulsa Reintentar para continuar.")}
+  }
+ }
  fun stopPlayer() { checkpoint();player.release() }
  fun back(): Boolean {
   val old=state.value;if(old.screen==Screen.HOME)return false
