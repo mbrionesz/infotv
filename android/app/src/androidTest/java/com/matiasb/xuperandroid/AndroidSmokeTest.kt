@@ -40,7 +40,7 @@ class AndroidSmokeTest {
   scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
   compose.waitUntil(30_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()}
   lateinit var vm: XuperViewModel;scenario.onActivity { vm=ViewModelProvider(it)[XuperViewModel::class.java] }
-  compose.onNodeWithText("TV").performSemanticsAction(SemanticsActions.RequestFocus)
+  compose.onNodeWithText("TV").performSemanticsAction(SemanticsActions.RequestFocus) { it() }
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.TV};screenshot("tv-live")
   InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT)
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.MOVIES}
