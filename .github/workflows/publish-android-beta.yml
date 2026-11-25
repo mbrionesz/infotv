@@ -17,7 +17,7 @@ on:
       tag:
         description: Existing beta draft tag
         required: true
-        default: v0.1.1-android-beta.2
+        default: v0.1.1-android-beta.3
 permissions:
   contents: write
   actions: read
@@ -84,5 +84,13 @@ jobs:
           "$ANDROID_HOME/build-tools/37.0.0/zipalign" -c -P 16 4 release-payload/*.apk
       - name: Publish verified beta
         run: |
-          gh release upload "$RELEASE_TAG" release-payload/*.apk release-payload/SHA256SUMS.txt release-payload/build-info.json --clobber
+          # Upload sequentially and retry transient service errors without rebuilding the APK.
+          for asset in release-payload/*.apk release-payload/SHA256SUMS.txt release-payload/build-info.json; do
+            uploaded=false
+            for attempt in 1 2 3; do
+              if gh release upload "$RELEASE_TAG" "$asset" --clobber; then uploaded=true; break; fi
+              if [ "$attempt" -lt 3 ]; then sleep $((attempt * 5)); fi
+            done
+            if [ "$uploaded" != true ]; then exit 1; fi
+          done
           gh release edit "$RELEASE_TAG" --draft=false --prerelease --latest=false
