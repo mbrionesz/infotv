@@ -1,3 +1,16 @@
+# XuperAndroid 0.1.1 beta 5: verificación
+
+- Fuente validada: `4a658a2e7f6016d2c2cb3d747e61feda06ad245a`.
+- Catálogo DNS generado al compilar desde `desktop/resolvers.json` mediante la API de fuentes Kotlin generadas de AGP. Comparación exacta de las 17 IP, hostnames TLS y rutas contra el transporte nativo Samsung (`native/transport.cpp`) y diagnósticos del navegador (`browser/dns-diagnostic.js`). Nueve proveedores: Cloudflare, Google, AdGuard, Quad9, NextDNS, Control D, AliDNS, DNS.SB y Mullvad.
+- Un endpoint DoH por IP, bootstrap literal y TLS validado. Se mantienen seis trabajadores seguros, dos de sistema, cola acotada de 128, caché de 64 hosts/60 s y plazo global 3,5 s. Las alternativas pendientes se cancelan tras la primera respuesta válida; no garantiza consultar los 17 en cada operación. Respuestas de bloqueo y rangos privados descartados como en Windows; IPv6 público del sistema continúa admitido.
+- 28 pruebas unitarias y 9 instrumentadas aprobadas, cero fallos/errores/omisiones, en el segundo intento del mismo código: https://github.com/mbrionesz/infotv/actions/runs/45665589273/attempts/2 . El primer intento tuvo tres fallos de foco/navegación en el emulador; se repitió la suite completa sin modificar el código ni omitir pruebas. El artefacto del intento exitoso es `15047823340`.
+- Siete pruebas DNS incluyen alternativa del resolutor 17 cuando fallan los anteriores y rechazo de respuestas de bloqueo. Son pruebas con resolutores simulados; la paridad de configuración no certifica disponibilidad/latencia de cada proveedor desde la conexión del usuario.
+- APK release optimizado/R8, lint, firma v2/v3 y alineación 16 KiB verificados. Mismo certificado que beta 4; APK universal de 4.735.472 bytes. SHA-256: `0f63b520b7c2995f1958fb3a1d5a5f6a0ebc1b7914b2102aef69ce12bc980c8f`.
+- Publicación exitosa: https://github.com/mbrionesz/infotv/actions/runs/45668621520 . Descarga: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.5 . Se transfieren solo APK público y comprobantes, sin keystore.
+- Las pruebas instrumentadas usan debug y contenido local. Release optimizado compilado/verificado, pendiente de pruebas físicas y tiempos reales de carga del portal. No se promete una mejora de velocidad por aumentar el número de resolutores. Perfil, historial, preferencias, búfer y diseño de beta 4 conservados; `magis.js` sin cambios.
+
+## Registro anterior: beta 4
+
 # XuperAndroid 0.1.1 beta 4: verificación
 
 - Fuente validada: `b3aaf70de44e4342721ce00267a0adcd0448dc3f`.
