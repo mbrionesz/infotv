@@ -14,7 +14,12 @@ import com.matiasb.xuperandroid.model.Section
 import org.junit.*
 import org.junit.runner.RunWith
 
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ViewportCaptureTest
+
 /** Captures the published native UI without changing app source or adding mock artwork. */
+@ViewportCaptureTest
 @RunWith(AndroidJUnit4::class)
 class AndroidScreenshotsTest {
  @get:Rule val compose=createEmptyComposeRule()

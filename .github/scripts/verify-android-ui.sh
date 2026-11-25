@@ -30,11 +30,32 @@ PY
 cp -a app/build/reports/androidTests qa-evidence/pip/reports
 cp -a app/build/outputs/androidTest-results qa-evidence/pip/results
 
-timeout 300s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest
-python3 - <<'PY'
+# Keep viewport captures after functional tests: global wm overrides can steal window focus.
+timeout 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe
+python3 - <<'CHECK'
 from pathlib import Path
 import xml.etree.ElementTree as E
 rows=[E.parse(p).getroot().attrib for p in Path('app/build/outputs/androidTest-results/connected/debug').glob('TEST-*.xml')]
-assert sum(int(r.get('tests',0)) for r in rows)>=8, rows
+assert sum(int(r.get('tests',0)) for r in rows)==12, rows
 assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0))==0 for r in rows), rows
-PY
+CHECK
+mkdir -p qa-evidence/functional
+cp -a app/build/reports/androidTests qa-evidence/functional/reports
+cp -a app/build/outputs/androidTest-results qa-evidence/functional/results
+
+timeout 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.ViewportCaptureTest
+python3 - <<'CHECK'
+from pathlib import Path
+import xml.etree.ElementTree as E
+rows=[E.parse(p).getroot().attrib for p in Path('app/build/outputs/androidTest-results/connected/debug').glob('TEST-*.xml')]
+assert sum(int(r.get('tests',0)) for r in rows)==1, rows
+assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0))==0 for r in rows), rows
+CHECK
+mkdir -p qa-evidence/captures
+cp -a app/build/reports/androidTests qa-evidence/captures/reports
+cp -a app/build/outputs/androidTest-results qa-evidence/captures/results
+
+if [ "${XUPER_PORTAL_PROBE:-0}" = 1 ]; then
+  # This produces a redacted diagnostic, not an assertion that the real portal is available.
+  timeout 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PortalProbe
+fi

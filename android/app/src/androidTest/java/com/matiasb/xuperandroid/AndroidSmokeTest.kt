@@ -20,11 +20,17 @@ import org.junit.runner.RunWith
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PipPlatformTest
 
+@FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
 @RunWith(AndroidJUnit4::class)
 class AndroidSmokeTest {
  @get:Rule val compose=createEmptyComposeRule()
  private lateinit var scenario: ActivityScenario<MainActivity>
- @Before fun start() { val context=ApplicationProvider.getApplicationContext<XuperApplication>();scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));compose.waitUntil(90_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()} }
+ @Before fun start() { val context=ApplicationProvider.getApplicationContext<XuperApplication>();(context as? XuperTestApplication)?.catalogOverride=null;scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));compose.waitUntil(90_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()} }
+ private fun hardwareKey(code: Int) {
+  lateinit var host: MainActivity;scenario.onActivity {host=it}
+  compose.waitUntil(30000){host.hasWindowFocus()}
+  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(code)
+ }
  private fun screenshot(name: String) { val context=ApplicationProvider.getApplicationContext<XuperApplication>();val file=File(context.getExternalFilesDir("qa"),name+".png");file.parentFile!!.mkdirs();InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()?.let { image->file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle() } }
  private fun shell(command: String) { ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use { it.readBytes() } }
  @After fun stop() { scenario.onActivity {ViewModelProvider(it)[XuperViewModel::class.java].stopPlayer();it.clearPip()};scenario.close();shell("wm size reset");shell("wm density reset") }
@@ -32,7 +38,7 @@ class AndroidSmokeTest {
   screenshot("phone-movies");compose.onAllNodesWithText("Series")[0].performClick();compose.waitUntil(30_000){compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty()}
   screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed()
   // Use a real hardware Back event after lazy scrolling, rather than Espresso's stale root-focus picker.
-  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+  hardwareKey(KeyEvent.KEYCODE_BACK)
   lateinit var model: XuperViewModel;scenario.onActivity {model=ViewModelProvider(it)[XuperViewModel::class.java]}
   compose.waitUntil(15000){model.state.value.screen==Screen.HOME}
   compose.onNodeWithContentDescription("Buscar").performClick();compose.onNode(hasSetTextAction()).performTextInput("Horizontes");compose.waitForIdle();assert(compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty())
@@ -51,13 +57,13 @@ class AndroidSmokeTest {
   lateinit var vm: XuperViewModel;scenario.onActivity { vm=ViewModelProvider(it)[XuperViewModel::class.java] }
   org.junit.Assert.assertEquals(com.matiasb.xuperandroid.model.Section.MOVIES,vm.state.value.section)
   compose.onAllNodesWithText("Películas")[0].assertIsFocused()
-  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN)
+  hardwareKey(KeyEvent.KEYCODE_DPAD_DOWN)
   compose.onNodeWithText("TV").performSemanticsAction(SemanticsActions.RequestFocus) { action -> org.junit.Assert.assertTrue("TV button must accept focus",action()) }
   compose.onNodeWithText("TV").assertIsFocused()
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.TV};screenshot("tv-live")
-  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT)
+  hardwareKey(KeyEvent.KEYCODE_DPAD_RIGHT)
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.MOVIES}
-  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_RIGHT)
+  hardwareKey(KeyEvent.KEYCODE_DPAD_RIGHT)
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.SERIES};screenshot("tv-series")
  }
 
@@ -65,7 +71,7 @@ class AndroidSmokeTest {
   compose.onNodeWithText("Ver ficha",substring=true).performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Similares").fetchSemanticsNodes().isNotEmpty()}
   compose.onNodeWithText("Mi lista").performClick()
-  pressBack();compose.onNodeWithContentDescription("Mi lista").performClick()
+  hardwareKey(KeyEvent.KEYCODE_BACK);compose.onNodeWithContentDescription("Mi lista").performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Quitar de mi lista").fetchSemanticsNodes().isNotEmpty()}
   compose.onAllNodesWithText("Quitar de mi lista")[0].performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}

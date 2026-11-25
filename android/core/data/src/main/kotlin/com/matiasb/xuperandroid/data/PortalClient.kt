@@ -23,7 +23,8 @@ suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation 
   override fun onResponse(call: Call,response: Response) { if(continuation.isActive)continuation.resume(response) else response.close() }
  })
 }
-class PortalClient(private val vault: SessionVault, val http: OkHttpClient=networkClient(),private val observe: suspend (Map<String,String>)->Unit={}) {
+fun interface PortalRequests { suspend fun request(route: String,bean: JSONObject): JSONObject }
+class PortalClient(private val vault: SessionVault, val http: OkHttpClient=networkClient(),private val observe: suspend (Map<String,String>)->Unit={}) : PortalRequests {
  private val mutex=Mutex();@Volatile private var session: JSONObject?=vault.read();@Volatile private var preferred=""
  private val hosts=listOf("ftmrmy.jdfey0cd.com","fuxok.nguvmqhpk.com","eajmnp.hcgv1dt8.com","mptec.dhkrxuzcy.com","hinumz.a878kkoyc.com","krdwvd.swcaw7qx.com","osuhk.m3x8o50te.com","oogoy.f30c96w8.com","dtgrd.txhnojlbu.com","c2tgd.izvhrdcjb.com")
  private fun device()=JSONObject().put("loginType","2").put("appLanguage","en").put("hardwareInfo",Build.HARDWARE).put("model",Build.MODEL).put("product",Build.PRODUCT).put("cpu",Build.SUPPORTED_ABIS.firstOrNull().orEmpty()).put("B29","").put("reserve1","583442714b345572434a4d5769637461545a735936413d3d").put("deviceToken","").put("drmId",Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(vault.installationId.toByteArray()))).put("sdkVer",PROTOCOL_SDK).put("apkVersion",APK_VERSION).put("sysVersion",PROFILE).put("appId",APP_ID).put("sn",session?.optString("sn").orEmpty())
@@ -52,7 +53,7 @@ class PortalClient(private val vault: SessionVault, val http: OkHttpClient=netwo
   }
  }
  }
- suspend fun request(route: String,bean: JSONObject): JSONObject {
+ override suspend fun request(route: String,bean: JSONObject): JSONObject {
   ensureSession()
   try { return rpc(route,bean) } catch(error: PortalException) {
    if(error.code !in setOf("aaa100027","aaa100028","aaa100080","aaa100082","aaa100083"))throw error

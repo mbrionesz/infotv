@@ -7,7 +7,8 @@ import com.matiasb.xuperandroid.model.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 enum class Screen { HOME, DETAILS, SEARCH, SETTINGS, PLAYER, FAVORITES }
-data class UiState(val screen: Screen=Screen.HOME,val section: Section=Section.MOVIES,val items: List<Title> = emptyList(),val columns: List<Choice> = emptyList(),val filters: Filters=Filters(),val query: Query=Query(),val page: Int=0,val hasMore: Boolean=false,val total: Int?=null,val loading: Boolean=false,val error: String?=null,val details: Details?=null,val seasonId: String="",val playing: Playing?=null,val demo: Boolean=false,val similar: List<Title> = emptyList())
+data class PlaybackRequest(val title: Title,val episode: Episode?=null,val resume: WatchProgress?=null,val position: Long?=null,val audio: String="",val autoplay: Boolean=true)
+data class UiState(val screen: Screen=Screen.HOME,val section: Section=Section.MOVIES,val items: List<Title> = emptyList(),val columns: List<Choice> = emptyList(),val filters: Filters=Filters(),val query: Query=Query(),val page: Int=0,val hasMore: Boolean=false,val total: Int?=null,val loading: Boolean=false,val error: String?=null,val details: Details?=null,val seasonId: String="",val playing: Playing?=null,val playRequest: PlaybackRequest?=null,val demo: Boolean=false,val similar: List<Title> = emptyList())
 class XuperViewModel(application: Application): AndroidViewModel(application) {
  private val app=application as XuperApplication
  val library=app.library;val player by lazy { app.player }
@@ -21,7 +22,7 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  private var lastOrigins=listOf("https://ftmrmy.jdfey0cd.com","https://fuxok.nguvmqhpk.com")
  val settings=library.settings.stateIn(viewModelScope,SharingStarted.Eagerly,Settings())
  private var request: Job?=null;private var searchJob: Job?=null;private var beforePlayer=Screen.HOME
- private val repository: CatalogRepository get()=if(state.value.demo)FixtureRepository() else app.portal
+ private val repository: CatalogRepository get()=app.repository(state.value.demo)
  init { request=viewModelScope.launch { yield();reload() };viewModelScope.launch { while(isActive){delay(5000);checkpoint()} } }
  fun demo(enabled: Boolean) { countJob?.cancel();request?.cancel();mutable.value=UiState(demo=enabled,section=state.value.section);reload() }
  fun select(section: Section) { if(state.value.section==section&&state.value.screen==Screen.HOME)return;request?.cancel();searchJob?.cancel();mutable.value=UiState(section=section,demo=state.value.demo);reload() }
@@ -48,14 +49,14 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  fun openCategory(query: Query) { mutable.update { it.copy(screen=Screen.SEARCH,query=query) };reload() }
  fun search() { request?.cancel();mutable.update { it.copy(screen=Screen.SEARCH,query=Query()) };reload() }
  fun query(query: Query) { mutable.update { it.copy(query=query) };searchJob?.cancel();searchJob=viewModelScope.launch { delay(350);reload() } }
- fun settingsScreen() { request?.cancel();mutable.update { it.copy(screen=Screen.SETTINGS,query=Query(),loading=false) } }
+ fun settingsScreen() { searchJob?.cancel();request?.cancel();mutable.update { it.copy(screen=Screen.SETTINGS,query=Query(),loading=false) } }
  fun detail(title: Title, season: String = "") {
   if (title.kind == Kind.LIVE) { play(title); return }
-  request?.cancel()
+  searchJob?.cancel();request?.cancel()
   request = viewModelScope.launch {
    mutable.update { it.copy(screen=Screen.DETAILS, details=if(season.isBlank()) Details(title) else it.details, seasonId=season.ifBlank { title.id }, loading=true, error=null, query=Query(), similar=emptyList()) }
    try {
-    val details = repository.details(title, season)
+    val details = withTimeout(60_000){repository.details(title, season)}
     ensureActive()
     mutable.update { it.copy(details=details, loading=false) }
     val genre = details.title.genres.firstOrNull()
@@ -69,41 +70,74 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
     }
    } catch (error: CancellationException) {
     if(error is TimeoutCancellationException) mutable.update { it.copy(loading=false,error=message(error)) } else throw error
-   } catch (error: Exception) { mutable.update { it.copy(loading=false,error=message(error)) } }
+   } catch (error: Exception) { ensureActive();mutable.update { it.copy(loading=false,error=message(error)) } }
   }
  }
 
  fun play(title: Title,episode: Episode?=null,resume: WatchProgress?=null,overridePosition: Long?=null,audioChoice: String="",autoplay: Boolean=true) {
-  val previous=state.value;if(previous.screen!=Screen.PLAYER)beforePlayer=previous.screen
-  request?.cancel();request=viewModelScope.launch {
-   checkpoint();player.release();mutable.update { it.copy(screen=Screen.PLAYER,loading=true,error=null,playing=null) }
-   try {
+  val previous=state.value
+  if(previous.screen!=Screen.PLAYER)beforePlayer=previous.screen
+  val intent=PlaybackRequest(title,episode.takeIf {title.kind==Kind.SERIES},resume,overridePosition,audioChoice,autoplay)
+  searchJob?.cancel();request?.cancel()
+  request=viewModelScope.launch {
+   checkpoint();player.release()
+   mutable.update {it.copy(screen=Screen.PLAYER,loading=true,error=null,playing=null,playRequest=intent)}
+   val started=try {withTimeout(60_000) {
     val saved=resume?:library.find(title)
-    val selectedEpisode=episode?:saved?.episodeId?.takeIf { title.kind==Kind.SERIES }?.let { Episode(it,saved.episodeNumber,"Episodio ${saved.episodeNumber}",season=saved.seasonNumber) }?:previous.details?.takeIf { it.title.id==title.id }?.episodes?.firstOrNull()
-    if(title.kind==Kind.SERIES&&selectedEpisode==null)throw java.io.IOException("Selecciona un episodio desde la ficha")
-    val seasonId=saved?.seasonId?.takeIf { selectedEpisode?.id==saved.episodeId&&it.isNotBlank() }?:previous.seasonId.takeIf { previous.details?.title?.id==title.id&&it.isNotBlank() }?:title.id
+    val selectedEpisode=if(title.kind!=Kind.SERIES)null else intent.episode
+     ?:saved?.episodeId?.takeIf {it.isNotBlank()}?.let {Episode(it,saved.episodeNumber,"Episodio ${saved.episodeNumber}",season=saved.seasonNumber)}
+     ?:previous.details?.takeIf {it.title.id==title.id&&it.title.kind==Kind.SERIES}?.episodes?.firstOrNull()
+    if(title.kind==Kind.SERIES&&selectedEpisode?.id.isNullOrBlank())throw java.io.IOException("Selecciona un episodio desde la ficha")
+    val seasonId=saved?.seasonId?.takeIf {selectedEpisode?.id==saved.episodeId&&it.isNotBlank()}
+     ?:previous.seasonId.takeIf {previous.details?.title?.id==title.id&&it.isNotBlank()}?:title.id
+    val sameEpisode=title.kind==Kind.MOVIE||saved?.episodeId==selectedEpisode?.id
+    val start=overridePosition?:if(saved!=null&&!saved.completed&&sameEpisode)saved.positionMs else 0
+    mutable.update {it.copy(playRequest=intent.copy(episode=selectedEpisode,resume=saved,position=start))}
     val connectivity=getApplication<Application>().getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
     val cap=DataPolicy.maxHeight(connectivity.getNetworkCapabilities(connectivity.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)==true,connectivity.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
     val manual=library.titleAudio(title)
     val desiredAudio=audioChoice.ifBlank {manual?.first.orEmpty()}
-    val resolved=repository.resolve(title,selectedEpisode,seasonId,cap,desiredAudio);val stream=resolved.copy(durationSeconds=resolved.durationSeconds.takeIf {it>0}?:selectedEpisode?.durationSeconds?.takeIf {it>0}?:title.durationSeconds);ensureActive()
-    val sameEpisode=title.kind==Kind.MOVIE||saved?.episodeId==selectedEpisode?.id
-    val start=overridePosition?:if(saved!=null&&!saved.completed&&sameEpisode)saved.positionMs else 0
-    val playing=Playing(title,selectedEpisode,seasonId,stream,start);lastOrigins=stream.sources.mapNotNull {runCatching {java.net.URI(it.url).let { uri->if(uri.scheme in listOf("http","https"))"${uri.scheme}://${uri.rawAuthority}" else null}}.getOrNull()}.take(4);mutable.update { it.copy(playing=playing,loading=false) }
-    ensureActive();player.prepare(playing,settings.value,manual,renew={repository.resolve(title,selectedEpisode,seasonId,cap,desiredAudio)});if(!autoplay)player.pause()
-    if(title.kind==Kind.SERIES&&(previous.details==null||previous.details.title.id!=title.id)){
-     try {val details=repository.details(title,seasonId);ensureActive();mutable.update {it.copy(details=details,seasonId=seasonId)}} catch(error: CancellationException){throw error} catch(_: Exception){}
-    }
-   }catch(error: CancellationException){if(error is TimeoutCancellationException)mutable.update { it.copy(loading=false,error=message(error)) } else throw error}catch(error: Exception){mutable.update { it.copy(loading=false,error=message(error)) }}
+    val repo=withContext(Dispatchers.IO){repository}
+    val resolved=repo.resolve(title,selectedEpisode,seasonId,cap,desiredAudio,manual?.second.orEmpty())
+    require(resolved.sources.isNotEmpty()) {"El portal no entregó un enlace de vídeo"}
+    val stream=resolved.copy(durationSeconds=resolved.durationSeconds.takeIf {it>0}?:selectedEpisode?.durationSeconds?.takeIf {it>0}?:title.durationSeconds)
+    ensureActive()
+    val currentDetails=previous.details?.takeIf {it.title.id==title.id&&it.title.kind==title.kind&&previous.seasonId==seasonId}
+    val playing=Playing(title,selectedEpisode,seasonId,stream,start)
+    lastOrigins=stream.sources.mapNotNull {runCatching {java.net.URI(it.url).let {uri->if(uri.scheme in listOf("http","https"))"${uri.scheme}://${uri.rawAuthority}"else null}}.getOrNull()}.take(4)
+    mutable.update {it.copy(playing=playing,loading=false,details=currentDetails,seasonId=seasonId)}
+    val selectedAudio=if(audioChoice.isNotBlank())stream.portalAudio.firstOrNull {it.selected}?.let {it.language to it.name}?:manual else manual
+    player.prepare(playing,settings.value,selectedAudio,renew={repo.resolve(title,selectedEpisode,seasonId,cap,desiredAudio,manual?.second.orEmpty())})
+    if(!autoplay)player.pause()
+    playing
+   }} catch(error: CancellationException) {
+    if(error is TimeoutCancellationException&&isActive){player.release();mutable.update {it.copy(loading=false,error=message(error))};null}else throw error
+   } catch(error: Exception) {ensureActive();player.release();mutable.update {it.copy(loading=false,error=message(error))};null}
+   // Details fetched for a resumed season are optional; they cannot invalidate a playing video.
+   if(started!=null&&title.kind==Kind.SERIES&&state.value.details==null) {
+    try {
+     val details=withTimeout(25_000){repository.details(title,started.seasonId)};ensureActive()
+     mutable.update {it.copy(details=details,seasonId=started.seasonId)}
+    } catch(error: TimeoutCancellationException){ensureActive()}
+      catch(error: CancellationException){throw error}
+      catch(_: Exception){ensureActive()}
+   }
   }
  }
- fun openFavorites() {request?.cancel();mutable.update { it.copy(screen=Screen.FAVORITES,loading=false,query=Query()) }}
+
+ fun openFavorites() {searchJob?.cancel();request?.cancel();mutable.update { it.copy(screen=Screen.FAVORITES,loading=false,query=Query()) }}
  fun refreshStats(force: Boolean=false) {if(state.value.demo||countJob?.isActive==true||!force&&System.currentTimeMillis()-stats.value.checkedAt<1800000)return;countJob=viewModelScope.launch {try {withTimeout(30000){val repo=withContext(Dispatchers.IO){repository};val movies=repo.browse(Section.MOVIES,Query(),1).reportedTotal;val series=repo.browse(Section.SERIES,Query(),1).reportedTotal;if(movies!=null&&series!=null)app.insights.record(movies,series)}}catch(error: CancellationException){throw error}catch(_: Exception){} } }
  fun diagnose() {if(diagnosticJob?.isActive==true)return;diagnosticJob=viewModelScope.launch {diagnosing.value=true;try{networkReport.value=app.diagnostics.run(lastOrigins)}finally{diagnosing.value=false}}}
  fun resume(progress: WatchProgress)=play(progress.title,resume=progress)
- fun retry() { val playing=state.value.playing?:return;val at=player.snapshot.value.positionMs;play(playing.title,playing.episode,overridePosition=at) }
+ fun retry() {
+  val current=state.value;if(current.screen!=Screen.PLAYER||current.loading)return
+  val intent=current.playRequest?:return
+  val at=player.snapshot.value.positionMs.takeIf {it>0}?:intent.position
+  val autoplay=player.player?.playWhenReady?:intent.autoplay
+  play(intent.title,intent.episode,intent.resume,at,intent.audio,autoplay)
+ }
  fun changeChannel(direction: Int) {val current=state.value.playing?.title?:return;if(current.kind!=Kind.LIVE)return;val channels=state.value.items.filter {it.kind==Kind.LIVE};val index=channels.indexOfFirst {it.id==current.id};if(index>=0&&channels.isNotEmpty())play(channels[Math.floorMod(index+direction,channels.size)])}
- fun nextEpisode(): Episode? { val playing=state.value.playing?:return null;if(playing.title.kind!=Kind.SERIES)return null;val list=state.value.details?.takeIf { it.title.id==playing.title.id }?.episodes.orEmpty();val index=list.indexOfFirst { it.id==playing.episode?.id };return list.getOrNull(index+1).takeIf { index>=0 } }
+ fun nextEpisode(): Episode? { val playing=state.value.playing?:return null;if(playing.title.kind!=Kind.SERIES)return null;val list=state.value.details?.takeIf {it.title.id==playing.title.id&&state.value.seasonId==playing.seasonId}?.episodes.orEmpty();val index=list.indexOfFirst { it.id==playing.episode?.id };return list.getOrNull(index+1).takeIf { index>=0 } }
  fun next() { val ep=nextEpisode()?:return;val title=state.value.playing?.title?:return;play(title,ep) }
  fun choosePortalAudio(track: Track) {
   val current=state.value.playing?:return
@@ -121,7 +155,7 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  fun back(): Boolean {
   val old=state.value;if(old.screen==Screen.HOME)return false
   request?.cancel();searchJob?.cancel()
-  if(old.screen==Screen.PLAYER){stopPlayer();mutable.update { it.copy(screen=beforePlayer,playing=null,error=null,loading=false) };return true}
+  if(old.screen==Screen.PLAYER){stopPlayer();mutable.update { it.copy(screen=beforePlayer,playing=null,playRequest=null,error=null,loading=false) };return true}
   mutable.update { it.copy(screen=Screen.HOME,query=Query(),error=null,loading=false) };reload();return true
  }
  private fun message(error: Exception)=if(error is TimeoutCancellationException)"El portal tardó demasiado. Puedes reintentar." else error.message?.take(180)?:"No se pudo completar la operación"

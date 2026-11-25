@@ -3,7 +3,7 @@ import android.app.Application
 import okio.Path.Companion.toPath
 import com.matiasb.xuperandroid.data.*
 import com.matiasb.xuperandroid.player.AndroidPlayer
-class XuperApplication: Application(), coil3.SingletonImageLoader.Factory {
+open class XuperApplication: Application(), coil3.SingletonImageLoader.Factory {
  val http by lazy { networkClient() }
  override fun newImageLoader(context: android.content.Context): coil3.ImageLoader {
   val lowRam=(context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager).isLowRamDevice
@@ -14,5 +14,6 @@ class XuperApplication: Application(), coil3.SingletonImageLoader.Factory {
  val diagnostics by lazy { Diagnostics(http) }
  val library by lazy { LibraryStore(this) }
  val portal by lazy { PortalRepository(PortalClient(SessionVault(this),http){fields->insights.observeVersion(fields)}) }
+ open fun repository(demo: Boolean): CatalogRepository=if(demo)FixtureRepository()else portal
  val player by lazy { AndroidPlayer(this,http) }
 }

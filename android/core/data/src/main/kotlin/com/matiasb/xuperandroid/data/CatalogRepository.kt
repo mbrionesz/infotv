@@ -2,6 +2,11 @@ package com.matiasb.xuperandroid.data
 import com.matiasb.xuperandroid.model.*
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 interface CatalogRepository {
@@ -9,7 +14,7 @@ interface CatalogRepository {
  suspend fun categories(section: Section): List<Choice>
  suspend fun filters(section: Section): Filters
  suspend fun details(title: Title,seasonId: String=""): Details
- suspend fun resolve(title: Title,episode: Episode?=null,seasonId: String="",maxHeight: Int=0,preferredAudio: String=""): Stream
+ suspend fun resolve(title: Title,episode: Episode?=null,seasonId: String="",maxHeight: Int=0,preferredAudio: String="",preferredAudioName: String=""): Stream
 }
 internal fun JSONArray?.objects() = (0 until (this?.length()?:0)).mapNotNull { this?.optJSONObject(it) }
 internal fun JSONObject.text(key: String) = optString(key,"").takeUnless { it=="null" }.orEmpty()
@@ -18,7 +23,7 @@ internal fun JSONObject.title(kind: Kind): Title {
  val actual=if(kind==Kind.LIVE)Kind.LIVE else if(text("programType") in listOf("teleplay","series") || optInt("volumnCount")>1 || kind==Kind.SERIES)Kind.SERIES else Kind.MOVIE
  return Title(text(if(actual==Kind.LIVE)"channelCode" else "contentId"),text("name").ifBlank { text("title") },actual,image("icon").ifBlank { text("posterUrl").ifBlank { image("poster") } },image("stage").ifBlank { image("poster") },text("releaseTime").take(4),text("description").ifBlank { text("synopsis") },text("tags").split(',').filter { it.isNotBlank() },text("originalCountry"),PlaybackPolicy.duration(text("duration")))
 }
-class PortalRepository(private val client: PortalClient): CatalogRepository {
+class PortalRepository(private val client: PortalRequests): CatalogRepository {
  private val columns=java.util.concurrent.ConcurrentHashMap<Section,List<Choice>>()
  private val columnLocks=Section.entries.associateWith {Mutex()}
  private suspend fun call(path: String,bean: JSONObject): JSONObject=client.request(path,bean)
@@ -60,26 +65,39 @@ class PortalRepository(private val client: PortalClient): CatalogRepository {
   return Page(items,page,assets.isNotEmpty()&&(total?.let { page*size<it }?: (assets.size>=size)),total)
  }
  override suspend fun details(title: Title,seasonId: String): Details {
-  val result=call("v4/getItemData",JSONObject().put("contentId",seasonId.ifBlank { title.id }).put("type","0").put("sortType","0").put("language","en").put("macAddr","02:00:00:00:00:00"))
+  val bean=JSONObject().put("contentId",seasonId.ifBlank { title.id }).put("type","0").put("sortType","0").put("language","en").put("macAddr","02:00:00:00:00:00")
+  val result=try {call("v4/getItemData",bean)} catch(error: PortalException) {
+   if(error.code!="portal100006")throw error
+   call("v4/getItemData",JSONObject(bean.toString()).put("type","1"))
+  }
   val asset=result.optJSONObject("assetData")?:throw java.io.IOException("El portal no devolvió la ficha")
-  val episodes=asset.optJSONArray("simpleProgramList").objects().mapIndexed { index, it->Episode(it.text("contentId"),it.optInt("seriesNumber",index+1),it.text("name"),PlaybackPolicy.duration(it.text("duration")),asset.optInt("seasonNumber",1)) }
-  val seasons=asset.optJSONArray("sameSeasonSeriesList").objects().map { Season(it.text("contentId"),it.optInt("seasonNumber",1)) }
+  val episodes=if(title.kind!=Kind.SERIES)emptyList()else asset.optJSONArray("simpleProgramList").objects().mapIndexed { index, it->Episode(it.text("contentId"),it.optInt("seriesNumber",index+1),it.text("name"),PlaybackPolicy.duration(it.text("duration")),asset.optInt("seasonNumber",1)) }.filter {it.id.isNotBlank()}.distinctBy {it.id}.sortedBy {it.number}
+  val seasons=if(title.kind!=Kind.SERIES)emptyList()else asset.optJSONArray("sameSeasonSeriesList").objects().map { Season(it.text("contentId"),it.optInt("seasonNumber",1)) }.filter {it.id.isNotBlank()}.distinctBy {it.id}
   return Details(asset.title(title.kind).copy(id=title.id,kind=title.kind),episodes,seasons)
  }
- override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int,preferredAudio: String): Stream {
+ override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int,preferredAudio: String,preferredAudioName: String): Stream {
   if(title.kind==Kind.LIVE)return resolveLive(title)
-  val play=call("v10/startPlayVOD",JSONObject().put("contentId",episode?.id?:title.id).put("seriesContentId",if(episode!=null)seasonId.ifBlank { title.id } else "").put("startTime",0).put("type","1").put("columnId",0).put("authType",""))
+  val selectedEpisode=episode.takeIf {title.kind==Kind.SERIES}
+  if(title.kind==Kind.SERIES&&selectedEpisode?.id.isNullOrBlank())throw java.io.IOException("Selecciona un episodio desde la ficha")
+  val play=call("v10/startPlayVOD",JSONObject().put("contentId",selectedEpisode?.id?:title.id).put("seriesContentId",if(selectedEpisode!=null)seasonId.ifBlank { title.id } else "").put("startTime",0).put("type","1").put("columnId",0).put("authType",""))
   val program=play.optJSONArray("episodeList")?.optJSONObject(0)?:throw java.io.IOException("No hay pistas disponibles")
   val tracks=program.optJSONArray("totalMovieList").objects().flatMap { group->group.optJSONArray("movieList").objects().map { if(it.text("quality").isBlank())it.put("quality",group.text("quality"));it } }.filter { it.text("contentId").isNotBlank() }
 
-  val chosenHeight=DataPolicy.chooseHeight(tracks.map { vodHeight(it) },maxHeight)
-  val available=tracks.filter { chosenHeight==0||vodHeight(it)==chosenHeight }
-  val selected=available.sortedWith(compareByDescending<JSONObject> { if(preferredAudio.isNotBlank()&&(it.text("contentId")==preferredAudio||vodAudio(it).equals(preferredAudio,true)))1 else 0 }.thenByDescending { vodHeight(it) }.thenByDescending { PlaybackPolicy.audioScore(vodAudio(it),it.text("languageName")) }).firstOrNull()?:throw java.io.IOException("No hay vídeo disponible")
-  val license=selected.optJSONArray("licenseList")?.optJSONObject(0)?.text("license").orEmpty();if(license.isBlank())throw java.io.IOException("El portal no entregó autorización de vídeo")
+  fun trackLicense(track: JSONObject)=track.optJSONArray("licenseList").objects().firstNotNullOfOrNull {it.text("license").takeIf(String::isNotBlank)}.orEmpty()
+  val playable=tracks.filter {trackLicense(it).isNotBlank()}
+  if(playable.isEmpty())throw java.io.IOException("El portal no entregó pistas de vídeo autorizadas")
+  val explicit=playable.filter {preferredAudio.isNotBlank()&&it.text("contentId")==preferredAudio}
+  val preferred=playable.filter {preferredAudio.isNotBlank()&&vodAudio(it).equals(preferredAudio,true)}
+  val named=preferred.filter {preferredAudioName.isNotBlank()&&it.text("languageName").equals(preferredAudioName,true)}
+  val candidates=explicit.ifEmpty {named}.ifEmpty {preferred}.ifEmpty {playable}
+  val chosenHeight=DataPolicy.chooseHeight(candidates.map {vodHeight(it)},maxHeight)
+  val available=candidates.filter {chosenHeight==0||vodHeight(it)==chosenHeight}
+  val selected=available.maxByOrNull {PlaybackPolicy.audioScore(vodAudio(it),it.text("languageName"))}?:throw java.io.IOException("No hay vídeo disponible")
+  val license=trackLicense(selected)
   val extension=if(selected.text("videoFormat").equals("ts",true))"ts" else "mp4"
   val sources=cdnSources("vod",license,"/vod/${selected.text("contentId")}_media.$extension")
-  val subtitles=program.optJSONArray("subtitleList").objects().mapNotNull { item->val file=item.optJSONArray("file")?.optJSONObject(0)?:return@mapNotNull null;val url=file.text("url");if(!url.startsWith("http"))return@mapNotNull null;Subtitle(url,item.text("language"),if(file.text("fileType").equals("vtt",true))"text/vtt" else "application/x-subrip",item.text("name")) }
-  return Stream(sources,if(extension=="ts")"video/mp2t" else "video/mp4",PlaybackPolicy.duration(selected.text("duration").ifBlank { program.text("duration") }),subtitles,selected.text("quality"),vodFps(selected),available.distinctBy {vodAudio(it)+it.text("languageName")}.map {Track(it.text("contentId"),vodAudio(it),it.text("languageName").ifBlank {vodAudio(it)},it.text("contentId")==selected.text("contentId"))})
+  val subtitles=program.optJSONArray("subtitleList").objects().mapNotNull { item->val file=item.optJSONArray("file")?.optJSONObject(0)?:return@mapNotNull null;val url=file.text("url");if(url.toHttpUrlOrNull()==null)return@mapNotNull null;Subtitle(url,item.text("language"),if(file.text("fileType").equals("vtt",true))"text/vtt" else "application/x-subrip",item.text("name")) }
+  return Stream(sources,if(extension=="ts")"video/mp2t" else "video/mp4",PlaybackPolicy.duration(selected.text("duration").ifBlank { program.text("duration").ifBlank {play.text("duration")} }),subtitles,selected.text("quality"),vodFps(selected),playable.groupBy {vodAudio(it)+":"+it.text("languageName")}.values.map {group->val height=DataPolicy.chooseHeight(group.map {vodHeight(it)},maxHeight);group.firstOrNull {it.text("contentId")==selected.text("contentId")}?:group.first {height==0||vodHeight(it)==height}}.map {Track(it.text("contentId"),vodAudio(it),it.text("languageName").ifBlank {vodAudio(it)},it.text("contentId")==selected.text("contentId"))})
  }
  private suspend fun resolveLive(title: Title): Stream {
   val result=call("v4/startPlayLive",JSONObject().put("channelCode",title.id).put("type","1"));val address=result.optJSONArray("liveAddressList").objects().firstOrNull { it.text("license").isNotBlank() }?:throw java.io.IOException("No hay autorización para el canal")
@@ -88,11 +106,16 @@ class PortalRepository(private val client: PortalClient): CatalogRepository {
  private suspend fun cdnSources(tag: String,license: String,path: String): List<Source> {
   val bean=JSONObject().put("hasPay","0").put("userIdentity","1").put("type","merge").put("appVer","49902").put("lang","es").put("encMediaSupported",1).put("liveCodeList",JSONArray().put("masnew_live")).put("appParams","").put("reserve1","583442714b345572434a4d5769637461545a735936413d3d").put("pipFlag","0")
   for(route in listOf("v15/getSlbInfo","v14/getSlbInfo")) {
-   val data=try { call(route,bean) } catch(error: PortalException) { if(error.code=="portal200001"||error.code=="portal100024")throw error else continue }
+   val data=try {call(route,bean)}
+    catch(error: TimeoutCancellationException){currentCoroutineContext().ensureActive();continue}
+    catch(error: CancellationException){throw error}
+    catch(error: PortalException){if(error.code=="portal200001"||error.code=="portal100024")throw error else continue}
+    catch(_: java.io.IOException){continue}
+    catch(_: org.json.JSONException){continue}
    val sources=data.optJSONArray("cdn_list").objects().filter { it.text("tag")==tag }.flatMap { cdn->
     val urls=cdn.optJSONArray("url_list").objects();val signed=urls.firstOrNull { (tag=="live"||it.text("tag")=="free"||it.text("url").contains("tag=free"))&&it.text("url").isNotBlank() }?:return@flatMap emptyList()
     var auth=signed.text("url");if(tag=="live"){val token=Regex("token=([a-fA-F0-9]{32})").find(auth)?.groupValues?.get(1).orEmpty();val now=System.currentTimeMillis();auth+="&sign2_method=sign_o3&instance=0&start_moment=$now&sign2=${PortalCrypto.liveSign(token,now)}"}
-    listOf(cdn.text("main_addr"),cdn.text("spared_addr")).filter { it.isNotBlank() }.distinct().map { base->Source((if(base.startsWith("http"))base else "https://$base").trimEnd('/')+path,mapOf("Content-Auth" to auth,"Content-License" to license,"User-Agent" to "Ranger/4.9.4-17294ac0","App" to PortalClient.APP_ID,"App-Version" to "49902")) }
+    listOf(cdn.text("main_addr"),cdn.text("spared_addr")).filter {it.isNotBlank()}.distinct().mapNotNull {base->val url=((if(base.startsWith("http"))base else "https://$base").trimEnd('/')+path).toHttpUrlOrNull()?:return@mapNotNull null;Source(url.toString(),mapOf("Content-Auth" to auth,"Content-License" to license,"User-Agent" to "Ranger/4.9.4-17294ac0","App" to PortalClient.APP_ID,"App-Version" to "49902")) }
    }.distinctBy { it.url }.take(6)
    if(sources.isNotEmpty())return sources
   }
@@ -105,5 +128,5 @@ class FixtureRepository: CatalogRepository {
  override suspend fun categories(section: Section)=listOf(Choice("action","Acción"),Choice("drama","Drama"),Choice("crime","Crimen"),Choice("thriller","Suspenso"))
  override suspend fun filters(section: Section)=Filters(listOf(Choice("Action","Acción"),Choice("Drama","Drama")),listOf(Choice("2026","2026")))
  override suspend fun details(title: Title,seasonId: String)=Details(title,if(title.kind==Kind.SERIES)(1..3).map { Episode("demo-episode-$it",it,"Episodio $it",12) } else emptyList(),if(title.kind==Kind.SERIES)listOf(Season(title.id,1)) else emptyList())
- override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int,preferredAudio: String)=Stream(listOf(Source("asset:///demo.mp4")),"video/mp4",12,listOf(Subtitle("asset:///demo.srt","es","application/x-subrip","Español de prueba")))
+ override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int,preferredAudio: String,preferredAudioName: String)=Stream(listOf(Source("asset:///demo.mp4")),"video/mp4",12,listOf(Subtitle("asset:///demo.srt","es","application/x-subrip","Español de prueba")))
 }

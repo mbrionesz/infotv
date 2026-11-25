@@ -29,6 +29,7 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
  private val mutable=MutableStateFlow(PlaybackSnapshot());val snapshot: StateFlow<PlaybackSnapshot> = mutable.asStateFlow()
  val player: ExoPlayer? get()=engine
  fun prepare(playing: Playing,preferences: Settings,preferredAudio: Pair<String,String>?,renew: (suspend ()->Stream)?=null) {
+  require(playing.stream.sources.isNotEmpty()) {"El portal no entregó un enlace de vídeo"}
   release();generation++;val run=generation;active=playing;renewer=renew;renewals=0;renewedAt=0;sourceIndex=0;settings=preferences;manualAudio=preferredAudio;audioApplied="";subtitlesManual=false;manualSubtitle=null
   val network=context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
   val cap=DataPolicy.maxHeight(network.getNetworkCapabilities(network.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)==true,network.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
@@ -54,13 +55,15 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
   scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);scope.launch { while(isActive){publish();delay(500)} }
  }
  private fun openSource(position: Long,autoplay: Boolean) {
-  val current=active?:return;val source=current.stream.sources.getOrNull(sourceIndex)?:return;mutable.value=mutable.value.copy(error=null,loading=true)
+  val current=active?:return;val source=current.stream.sources.getOrNull(sourceIndex)?:run {mutable.value=mutable.value.copy(error="No hay enlace de vídeo disponible",loading=false);return};mutable.value=mutable.value.copy(error=null,loading=true)
+  try {
   val item=MediaItem.Builder().setMediaId(current.title.id).setUri(source.url).setMimeType(current.stream.mime.takeIf {it.isNotBlank()}).setMediaMetadata(MediaMetadata.Builder().setTitle(current.title.name).build()).setSubtitleConfigurations(current.stream.subtitles.map { MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(it.url)).setMimeType(it.mime).setLanguage(it.language).setLabel(it.label.ifBlank { it.language }).build() }).build()
   // Capture the fresh stream's credentials for this source; later renewals cannot mutate in-flight requests.
   val headers=current.stream.sources.filter {it.url.startsWith("http")}.associate {OriginCredentials.origin(it.url.toHttpUrl()) to it.headers}
   val transport=http.newBuilder().callTimeout(0,java.util.concurrent.TimeUnit.MILLISECONDS).readTimeout(15,java.util.concurrent.TimeUnit.SECONDS).addInterceptor(OriginCredentials {headers}).build()
   val media=DefaultMediaSourceFactory(DefaultDataSource.Factory(context,OkHttpDataSource.Factory(transport))).createMediaSource(item)
   engine?.apply { setMediaSource(media,position.coerceAtLeast(0));prepare();playWhenReady=autoplay }
+  } catch(_: Exception) {mutable.value=mutable.value.copy(error="No se pudo preparar el enlace de vídeo. Puedes reintentar.",loading=false);engine?.stop()}
  }
  fun recoverConnection(): Boolean {
   val refresh=renewer?:return false;if(renewal?.isActive==true)return true

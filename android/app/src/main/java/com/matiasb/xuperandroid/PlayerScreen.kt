@@ -50,9 +50,11 @@ import kotlinx.coroutines.delay
   if(playing!=null)AndroidView(factory={c->PlayerView(c).apply { useController=false;player=vm.player.player;keepScreenOn=true }},onRelease={it.player=null},update={view->view.player=vm.player.player;vm.player.style(view,settings);view.subtitleView?.setBottomPaddingFraction(if(controls&&!pip).38f else .08f)},modifier=Modifier.fillMaxSize())
   if(state.loading||snapshot.loading)CircularProgressIndicator(Modifier.align(Alignment.Center),color=Color(0xFF64D9FF))
   val error=state.error?:snapshot.error
-  if(error!=null&&!pip)Column(Modifier.align(Alignment.Center).fillMaxWidth(.85f).background(Color(0xE6192231)).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Text(error,color=Color.White);Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){XuperButton(onClick=vm::retry,enabled=playing!=null){Text("Reintentar")};XuperOutlinedButton(onClick={vm.back()}){Text("Volver")}}}
+  if(error!=null&&!pip)Column(Modifier.align(Alignment.Center).fillMaxWidth(.85f).background(Color(0xE6192231)).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Text(error,color=Color.White);Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){XuperButton(onClick=vm::retry,enabled=!state.loading&&!snapshot.loading){Text("Reintentar")};XuperOutlinedButton(onClick={vm.back()}){Text("Volver")}}}
   if(controls&&!pip)Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.8f)))).safeDrawingPadding().padding(horizontal=20.dp,vertical=16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-   val title=playing?.let { it.title.name+(it.episode?.let { ep -> " · EP. ${ep.number} · T${ep.season}" }?:"") }?:"Preparando reproducción…"
+   val title=playing?.let {it.title.name+(it.episode?.takeIf {_ ->it.title.kind==Kind.SERIES}?.let {ep->" · EP. ${ep.number} · T${ep.season}"}?:"")}
+    ?:state.playRequest?.let {it.title.name+(it.episode?.let {ep->" · EP. ${ep.number} · T${ep.season}"}?:"")}
+    ?:"Preparando reproducción…"
    Text(title,color=Color.White,fontWeight=FontWeight.SemiBold,fontSize=19.sp,maxLines=2,overflow=TextOverflow.Ellipsis)
    Text(listOf(if(snapshot.height>0)"${snapshot.width} × ${snapshot.height}" else "",if(snapshot.fps>0)"${"%.2f".format(snapshot.fps)} FPS" else "", "Búfer ${snapshot.bufferMs/1000} s").filter { it.isNotBlank() }.joinToString(" · "),color=Color(0xFFB6C8DA),fontSize=12.sp)
    if(playing?.title?.kind!=Kind.LIVE&&snapshot.durationMs>0) {

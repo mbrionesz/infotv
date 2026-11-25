@@ -1,6 +1,11 @@
 name: XuperAndroid beta
 on:
   workflow_dispatch:
+    inputs:
+      portal_probe:
+        description: Record a redacted real-portal metadata diagnostic with an own installation session
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -26,6 +31,8 @@ jobs:
         run: |
           if [ -e /dev/kvm ]; then sudo chown "$(id -u):$(id -g)" /dev/kvm; fi
       - name: Real Android UI and native playback test
+        env:
+          XUPER_PORTAL_PROBE: ${{ inputs.portal_probe && '1' || '0' }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -43,7 +50,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperAndroid-0.1.1-beta5
+          name: XuperAndroid-0.1.1-beta6
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/
