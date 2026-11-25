@@ -5,6 +5,7 @@
 - Evidencia: https://github.com/mbrionesz/infotv/actions/runs/45645971515 . Incluye contraste real, límites de navegación a 320 dp, foco inicial/retorno al menú y 16 capturas de teléfono, tablet y TV.
 - APK universal optimizado: 4.735.472 bytes. Firma v2/v3 y alineación 16 KiB verificadas. Mismo certificado de desarrollo que beta 1.
 - SHA-256: `12fbfc6edfa3419e3f458611c4409683401556c317c92c6f42b99ddfe82138be`.
+- Publicación pendiente: https://github.com/mbrionesz/infotv/actions/runs/45648438226 . Todas las verificaciones pasaron; GitHub devolvió HTTP 502 al subir los archivos públicos. La release permanece en borrador y se conserva el payload público para reintentar, sin claves privadas.
 - Las capturas usan contenido local de prueba. No certifican hardware TCL/Lenovo físico, cada CDN, todos los códecs ni sesiones de reproducción prolongadas. Las pruebas instrumentadas ejecutan debug; el APK release está compilado y verificado, pendiente de prueba física.
 
 ## Registro anterior: beta 1
