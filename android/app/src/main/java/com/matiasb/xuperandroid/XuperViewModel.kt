@@ -46,7 +46,9 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
     val selectedEpisode=episode?:saved?.episodeId?.takeIf { title.kind==Kind.SERIES }?.let { Episode(it,saved.episodeNumber,"Episodio ${saved.episodeNumber}",season=saved.seasonNumber) }?:previous.details?.takeIf { it.title.id==title.id }?.episodes?.firstOrNull()
     if(title.kind==Kind.SERIES&&selectedEpisode==null)throw java.io.IOException("Selecciona un episodio desde la ficha")
     val seasonId=resume?.seasonId?.ifBlank { null }?:previous.seasonId.ifBlank { title.id }
-    val stream=repository.resolve(title,selectedEpisode,seasonId);ensureActive()
+    val connectivity=getApplication<Application>().getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    val cap=DataPolicy.maxHeight(settings.value.dataMode,connectivity.isActiveNetworkMetered,connectivity.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
+    val stream=repository.resolve(title,selectedEpisode,seasonId,cap);ensureActive()
     val sameEpisode=title.kind==Kind.MOVIE||saved?.episodeId==selectedEpisode?.id
     val start=overridePosition?:if(saved!=null&&!saved.completed&&sameEpisode)saved.positionMs else 0
     val playing=Playing(title,selectedEpisode,seasonId,stream,start);mutable.update { it.copy(playing=playing,loading=false) }

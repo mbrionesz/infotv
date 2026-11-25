@@ -45,3 +45,18 @@ object PlaybackPolicy {
   return value.toDoubleOrNull()?.let { if (it > 86400) (it / 1000).toLong() else it.toLong() } ?: 0
  }
 }
+
+object DataPolicy {
+ // 0 automatic, 1 saver, 2 maximum. A zero height means no artificial cap.
+ fun maxHeight(mode: Int,metered: Boolean,systemSaver: Boolean=false): Int = when {
+  metered&&systemSaver -> 480
+  mode==1 -> 480
+  mode==2 -> 0
+  metered -> 720
+  else -> 0
+ }
+ fun chooseHeight(available: List<Int>,cap: Int): Int {
+  val known=available.filter { it>0 };if(known.isEmpty())return 0
+  return if(cap<=0)known.max() else known.filter { it<=cap }.maxOrNull()?:known.min()
+ }
+}

@@ -35,7 +35,9 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: android
-          script: ./gradlew :app:connectedDebugAndroidTest
+          script: |
+            ./gradlew :app:connectedDebugAndroidTest
+            adb pull /sdcard/Android/data/com.matiasb.xuperandroid/files/qa qa-screenshots || true
       - name: Pull Android screenshots
         if: always()
         run: adb pull /sdcard/Android/data/com.matiasb.xuperandroid/files/qa android/qa-screenshots || true

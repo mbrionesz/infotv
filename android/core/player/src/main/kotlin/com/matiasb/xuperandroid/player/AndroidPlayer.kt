@@ -29,13 +29,16 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
  val player: ExoPlayer? get()=engine
  fun prepare(playing: Playing,preferences: Settings,preferredAudio: Pair<String,String>?) {
   release();generation++;val run=generation;active=playing;sourceIndex=0;settings=preferences;manualAudio=preferredAudio;audioApplied="";subtitlesManual=false
+  val network=context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+  val cap=DataPolicy.maxHeight(preferences.dataMode,network.isActiveNetworkMetered,network.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
   val lowRam=(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
   val requestCredentials=playing.stream.sources.filter { it.url.startsWith("http") }.associate { OriginCredentials.origin(it.url.toHttpUrl()) to it.headers }
   val transport=http.newBuilder().callTimeout(0,java.util.concurrent.TimeUnit.MILLISECONDS).readTimeout(15,java.util.concurrent.TimeUnit.SECONDS).addInterceptor(OriginCredentials { requestCredentials }).build()
   val sources=DefaultMediaSourceFactory(DefaultDataSource.Factory(context,OkHttpDataSource.Factory(transport)))
   selector.setParameters(selector.buildUponParameters().clearOverridesOfType(C.TRACK_TYPE_AUDIO).clearOverridesOfType(C.TRACK_TYPE_TEXT).setPreferredAudioLanguages(preferences.audio,"es","spa").setTrackTypeDisabled(C.TRACK_TYPE_TEXT,true))
+  selector.setParameters(selector.buildUponParameters().setMaxVideoSize(Int.MAX_VALUE,if(cap>0)cap else Int.MAX_VALUE))
   val renderer=DefaultRenderersFactory(context).setEnableDecoderFallback(true)
-  engine=ExoPlayer.Builder(context,renderer).setTrackSelector(selector).setMediaSourceFactory(sources).setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(15_000,if(lowRam)30_000 else 60_000,1500,3000).setTargetBufferBytes(PlaybackPolicy.bufferBytes(lowRam)).setPrioritizeTimeOverSizeThresholds(false).build()).build().apply {
+  engine=ExoPlayer.Builder(context,renderer).setTrackSelector(selector).setMediaSourceFactory(sources).setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(15_000,if(lowRam)30_000 else 60_000,1500,3000).setTargetBufferBytes(if(cap==480)8*1024*1024 else PlaybackPolicy.bufferBytes(lowRam)).setPrioritizeTimeOverSizeThresholds(false).build()).build().apply {
    setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);setHandleAudioBecomingNoisy(true)
    addListener(object: Player.Listener {
     override fun onTracksChanged(tracks: Tracks) { if(run!=generation)return;chooseAudio(tracks);if(!subtitlesManual)automaticSubtitles(tracks);publish() }

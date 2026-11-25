@@ -63,4 +63,8 @@ Android bloquea HTTP por defecto. Solo dos dominios heredados ya observados (yuw
 - Contador/historial del universo del catálogo, diagnósticos de red avanzados, colección de favoritos navegable, similares, renovación de autorización durante una reproducción larga, PiP y firma de distribución. La alpha guarda favoritos pero no tiene aún una pantalla propia para recorrerlos.
 - La búsqueda de canales y los filtros combinados de búsqueda se aplican a las páginas consultadas; no se presentan como índice exhaustivo local. Se conserva «Cargar más».
 
-Ver docs/ARQUITECTURA-ANDROID-Y-TIZEN10.md para la decisión original y las fuentes oficiales. El protocolo se adapta de companion/lib/magis.js, cuyo archivo original permanece intacto; conservar LICENSE-UPSTREAM.
+Ver ../docs/ARQUITECTURA-ANDROID-Y-TIZEN10.md para la decisión original y las fuentes oficiales. El protocolo se adapta de companion/lib/magis.js, cuyo archivo original permanece intacto; conservar LICENSE-UPSTREAM.
+
+## Datos móviles
+
+Ajustes incluye Automático (720p en red medida, sin límite artificial en Wi-Fi no medido), Ahorro (480p si existe) y Máxima calidad. El ahorro de datos de Android limita a 480p en redes medidas incluso si estaba seleccionada máxima calidad. No requiere permisos telefónicos ni intenta deducir el ancho de banda por el rótulo 3G/4G/5G. Media3 adapta HLS/DASH según las variantes y su estimación de velocidad; el portal permite elegir una variante VOD al abrir el vídeo. Una fuente progresiva fija no puede transcodificarse: si solo hay 720p, no se inventa 480p. La selección del modo se aplica al siguiente vídeo; no fuerza una reconexión al cambiar de red durante el actual.
