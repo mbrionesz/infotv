@@ -5315,6 +5315,7 @@
       }, window.XuperDesktop ? 3000 : ei)));
   }
   function pi() {
+    Me || (Me=t("player-vod-infobar"));we || (we=t("player-infobar"));
     ((X.infobar = !0),
       "vod" === X.playerMode
         ? (Me && Me.classList.add("is-active"),
