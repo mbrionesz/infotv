@@ -2,13 +2,13 @@
   "app": "XuperAndroid",
   "version": "0.1.1-beta.2",
   "versionCode": 3,
-  "commit": "cd0d14aff9be8d30220beb292374ec00634e4799",
-  "validationRun": "45640551851",
+  "commit": "dee82646b3288a26e7492e757769046b578d1b82",
+  "validationRun": "45645971515",
   "minSdk": 26,
   "targetSdk": 37,
   "apkBytes": 4735472,
-  "sha256": "2c15a55d4f116e3c5db7830ecd60ea22ab80da66e9063be3ee9643bb3a83e56f",
-  "signature": "same development certificate as beta 1",
-  "build": "optimized release; R8 + resource shrinking",
-  "changes": "shared grouped navigation/search, responsive phone tablet TV layouts, foreground contrast and active-tab focus"
+  "sha256": "12fbfc6edfa3419e3f458611c4409683401556c317c92c6f42b99ddfe82138be",
+  "signature": "Same development certificate as beta1",
+  "build": "Optimized release, R8 and resource shrinking",
+  "changes": "Grouped responsive navigation, contrast and active-tab focus"
 }
