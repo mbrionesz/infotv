@@ -35,7 +35,7 @@ import kotlinx.coroutines.delay
 @androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
 @Composable internal fun PlayerScreen(vm: XuperViewModel,state: UiState,settings: Settings,tv: Boolean=false,pip: Boolean=false) {
  val snapshot by vm.player.snapshot.collectAsStateWithLifecycle();var controls by remember { mutableStateOf(true) };var activity by remember { mutableLongStateOf(SystemClock.uptimeMillis()) };var tracks by remember { mutableStateOf(false) };var seek by remember { mutableStateOf<Float?>(null) };val stage=remember { FocusRequester() };val playFocus=remember { FocusRequester() };val context=LocalContext.current
- LaunchedEffect(snapshot.playing,snapshot.width,snapshot.height){(context as? MainActivity)?.updatePip(snapshot)}
+ LaunchedEffect(snapshot.playWhenReady,snapshot.error,snapshot.width,snapshot.height){(context as? MainActivity)?.updatePip(snapshot)}
  val playing=state.playing
  DisposableEffect(Unit) { val window=(context as? MainActivity)?.window;window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
   window?.let {androidx.core.view.WindowCompat.getInsetsController(it,it.decorView).apply {hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());systemBarsBehavior=androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE}}

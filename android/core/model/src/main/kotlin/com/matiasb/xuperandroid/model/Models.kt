@@ -21,7 +21,7 @@ data class WatchProgress(val title: Title, val episodeId: String = "", val episo
  val remainingMinutes: Long? get() = durationMs.takeIf { it > 0 }?.let { ((it - positionMs).coerceAtLeast(0) + 59_999) / 60_000 }
 }
 data class Track(val id: String, val language: String, val name: String, val selected: Boolean)
-data class PlaybackSnapshot(val positionMs: Long = 0, val durationMs: Long = 0, val bufferMs: Long = 0, val playing: Boolean = false, val loading: Boolean = false, val width: Int = 0, val height: Int = 0, val fps: Float = 0f, val audio: List<Track> = emptyList(), val subtitles: List<Track> = emptyList(), val error: String? = null)
+data class PlaybackSnapshot(val positionMs: Long = 0, val durationMs: Long = 0, val bufferMs: Long = 0, val playing: Boolean = false, val loading: Boolean = false, val width: Int = 0, val height: Int = 0, val fps: Float = 0f, val audio: List<Track> = emptyList(), val subtitles: List<Track> = emptyList(), val error: String? = null, val playWhenReady: Boolean = false)
 object PlaybackPolicy {
  fun audioScore(language: String, name: String = ""): Int {
   val value = (language + " " + name).lowercase()

@@ -54,17 +54,18 @@ private val Accent=XuperStyle.ring
 class MainActivity: ComponentActivity() {
  private val model: XuperViewModel by viewModels()
  private var pipMode by mutableStateOf(false)
- fun canUsePip()=(getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).currentModeType!=Configuration.UI_MODE_TYPE_TELEVISION&&!(BuildConfig.DEBUG&&intent.getBooleanExtra("force_tv",false))&&packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
- fun updatePip(snapshot: PlaybackSnapshot) { if(!canUsePip())return;val ratio=if(snapshot.height>0)(snapshot.width.toFloat()/snapshot.height).coerceIn(.42f,2.39f) else 16f/9f;val params=android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational((ratio*1000).toInt(),1000));if(android.os.Build.VERSION.SDK_INT>=31)params.setAutoEnterEnabled(!model.cleaning.value&&snapshot.playing&&model.state.value.screen==Screen.PLAYER);runCatching { setPictureInPictureParams(params.build()) } }
+ private fun isTvDevice()=(getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).currentModeType==Configuration.UI_MODE_TYPE_TELEVISION||packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)||BuildConfig.DEBUG&&intent.getBooleanExtra("force_tv",false)
+ fun canUsePip()=!isTvDevice()&&packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
+ fun updatePip(snapshot: PlaybackSnapshot) { if(!canUsePip())return;val ratio=if(snapshot.height>0)(snapshot.width.toFloat()/snapshot.height).coerceIn(.42f,2.39f) else 16f/9f;val params=android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational((ratio*1000).toInt(),1000));if(android.os.Build.VERSION.SDK_INT>=31)params.setAutoEnterEnabled(!model.cleaning.value&&snapshot.playWhenReady&&snapshot.error==null&&model.state.value.screen==Screen.PLAYER);runCatching { setPictureInPictureParams(params.build()) } }
  fun clearPip() {if(canUsePip()&&android.os.Build.VERSION.SDK_INT>=31)runCatching {setPictureInPictureParams(android.app.PictureInPictureParams.Builder().setAutoEnterEnabled(false).build())}}
  fun restartAfterCleanup() {clearPip();if(!isFinishing&&!isDestroyed)recreate()}
  fun enterMiniPlayer(): Boolean {if(!canUsePip()||model.cleaning.value||model.state.value.screen!=Screen.PLAYER||model.state.value.playing==null)return false;if(isInPictureInPictureMode)return true;updatePip(model.player.snapshot.value);return runCatching { enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().build()) }.getOrDefault(false)}
  // Android 12+ uses auto-enter; invoking the legacy hook as well can request PiP twice.
- override fun onUserLeaveHint() {super.onUserLeaveHint();if(android.os.Build.VERSION.SDK_INT<31&&model.state.value.screen==Screen.PLAYER&&model.player.snapshot.value.playing)enterMiniPlayer()}
+ override fun onUserLeaveHint() {super.onUserLeaveHint();if(android.os.Build.VERSION.SDK_INT<31&&model.state.value.screen==Screen.PLAYER&&model.player.snapshot.value.playWhenReady)enterMiniPlayer()}
  override fun onPictureInPictureModeChanged(active: Boolean,newConfig: Configuration) {super.onPictureInPictureModeChanged(active,newConfig);pipMode=active;if(!active&&!lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED))model.background()}
 
  override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT));setContent {
-  val tv=(getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).currentModeType==Configuration.UI_MODE_TYPE_TELEVISION || BuildConfig.DEBUG&&intent.getBooleanExtra("force_tv",false)
+  val tv=isTvDevice()
   XuperTheme { XuperApp(model,tv,pipMode) }
  };if(BuildConfig.DEBUG&&intent.getBooleanExtra("demo",false))model.demo(true) }
  override fun onStop() { if(!isChangingConfigurations&&!isInPictureInPictureMode)model.background();super.onStop() }

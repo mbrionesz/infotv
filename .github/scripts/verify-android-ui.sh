@@ -45,7 +45,7 @@ python3 - <<'CHECK'
 from pathlib import Path
 import xml.etree.ElementTree as E
 rows=[E.parse(p).getroot().attrib for p in Path('app/build/outputs/androidTest-results/connected/debug').glob('TEST-*.xml')]
-assert sum(int(r.get('tests',0)) for r in rows)==16, rows
+assert sum(int(r.get('tests',0)) for r in rows)==18, rows
 assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0))==0 for r in rows), rows
 CHECK
 mkdir -p qa-evidence/functional

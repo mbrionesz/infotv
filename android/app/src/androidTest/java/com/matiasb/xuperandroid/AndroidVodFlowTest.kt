@@ -97,4 +97,33 @@ class AndroidVodFlowTest {
   assertEquals(2,backend.attempts.get())
  }
 
+ @Test fun pauseAndSeekDuringRenewalArePreserved() {
+  val title=Title("qa-renew-intent","Renovación",Kind.MOVIE)
+  scenario.onActivity {vm.play(title)};ready()
+  val stream=kotlinx.coroutines.runBlocking {FixtureRepository().resolve(title)}
+  val requested=kotlinx.coroutines.CompletableDeferred<Unit>();val resume=kotlinx.coroutines.CompletableDeferred<Unit>()
+  scenario.onActivity {vm.player.prepare(Playing(title,stream=stream),Settings(),null,renew={requested.complete(Unit);resume.await();stream})}
+  compose.waitUntil(30000){vm.player.snapshot.value.width==640}
+  scenario.onActivity {assertTrue(vm.player.recoverConnection())}
+  compose.waitUntil(10000){requested.isCompleted}
+  scenario.onActivity {vm.player.pause();vm.player.seek(4000)}
+  resume.complete(Unit)
+  compose.waitUntil(30000){!vm.player.snapshot.value.loading&&vm.player.snapshot.value.positionMs>=3800}
+  assertFalse(vm.player.snapshot.value.playWhenReady);assertFalse(vm.player.snapshot.value.playing)
+ }
+ @Test fun failedRenewalStopsSpinnerAndReleaseCancelsLateResults() {
+  val title=Title("qa-renew-error","Renovación fallida",Kind.MOVIE);scenario.onActivity {vm.play(title)};ready();val stream=kotlinx.coroutines.runBlocking {FixtureRepository().resolve(title)}
+  scenario.onActivity {vm.player.prepare(Playing(title,stream=stream),Settings(),null,renew={throw IOException("fixture")})}
+  compose.waitUntil(30000){vm.player.snapshot.value.width==640}
+  scenario.onActivity {assertTrue(vm.player.recoverConnection())}
+  compose.waitUntil(10000){vm.player.snapshot.value.error!=null}
+  Thread.sleep(1200)
+  assertFalse(vm.player.snapshot.value.loading)
+  val requested=kotlinx.coroutines.CompletableDeferred<Unit>();val resume=kotlinx.coroutines.CompletableDeferred<Unit>()
+  scenario.onActivity {vm.player.prepare(Playing(title,stream=stream),Settings(),null,renew={requested.complete(Unit);resume.await();stream});assertTrue(vm.player.recoverConnection())}
+  compose.waitUntil(10000){requested.isCompleted}
+  scenario.onActivity {vm.player.release()};resume.complete(Unit)
+  compose.waitForIdle();assertNull(vm.player.player);assertFalse(vm.player.snapshot.value.loading)
+ }
+
 }

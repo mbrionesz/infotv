@@ -102,8 +102,9 @@ class AndroidSmokeTest {
    // Keep the 12-second local fixture alive through a slow cold-emulator transition.
    // This exercises long-running PiP rather than racing media completion.
    vm.player.player!!.repeatMode=androidx.media3.common.Player.REPEAT_MODE_ONE
-   host=it;org.junit.Assert.assertTrue(it.enterMiniPlayer())
+   host=it;org.junit.Assert.assertTrue(it.canUsePip())
   }
+  shell("input keyevent KEYCODE_HOME")
   // PiP pauses Compose's frame clock: use bounded platform polling while the Activity is paused.
   fun waitPlatform(timeoutMs: Long,label: String,condition: ()->Boolean) {
    // Activity/lifecycle state belongs to the main thread; polling it from the

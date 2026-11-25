@@ -1,6 +1,13 @@
-# XuperAndroid · 0.1.1 beta 8
+# XuperAndroid · 0.1.1 beta 9
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 9
+
+- Recuperación VOD que respeta pausa y adelantos realizados durante la renovación, sin reaperturas tardías tras liberar el reproductor. Inicialización correcta del scope de recuperación y errores que no vuelven a activar indefinidamente el indicador de carga.
+- Selección de pistas renovada al cambiar de fuente. PiP sigue la intención de reproducción incluso mientras espera búfer, y se desactiva al pausar o ante error.
+- Detección TV por modo del sistema o característica Leanback, compartida con la exclusión PiP. Interfaz ajustada a las dimensiones actuales, sin selector manual de celular/tablet.
+- Política de memoria y búfer conservada; no se aumenta la reserva para ocultar problemas de red.
 
 ## Novedades de beta 8
 
