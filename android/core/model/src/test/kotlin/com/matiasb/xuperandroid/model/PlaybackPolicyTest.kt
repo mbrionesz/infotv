@@ -1,7 +1,7 @@
 package com.matiasb.xuperandroid.model
 import kotlin.test.*
 class PlaybackPolicyTest {
- @Test fun meteredDataAndSystemSaverHaveExplicitLimits() { assertEquals(720,DataPolicy.maxHeight(0,true));assertEquals(0,DataPolicy.maxHeight(0,false));assertEquals(480,DataPolicy.maxHeight(1,false));assertEquals(0,DataPolicy.maxHeight(2,true));assertEquals(480,DataPolicy.maxHeight(2,true,true)) }
+ @Test fun wifiAndCellularUseInternalNetworkBudgets() { assertEquals(720,DataPolicy.maxHeight(true));assertEquals(0,DataPolicy.maxHeight(false));assertEquals(480,DataPolicy.maxHeight(true,true)) }
  @Test fun neverInventLowerQualityWhenPortalHasOnlyOneVariant() { assertEquals(720,DataPolicy.chooseHeight(listOf(720),480));assertEquals(480,DataPolicy.chooseHeight(listOf(480,720,1080),480));assertEquals(1080,DataPolicy.chooseHeight(listOf(480,1080),0)) }
 
  @Test fun latinoHasPriorityWithoutInventingVariantOfSpa() { assertTrue(PlaybackPolicy.audioScore("es-419") > PlaybackPolicy.audioScore("spa"));assertTrue(PlaybackPolicy.audioScore("spa") > PlaybackPolicy.audioScore("es-ES"));assertEquals(0,PlaybackPolicy.audioScore("jpn")) }

@@ -65,6 +65,6 @@ Android bloquea HTTP por defecto. Solo dos dominios heredados ya observados (yuw
 
 Ver ../docs/ARQUITECTURA-ANDROID-Y-TIZEN10.md para la decisión original y las fuentes oficiales. El protocolo se adapta de companion/lib/magis.js, cuyo archivo original permanece intacto; conservar LICENSE-UPSTREAM.
 
-## Datos móviles
+## Wi-Fi y datos celulares
 
-Ajustes incluye Automático (720p en red medida, sin límite artificial en Wi-Fi no medido), Ahorro (480p si existe) y Máxima calidad. El ahorro de datos de Android limita a 480p en redes medidas incluso si estaba seleccionada máxima calidad. No requiere permisos telefónicos ni intenta deducir el ancho de banda por el rótulo 3G/4G/5G. Media3 adapta HLS/DASH según las variantes y su estimación de velocidad; el portal permite elegir una variante VOD al abrir el vídeo. Una fuente progresiva fija no puede transcodificarse: si solo hay 720p, no se inventa 480p. La selección del modo se aplica al siguiente vídeo; no fuerza una reconexión al cambiar de red durante el actual.
+Sin selector de modos. La app usa la red que proporciona Android y admite Wi-Fi y datos celulares 3G/4G/5G según el dispositivo y el operador. No cambia ni selecciona bandas del módem. En conexiones celulares se aplica un presupuesto inicial de hasta 720p, o 480p cuando el ahorro de Android está activo, si el portal ofrece esas variantes; en Wi-Fi no se impone ese límite. Media3 adapta fuentes HLS/DASH según la velocidad y variantes disponibles. Una fuente progresiva fija no se transcodifica: si solo existe 720p no se inventa 480p. El presupuesto inicial se decide al abrir el vídeo; cambiar la red no fuerza un reinicio del actual. No requiere permisos telefónicos.

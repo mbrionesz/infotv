@@ -30,7 +30,7 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
  fun prepare(playing: Playing,preferences: Settings,preferredAudio: Pair<String,String>?) {
   release();generation++;val run=generation;active=playing;sourceIndex=0;settings=preferences;manualAudio=preferredAudio;audioApplied="";subtitlesManual=false
   val network=context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-  val cap=DataPolicy.maxHeight(preferences.dataMode,network.isActiveNetworkMetered,network.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
+  val cap=DataPolicy.maxHeight(network.getNetworkCapabilities(network.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)==true,network.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
   val lowRam=(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
   val requestCredentials=playing.stream.sources.filter { it.url.startsWith("http") }.associate { OriginCredentials.origin(it.url.toHttpUrl()) to it.headers }
   val transport=http.newBuilder().callTimeout(0,java.util.concurrent.TimeUnit.MILLISECONDS).readTimeout(15,java.util.concurrent.TimeUnit.SECONDS).addInterceptor(OriginCredentials { requestCredentials }).build()

@@ -47,12 +47,10 @@ object PlaybackPolicy {
 }
 
 object DataPolicy {
- // 0 automatic, 1 saver, 2 maximum. A zero height means no artificial cap.
- fun maxHeight(mode: Int,metered: Boolean,systemSaver: Boolean=false): Int = when {
-  metered&&systemSaver -> 480
-  mode==1 -> 480
-  mode==2 -> 0
-  metered -> 720
+ // Network adaptation is internal; no user-facing mode selector.
+ fun maxHeight(cellular: Boolean,systemSaver: Boolean=false): Int = when {
+  cellular&&systemSaver -> 480
+  cellular -> 720
   else -> 0
  }
  fun chooseHeight(available: List<Int>,cap: Int): Int {
