@@ -1,1 +1,1 @@
-86c4717b3912fa5f8cbe924069ac96837548d9094066763fb82d151654b57dda  XuperAndroid-0.1.1-beta2-universal.apk
+2c15a55d4f116e3c5db7830ecd60ea22ab80da66e9063be3ee9643bb3a83e56f  XuperAndroid-0.1.1-beta2-universal.apk
