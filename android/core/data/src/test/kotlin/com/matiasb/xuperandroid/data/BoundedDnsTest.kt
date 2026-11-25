@@ -37,4 +37,11 @@ class BoundedDnsTest {
   assertEquals(17,calls.get())
  }
 
+ @Test fun sinkholeAndPrivateAnswersDoNotWinOverPublicAnswers() {
+  for(ip in listOf("0.0.0.0","127.0.0.1","10.0.0.1","192.168.1.1","100.64.0.1","198.18.0.1")) {
+   val blocked=InetAddress.getByAddress(ip.split('.').map {it.toInt().toByte()}.toByteArray())
+   assertEquals(listOf(address),BoundedDns(listOf(dns {listOf(blocked)},dns {listOf(address)}),failed,1000,0).lookup("portal.example"))
+  }
+ }
+
 }

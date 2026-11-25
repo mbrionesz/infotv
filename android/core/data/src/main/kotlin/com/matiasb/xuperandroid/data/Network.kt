@@ -7,6 +7,16 @@ import java.util.concurrent.*
 import java.io.IOException
 internal data class ResolverEndpoint(val ip: String,val host: String,val path: String,val provider: String)
 
+/** Reject DNS sinkholes and private IPv4 ranges, as in desktop/dns.cjs. */
+internal fun isPublicDnsAddress(address: InetAddress): Boolean {
+ val bytes=address.address
+ if(bytes.size==4) {
+  val a=bytes[0].toInt() and 255;val b=bytes[1].toInt() and 255
+  return !(a==0||a==10||a==127||a>=224||a==169&&b==254||a==172&&b in 16..31||a==192&&b==168||a==100&&b in 64..127||a==198&&b in 18..19)
+ }
+ return !address.isAnyLocalAddress&&!address.isLoopbackAddress&&!address.isLinkLocalAddress&&!address.isSiteLocalAddress&&!address.isMulticastAddress&&(bytes[0].toInt() and 254)!=252
+}
+
 /** Race independent secure resolvers; retain Android DNS as a bounded, delayed fallback. */
 class BoundedDns(
  private val resolvers: List<Dns> = secureResolvers(),
@@ -23,7 +33,7 @@ class BoundedDns(
    try { tasks+=pool.submit {
     val result=runCatching {
      if(delayMs>0)Thread.sleep(delayMs)
-     dns.lookup(hostname).distinct().sortedBy { if(it is java.net.Inet4Address)0 else 1 }
+     dns.lookup(hostname).filter(::isPublicDnsAddress).distinct().sortedBy { if(it is java.net.Inet4Address)0 else 1 }
       .also { if(it.isEmpty())throw java.net.UnknownHostException(hostname) }
     }
     answers.offer(result)

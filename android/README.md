@@ -6,6 +6,7 @@ Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identi
 
 - Los mismos 17 endpoints DoH (9 proveedores) que Windows y el transporte nativo Samsung/Tizen, con idénticas IP, hostname TLS y ruta. Se genera la lista Kotlin al compilar desde `desktop/resolvers.json`, sin mantener una copia manual en Android.
 - Bootstrap por IP para cada endpoint y TLS validado. Se mantienen seis trabajadores de DNS seguro, dos de sistema, cola acotada de 128 tareas y plazo global de 3,5 s; se cancelan las alternativas pendientes tras una respuesta válida. No garantiza consultar los 17 antes del plazo ni que más resolutores reduzcan la latencia en cualquier red.
+- Descarta respuestas de bloqueo y direcciones privadas como el resolutor Windows, permitiendo que otra alternativa responda.
 - Prueba adicional de alternativa final: el resolutor 17 puede responder cuando fallan los anteriores. Conserva las correcciones de perfil, sesión y carga de beta 4.
 
 ## Novedades de beta 4
