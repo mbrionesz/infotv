@@ -24,6 +24,7 @@ import androidx.compose.ui.focus.*
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.*
@@ -55,6 +56,7 @@ class MainActivity: ComponentActivity() {
  override fun onStop() { if(!isChangingConfigurations)model.background();super.onStop() }
 }
 @Composable private fun XuperApp(vm: XuperViewModel,tv: Boolean) {
+ val inputMode=LocalInputModeManager.current;LaunchedEffect(tv){if(tv)inputMode.requestInputMode(InputMode.Keyboard)}
  val state by vm.state.collectAsStateWithLifecycle();val history by vm.history.collectAsStateWithLifecycle();val settings by vm.settings.collectAsStateWithLifecycle();var removing by remember { mutableStateOf<Title?>(null) }
  BackHandler(enabled=state.screen!=Screen.HOME) { vm.back() }
  if(state.screen==Screen.PLAYER) { PlayerScreen(vm,state,settings,tv);return }
