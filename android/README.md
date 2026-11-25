@@ -1,6 +1,13 @@
-# XuperAndroid · 0.1.1 beta 1
+# XuperAndroid · 0.1.1 beta 2
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 2
+
+- TV, Películas, Series y búsqueda en un bloque común, con disposición adaptativa para teléfono, tablet y TV. Ajustes y Mi lista permanecen accesibles a la derecha.
+- Contraste claro heredado en todas las pantallas, paleta neutra compartida y controles coherentes; logo X conservado.
+- Foco inicial en Películas y navegación con mando corregidos; búsqueda accesible incluso a 320 dp. PiP solo móvil/tablet.
+- Capturas reales de emulador en los tres formatos, con contenido local identificado como prueba. Ver [VALIDACION.md](VALIDACION.md).
 
 ## Funciones implementadas
 

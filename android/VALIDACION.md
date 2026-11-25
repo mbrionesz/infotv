@@ -1,3 +1,14 @@
+# XuperAndroid 0.1.1 beta 2: verificación
+
+- Fuente validada: `dee82646b3288a26e7492e757769046b578d1b82`.
+- 20 pruebas unitarias y 9 instrumentadas aprobadas: cero fallos, errores u omisiones. Android API 35 Google APIs con aceleración; PiP se ejecuta primero en la pantalla original y las otras ocho pruebas a continuación.
+- Evidencia: https://github.com/mbrionesz/infotv/actions/runs/45645971515 . Incluye contraste real, límites de navegación a 320 dp, foco inicial/retorno al menú y 16 capturas de teléfono, tablet y TV.
+- APK universal optimizado: 4.735.472 bytes. Firma v2/v3 y alineación 16 KiB verificadas. Mismo certificado de desarrollo que beta 1.
+- SHA-256: `12fbfc6edfa3419e3f458611c4409683401556c317c92c6f42b99ddfe82138be`.
+- Las capturas usan contenido local de prueba. No certifican hardware TCL/Lenovo físico, cada CDN, todos los códecs ni sesiones de reproducción prolongadas. Las pruebas instrumentadas ejecutan debug; el APK release está compilado y verificado, pendiente de prueba física.
+
+## Registro anterior: beta 1
+
 # XuperAndroid 0.1.1 beta 1: verificación
 
 - Fuente de la beta: `94711491eceb24981c55343329e30309dd7e2b09`.
