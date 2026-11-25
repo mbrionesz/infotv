@@ -25,7 +25,7 @@ class AndroidSmokeTest {
  @After fun stop() { scenario.close();shell("wm size reset");shell("wm density reset") }
  @Test fun navigationAndSettingsAreAccessible() {
   screenshot("phone-movies");compose.onAllNodesWithText("Series")[0].performClick();compose.waitUntil(30_000){compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty()}
-  screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNodeWithText("Fuente",substring=true).assertExists();pressBack()
+  screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed();pressBack()
   compose.onNodeWithContentDescription("Buscar").performClick();compose.onNode(hasSetTextAction()).performTextInput("Horizontes");compose.waitForIdle();assert(compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty())
  }
  @Test fun localMovieDecodesAndAudioMenuOpens() {
@@ -60,7 +60,7 @@ class AndroidSmokeTest {
   compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}
  }
  @Test fun pipKeepsPhoneVideoAndIsDisabledForTv() {
-  org.junit.Assume.assumeTrue(ApplicationProvider.getApplicationContext<XuperApplication>().packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE))
+  org.junit.Assert.assertTrue("Reference emulator must expose PiP",ApplicationProvider.getApplicationContext<XuperApplication>().packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE))
   compose.onNodeWithText("Ver ficha",substring=true).performClick();compose.onNodeWithText("Reproducir").performClick()
   lateinit var vm: XuperViewModel;scenario.onActivity {vm=ViewModelProvider(it)[XuperViewModel::class.java]}
   compose.waitUntil(90000){vm.player.snapshot.value.playing}
