@@ -8,6 +8,7 @@ Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identi
 - Reinicia la interfaz nativa desde Películas, recargando el catálogo. No fuerza un cierre del proceso Android ni promete recuperar memoria del sistema. Room, DataStore, favoritos, progreso, estadísticas y preferencias se conservan.
 - Pantalla de operación que bloquea pulsaciones repetidas; errores recuperables sin anunciar éxito. La caché DNS descarta las respuestas iniciadas antes de limpiar para impedir que rellenen otra vez la caché.
 - La limpieza es una acción manual; no cambia el tamaño ni la estrategia de búfer durante reproducción.
+- PiP usa entrada automática en Android 12+ y el mecanismo anterior en Android 8–11; se bloquea durante mantenimiento. TV sigue excluida.
 
 ## Novedades de beta 7
 

@@ -1,3 +1,18 @@
+# XuperAndroid 0.1.1 beta 8: limpieza y reinicio
+
+- Fuente validada: `9a07d57e4118ea73f84e64047738010b6a69c6fe`.
+- Ajustes → Almacenamiento incorpora «Limpiar caché y reiniciar». Bloquea pulsaciones repetidas y navegación durante la operación, cancela y espera peticiones de catálogo/reproducción/diagnóstico/conteo, espera escrituras pendientes y guarda el progreso antes de liberar Media3. Elimina caché de imágenes, JSON de presentación y categorías en memoria; vacía respuestas DNS y conexiones HTTP y renueva la sesión temporal conservando el identificador de instalación. Recrea la Activity y recarga Películas. Room, DataStore, estadísticas y preferencias por título se conservan; no utiliza borrado global de datos ni mata el proceso.
+- Fallos de limpieza muestran Almacenamiento y permiten reintentar. No se anuncia éxito ni se ejecuta el reinicio si la limpieza falla. Un contador de generación impide que consultas DNS anteriores repueblen la caché después de limpiarla. La política de búfer y la lista de 17 resolutores permanecen iguales.
+- PiP: Android 12+ utiliza entrada automática al salir; Android 8–11 mantiene el mecanismo anterior. La entrada manual es idempotente y se bloquea durante mantenimiento. Televisores continúan excluidos. Se conserva el menú/diseño de beta 7.
+- 40 pruebas unitarias (7 modelo, 33 datos) y 18 instrumentadas (PiP 1, funcionales 16 y capturas 1), sin fallos, errores ni omisiones en la ejecución final: https://github.com/mbrionesz/infotv/actions/runs/45719644435 . Los tres nuevos casos nativos verifican datos persistidos y recreación real de Activity; progreso activo y cancelación de una apertura pendiente sin doble ejecución; y fallo de almacenamiento con biblioteca conservada y reintento. Los dos casos DNS nuevos verifican renovación e invalidación de respuestas en vuelo.
+- Una ejecución previa aprobó las 16 pruebas funcionales y las capturas pero falló la salida PiP. El registro mostró una transición lenta del emulador y que el clip local de 12 s terminaba durante ella. La prueba mantiene ese clip en bucle, comprueba avance incluso al repetir y da 45 s a la salida nativa, sin eliminar la aserción de pantalla completa/Activity RESUMED ni convertir errores en éxitos. La ejecución final pasó completa. El bucle solo existe en el test.
+- 20 capturas nativas conservadas en el artefacto `XuperAndroid-0.1.1-beta8/qa-screenshots`; revisión visual de Almacenamiento. Android 15/API 35 Google APIs, tamaños de celular/tablet/TV mediante `force_tv`. Contenido local de prueba y respuestas simuladas; `portal_probe=false`, ausencia de `portal-probe.json` comprobada. No certifica funcionamiento integral del portal ni dispositivos físicos.
+- Compilación release optimizada/R8 y lint correctos. APK universal de 4.768.240 bytes, firma v2/v3 con el mismo certificado de desarrollo de beta 7 y alineación de 16 KiB verificadas. SHA-256 `ec7c4be4c83d821b852beaecbcc53720c8e6b6b132d9210eb4fe4ce0f1d1ac2e`.
+- Publicación verificada: https://github.com/mbrionesz/infotv/actions/runs/45720751624 . APK público descargado y SHA-256 idéntico comprobado: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.8 . Solo APK firmado y datos públicos, clave privada local. El release optimizado y las plataformas físicas quedan pendientes de prueba.
+- Tizen no se modifica: Chromium pertenece al firmware Samsung; cambiar el SDK u objetivo JavaScript del WGT no actualiza el motor instalado. Se conserva el objetivo Chrome 56 y la versión mínima Tizen 4.0 para mantener compatibilidad previa. `companion/lib/magis.js` conserva su hash.
+
+## Registro anterior: beta 7
+
 # XuperAndroid 0.1.1 beta 7: identidad compartida
 
 - Fuente validada: `a71cebd85d9ea9f0679d9200dfceb61577dafc90`.
