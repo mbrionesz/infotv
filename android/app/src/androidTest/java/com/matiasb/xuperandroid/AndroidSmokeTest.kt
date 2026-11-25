@@ -36,10 +36,16 @@ class AndroidSmokeTest {
  @After fun stop() { scenario.onActivity {ViewModelProvider(it)[XuperViewModel::class.java].stopPlayer();it.clearPip()};scenario.close();shell("wm size reset");shell("wm density reset") }
  @Test fun navigationAndSettingsAreAccessible() {
   screenshot("phone-movies");compose.onAllNodesWithText("Series")[0].performClick();compose.waitUntil(30_000){compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty()}
-  screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed()
-  // Use a real hardware Back event after lazy scrolling, rather than Espresso's stale root-focus picker.
-  hardwareKey(KeyEvent.KEYCODE_BACK)
+  screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNodeWithTag("settings-section-playback").performClick();compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed()
   lateinit var model: XuperViewModel;scenario.onActivity {model=ViewModelProvider(it)[XuperViewModel::class.java]}
+  compose.onNodeWithTag("settings-content").performScrollToNode(hasTestTag("setting-font-3"))
+  compose.onNodeWithTag("setting-font-3").performClick()
+  compose.waitUntil(15000){model.settings.value.font==3}
+  compose.onNodeWithTag("setting-font-3").assertIsSelected()
+  compose.onNodeWithTag("setting-font-0").assertIsNotSelected()
+  // Hardware Back first returns from a phone settings page to its section menu.
+  hardwareKey(KeyEvent.KEYCODE_BACK)
+  if(model.state.value.screen==Screen.SETTINGS){compose.onNodeWithTag("settings-navigation").assertIsDisplayed();hardwareKey(KeyEvent.KEYCODE_BACK)}
   compose.waitUntil(15000){model.state.value.screen==Screen.HOME}
   compose.onNodeWithContentDescription("Buscar").performClick();compose.onNode(hasSetTextAction()).performTextInput("Horizontes");compose.waitForIdle();assert(compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty())
  }
@@ -65,13 +71,22 @@ class AndroidSmokeTest {
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.MOVIES}
   hardwareKey(KeyEvent.KEYCODE_DPAD_RIGHT)
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.SERIES};screenshot("tv-series")
+  val root=compose.onRoot().fetchSemanticsNode().boundsInRoot
+  val nav=compose.onNodeWithTag("navigation-group").fetchSemanticsNode().boundsInRoot
+  org.junit.Assert.assertTrue("TV navigation must be centered independently of the logo",kotlin.math.abs(nav.center.x-root.center.x)<2)
+  compose.onNodeWithContentDescription("Ajustes").performClick()
+  compose.onNodeWithTag("navigation-group").assertDoesNotExist()
+  compose.onNodeWithTag("settings-section-playback").assertIsFocused()
+  hardwareKey(KeyEvent.KEYCODE_DPAD_DOWN)
+  compose.onNodeWithTag("settings-section-display").assertIsFocused().assertIsSelected()
+  compose.onNodeWithTag("settings-panel-title").assertTextEquals("Pantalla")
  }
 
  @Test fun favoritesAndRelatedTitlesAreReachable() {
   compose.onNodeWithText("Ver ficha",substring=true).performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Similares").fetchSemanticsNodes().isNotEmpty()}
   compose.onNodeWithText("Mi lista").performClick()
-  hardwareKey(KeyEvent.KEYCODE_BACK);compose.onNodeWithContentDescription("Mi lista").performClick()
+  hardwareKey(KeyEvent.KEYCODE_BACK);compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithTag("settings-section-library").performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Quitar de mi lista").fetchSemanticsNodes().isNotEmpty()}
   compose.onAllNodesWithText("Quitar de mi lista")[0].performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}

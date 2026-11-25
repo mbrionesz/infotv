@@ -96,7 +96,7 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
     val connectivity=getApplication<Application>().getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
     val cap=DataPolicy.maxHeight(connectivity.getNetworkCapabilities(connectivity.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)==true,connectivity.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
     val manual=library.titleAudio(title)
-    val desiredAudio=audioChoice.ifBlank {manual?.first.orEmpty()}
+    val desiredAudio=audioChoice.ifBlank {manual?.first?.takeIf {it.isNotBlank()}?:settings.value.audio.takeUnless {it=="es-419"}.orEmpty()}
     val repo=withContext(Dispatchers.IO){repository}
     val resolved=repo.resolve(title,selectedEpisode,seasonId,cap,desiredAudio,manual?.second.orEmpty())
     require(resolved.sources.isNotEmpty()) {"El portal no entregó un enlace de vídeo"}
@@ -148,6 +148,7 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  fun chooseAudio(track: Track) { val selected=player.audio(track.id)?:return;val title=state.value.playing?.title?:return;viewModelScope.launch { library.saveTitleAudio(title,selected.language,selected.name) } }
  fun favorite(title: Title) { viewModelScope.launch { library.favorite(title,favorites.value.none { it.id==title.id&&it.kind==title.kind }) } }
  fun remove(title: Title) { viewModelScope.launch { library.remove(title) } }
+ fun changeAudioPreference(value: String) {viewModelScope.launch {library.audio(value)}}
  fun changeSetting(key: String,value: Int) { viewModelScope.launch { library.set(key,value) } }
  fun checkpoint() { val playing=state.value.playing?:return;val snapshot=player.snapshot.value;if(snapshot.positionMs<=0)return;viewModelScope.launch { library.checkpoint(playing,snapshot.positionMs,snapshot.durationMs) } }
  fun background() {

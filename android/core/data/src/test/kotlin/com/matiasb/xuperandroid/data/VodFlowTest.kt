@@ -80,4 +80,14 @@ class VodFlowTest {
   assertTrue(restored.sources.first().url.contains("spain-720"));assertEquals("Castellano",restored.portalAudio.single {it.selected}.name)
  }
 
+ @Test fun languagePreferencesRecognizePortalIsoThreeLetterCodes()=runBlocking {
+  val repository=repo(vod(track("spanish-1080",1080),track("english-720",720,"eng"),track("portuguese-720",720,"por")))
+  val english=repository.resolve(movie,preferredAudio="en")
+  assertEquals("eng",english.portalAudio.single {it.selected}.language)
+  val portuguese=repository.resolve(movie,preferredAudio="pt")
+  assertEquals("por",portuguese.portalAudio.single {it.selected}.language)
+  val regional=repo(vod(track("spanish-1080",1080),track("brazilian-720",720,"pt-BR"))).resolve(movie,preferredAudio="pt")
+  assertEquals("pt-BR",regional.portalAudio.single {it.selected}.language)
+ }
+
 }

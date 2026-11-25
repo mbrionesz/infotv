@@ -50,7 +50,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperAndroid-0.1.1-beta6
+          name: XuperAndroid-0.1.1-beta7
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/

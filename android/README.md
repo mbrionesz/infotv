@@ -1,6 +1,14 @@
-# XuperAndroid · 0.1.1 beta 6
+# XuperAndroid · 0.1.1 beta 7
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 7
+
+- Cabecera TV/Películas/Series/lupa centrada respecto a la pantalla, con zonas laterales iguales para marca y ajustes. Ventanas estrechas o con fuente grande pasan a dos filas. Mi lista se encuentra en Ajustes, como en el cliente compartido.
+- Ajustes reproduce la organización de Tizen/Windows: menú por grupos a la izquierda y panel de contenido a la derecha en tablet/TV; menú y página de sección en teléfono. Paneles de Mi lista, Reproducción, Pantalla, Diagnóstico, Catálogo y portal, Almacenamiento y Acerca de. La cabecera de catálogo se oculta en Ajustes como en el cliente compartido.
+- Superficies, bordes, radios, sombras discretas, selección y foco derivados de la paleta compartida Zinc. Controles nativos con área de interacción de 48 dp, sin filtros/efectos de desenfoque ni cambios del motor de vídeo.
+- Opciones de fuente/tamaño/color con una única selección y vista previa; preferencias reales conservadas. Los códigos en y pt se corresponden con las variantes eng/por del portal al elegir idiomas. Se conserva la prioridad de calidad predeterminada y las selecciones manuales por título.
+- Conteo y registros, diagnóstico, limpieza de caché y prueba local siguen disponibles en sus secciones. DNS, perfil, límites de búfer y biblioteca de beta 6 conservados.
 
 ## Novedades de beta 6
 

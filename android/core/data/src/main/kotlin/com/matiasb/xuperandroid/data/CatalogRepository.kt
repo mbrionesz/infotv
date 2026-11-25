@@ -87,7 +87,7 @@ class PortalRepository(private val client: PortalRequests): CatalogRepository {
   val playable=tracks.filter {trackLicense(it).isNotBlank()}
   if(playable.isEmpty())throw java.io.IOException("El portal no entregó pistas de vídeo autorizadas")
   val explicit=playable.filter {preferredAudio.isNotBlank()&&it.text("contentId")==preferredAudio}
-  val preferred=playable.filter {preferredAudio.isNotBlank()&&vodAudio(it).equals(preferredAudio,true)}
+  val preferred=playable.filter {preferredAudio.isNotBlank()&&sameAudioLanguage(vodAudio(it),preferredAudio)}
   val named=preferred.filter {preferredAudioName.isNotBlank()&&it.text("languageName").equals(preferredAudioName,true)}
   val candidates=explicit.ifEmpty {named}.ifEmpty {preferred}.ifEmpty {playable}
   val chosenHeight=DataPolicy.chooseHeight(candidates.map {vodHeight(it)},maxHeight)

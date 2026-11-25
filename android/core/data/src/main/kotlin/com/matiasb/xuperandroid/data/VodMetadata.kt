@@ -15,3 +15,12 @@ internal fun vodFps(track: JSONObject): Float {
  return value.takeIf {it.isFinite()&&it>0&&it<=240}?.toFloat()?:0f
 }
 internal fun vodAudio(track: JSONObject)=listOf("audioInfo","language","audioLanguage","languageName").firstNotNullOfOrNull {track.text(it).takeIf {value->value.isNotBlank()}}.orEmpty()
+
+internal fun audioLanguageKey(value: String): String = when(val code=value.lowercase().replace('_','-')) {
+ "eng"->"en";"por"->"pt";"jpn"->"ja";"kor"->"ko";"spa","esp"->"es";"es-mx","es419"->"es-419";else->code
+}
+
+internal fun sameAudioLanguage(left: String,right: String): Boolean {
+ val a=audioLanguageKey(left);val b=audioLanguageKey(right)
+ return a==b||(a.substringBefore('-')==b.substringBefore('-')&&(!a.contains('-')||!b.contains('-')))
+}

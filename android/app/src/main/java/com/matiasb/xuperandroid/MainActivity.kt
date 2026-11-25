@@ -77,17 +77,23 @@ class MainActivity: ComponentActivity() {
  BackHandler(enabled=state.screen==Screen.HOME){val now=android.os.SystemClock.uptimeMillis();if(now-exitAt<2000){vm.stopPlayer();(context as? MainActivity)?.finish()}else{exitAt=now;android.widget.Toast.makeText(context,"Pulsa Atrás otra vez para salir",android.widget.Toast.LENGTH_SHORT).show()}}
  BackHandler(enabled=state.screen!=Screen.HOME) { vm.back() }
  if(state.screen==Screen.PLAYER) { PlayerScreen(vm,state,settings,tv,pip);return }
+ if(state.screen==Screen.SETTINGS) { SettingsScreen(vm,settings,state.demo,tv);return }
  BoxWithConstraints(Modifier.fillMaxSize().background(Background).safeDrawingPadding()) {
-  val compact=maxWidth<720.dp
-  val navigationWidth=(maxWidth*0.55f).coerceAtMost(520.dp)
+  val horizontalPadding=if(tv)32.dp else 16.dp
+  val navigationWidth=(maxWidth-horizontalPadding*2-400.dp).coerceAtMost(520.dp)
+  val compact=navigationWidth<330.dp||LocalConfiguration.current.fontScale>1.35f
   Column(Modifier.fillMaxSize().padding(horizontal=if(tv)32.dp else 16.dp)) {
    // Restore the active tab before enabling navigation by focus. This also applies after playback.
    DisposableEffect(tv){onDispose {if(tv)menuFocusReady=false}}
-   if(compact) Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically) { Brand(Modifier.weight(1f),stats);Actions(vm) }
-   Row(Modifier.fillMaxWidth().padding(vertical=if(compact)12.dp else 8.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-    if(!compact)Brand(Modifier.weight(1f),stats,dense=true)
-    NavigationGroup(vm,state,tv,menuFocusReady,tabFocus,if(compact)Modifier.weight(1f)else Modifier.width(navigationWidth),dense=!compact){menuFocusReady=true}
-    if(!compact)Actions(vm,dense=true)
+   if(compact) {
+    Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically) {Brand(Modifier.weight(1f),stats);Actions(vm)}
+    Box(Modifier.fillMaxWidth().padding(vertical=12.dp),contentAlignment=Alignment.Center) {
+     NavigationGroup(vm,state,tv,menuFocusReady,tabFocus,Modifier.widthIn(max=520.dp).fillMaxWidth()){menuFocusReady=true}
+    }
+   } else Row(Modifier.fillMaxWidth().padding(vertical=8.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+    Box(Modifier.weight(1f),contentAlignment=Alignment.CenterStart){Brand(stats=stats,dense=true)}
+    NavigationGroup(vm,state,tv,menuFocusReady,tabFocus,Modifier.width(navigationWidth),dense=true){menuFocusReady=true}
+    Box(Modifier.weight(1f),contentAlignment=Alignment.CenterEnd){Actions(vm,dense=true)}
    }
    if(state.demo) Text("MODO DE PRUEBA · Contenido local, no es el catálogo del portal",color=Accent,fontSize=12.sp,modifier=Modifier.padding(bottom=8.dp))
    when(state.screen) {
@@ -95,21 +101,21 @@ class MainActivity: ComponentActivity() {
     Screen.SEARCH -> SearchScreen(vm,state)
     Screen.DETAILS -> DetailScreen(vm,state)
     Screen.FAVORITES -> FavoritesScreen(vm)
-    Screen.SETTINGS -> SettingsScreen(vm,settings,state.demo)
+    Screen.SETTINGS -> Unit
     else -> Unit
    }
   }
  }
  removing?.let { title->AlertDialog(onDismissRequest={removing=null},title={Text("Quitar de Seguir viendo")},text={Text(title.name)},confirmButton={TextButton(onClick={vm.remove(title);removing=null}){Text("Eliminar")}},dismissButton={TextButton(onClick={removing=null}){Text("Cancelar")}}) }
 }
-@Composable private fun Brand(modifier: Modifier=Modifier,stats: com.matiasb.xuperandroid.data.CatalogStats=com.matiasb.xuperandroid.data.CatalogStats(),dense: Boolean=false) { Row(modifier,verticalAlignment=Alignment.CenterVertically) { Icon(painterResource(R.drawable.ic_xuper),null,tint=Color.Unspecified,modifier=Modifier.size(if(dense)36.dp else 44.dp));Column { Text("XuperAndroid",fontWeight=FontWeight.Bold,fontSize=if(dense)18.sp else 19.sp);Text("by Matias",fontSize=11.sp,color=XuperStyle.muted);stats.history.lastOrNull()?.let {Text("${it.total} títulos informados",fontSize=10.sp,color=Accent)} } } }
+@Composable private fun Brand(modifier: Modifier=Modifier,stats: com.matiasb.xuperandroid.data.CatalogStats=com.matiasb.xuperandroid.data.CatalogStats(),dense: Boolean=false) { Row(modifier,verticalAlignment=Alignment.CenterVertically) { Icon(painterResource(R.drawable.ic_xuper),null,tint=Color.Unspecified,modifier=Modifier.size(if(dense)36.dp else 44.dp));Spacer(Modifier.width(8.dp));Column { Text("XuperAndroid",fontWeight=FontWeight.Bold,fontSize=if(dense)18.sp else 19.sp);Text("by Matias",fontSize=11.sp,color=XuperStyle.muted);Text(stats.history.lastOrNull()?.let {"${it.total} títulos informados"}?:"Catálogo · sin conteo",fontSize=10.sp,color=XuperStyle.muted) } } }
 @Composable private fun NavigationGroup(vm: XuperViewModel,state: UiState,tv: Boolean,ready: Boolean,focus: Map<Section,FocusRequester>,modifier: Modifier=Modifier,dense: Boolean=false,onFocusReady: ()->Unit) {
  val inputMode=LocalInputModeManager.current
  Surface(modifier.testTag("navigation-group"),shape=RoundedCornerShape(16.dp),color=XuperStyle.secondary,contentColor=XuperStyle.foreground,border=BorderStroke(1.dp,XuperStyle.secondary),shadowElevation=2.dp) {
   BoxWithConstraints(Modifier.padding(4.dp)) {
    // These focus targets are subcomposed during layout; request focus only after placement.
    LaunchedEffect(tv){if(tv){withFrameNanos {};inputMode.requestInputMode(InputMode.Keyboard);if(!focus.getValue(state.section).requestFocus()){withFrameNanos {};focus.getValue(state.section).requestFocus()};onFocusReady()}}
-   val stacked=maxWidth<330.dp || (maxWidth<440.dp&&LocalConfiguration.current.fontScale>1.25f)
+   val stacked=maxWidth<280.dp || (maxWidth<440.dp&&LocalConfiguration.current.fontScale>1.25f)
    Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(2.dp),verticalAlignment=Alignment.CenterVertically) {
      Section.entries.forEach { section->NavigationButton(section.label,state.section==section,{vm.select(section)},Modifier.testTag("nav-${section.name}").focusRequester(focus.getValue(section)).focusProperties {canFocus=!tv||ready||state.section==section}.weight(1f),grouped=true,dense=dense,onFocus={if(tv&&ready&&state.section!=section)vm.select(section)}) }
@@ -123,7 +129,6 @@ class MainActivity: ComponentActivity() {
 @Composable private fun Actions(vm: XuperViewModel,dense: Boolean=false) {
  Surface(shape=XuperStyle.control,color=Panel,contentColor=XuperStyle.foreground,border=BorderStroke(1.dp,XuperStyle.secondary)) {
   Row(Modifier.padding(2.dp),horizontalArrangement=Arrangement.spacedBy(2.dp)) {
-   HeaderAction(Icons.Default.FavoriteBorder,"Mi lista",vm::openFavorites,grouped=true,dense=dense)
    HeaderAction(Icons.Outlined.Settings,"Ajustes",vm::settingsScreen,grouped=true,dense=dense)
   }
  }
@@ -211,29 +216,6 @@ class MainActivity: ComponentActivity() {
   items(details.episodes,key={it.id}){ep->XuperOutlinedButton(onClick={vm.play(title,ep)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp)){Column(Modifier.fillMaxWidth().padding(6.dp)){Text("EP. ${ep.number} · ${ep.name}",fontWeight=FontWeight.Medium);if(ep.durationSeconds>0)Text("${ep.durationSeconds/60} min",fontSize=12.sp)}}}
  }
 }
-@Composable private fun SettingsScreen(vm: XuperViewModel,settings: Settings,demo: Boolean) {
- val stats by vm.stats.collectAsStateWithLifecycle();val report by vm.networkReport.collectAsStateWithLifecycle();val diagnosing by vm.diagnosing.collectAsStateWithLifecycle()
- val context=LocalContext.current;val scope=rememberCoroutineScope();var status by remember { mutableStateOf("") }
- LazyColumn(verticalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(bottom=32.dp)) {
-  item {Text("Ajustes",modifier=Modifier.testTag("settings-heading"),fontSize=28.sp,fontWeight=FontWeight.Bold)}
-  item {Text("XuperAndroid · "+BuildConfig.VERSION_NAME,color=Accent);Text("Diseñado para teléfono, tablet y Android TV",fontSize=14.sp,color=XuperStyle.muted)}
-  item {XuperOutlinedButton(onClick=vm::openFavorites){Icon(Icons.Default.Favorite,null);Text("Mi lista")}}
-  item {Text("Estadísticas del catálogo",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Text(stats.history.lastOrNull()?.let {"✓ ${it.total} títulos informados · Películas ${it.movies} · Series ${it.series}"}?:"Sin conteo confirmado",color=Accent);Text("Totales declarados por el portal; no verifica títulos únicos.",fontSize=12.sp,color=XuperStyle.muted);XuperOutlinedButton(onClick={vm.refreshStats(true)},enabled=!demo){Text("Actualizar conteo")}}
-  items(stats.history.asReversed(),key={"count:${it.at}"}) {record->Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text("${record.total} títulos",fontWeight=FontWeight.Bold);Text(java.text.DateFormat.getDateTimeInstance().format(java.util.Date(record.at)),fontSize=12.sp)}}}
-  item {Text("Versión observada del portal",fontWeight=FontWeight.SemiBold);Text(stats.version.ifBlank {"El portal no ha declarado una versión en sus respuestas"},fontSize=13.sp);Text("Solo respuestas de nuestra sesión; observación cada 7 días cuando se publica ese dato.",fontSize=12.sp,color=XuperStyle.muted)}
-  item {Text("Diagnóstico de conexión",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Text("Mide conexiones y descarga hasta 1 MiB. No borra historial ni favoritos.",fontSize=12.sp,color=XuperStyle.muted);XuperOutlinedButton(onClick=vm::diagnose,enabled=!diagnosing){Text(if(diagnosing)"Comprobando…" else "Diagnosticar")}}
-  report?.let {network->items(network.hosts,key={"host:${it.host}"}) {host->Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text((if(host.status!=null)"✓ "else"! ")+host.host,color=if(host.status!=null)Color(0xFF86EFAC) else Color(0xFFFFC9C9));Text(if(host.status!=null)"${host.elapsedMs} ms · HTTP ${host.status}"else host.error.orEmpty(),fontSize=13.sp)}}};item {Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text(network.megabits?.let {"%.2f Mbps · medición puntual".format(it)}?:network.error.orEmpty());Text(when(network.consistent){true->"Latencia consistente entre los hosts medidos";false->"Latencia variable entre los hosts medidos";null->"No hay suficientes respuestas para comparar estabilidad"},fontSize=12.sp)}}}}
-  item {Text("Subtítulos",fontSize=20.sp,fontWeight=FontWeight.SemiBold)}
-  item {FilterPicker("Modo",listOf(Choice("0","Automáticos si no hay español"),Choice("1","Desactivados"),Choice("2","Activados si existen")),settings.subtitleMode.toString(),allowAll=false){vm.changeSetting("subtitles",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Fuente",listOf("Sistema","Condensada","Serif","Monoespaciada").mapIndexed { i,s->Choice(i.toString(),s) },settings.font.toString(),allowAll=false){vm.changeSetting("font",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Tamaño",listOf("Normal","Grande","Pequeño").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontSize.toString(),allowAll=false){vm.changeSetting("fontSize",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Color",listOf("Blanco","Amarillo","Cian").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontColor.toString(),allowAll=false){vm.changeSetting("fontColor",it.toIntOrNull()?:0)}}
-  item {Text("Audio: español latino cuando esté identificado. Las elecciones por título tienen prioridad.",fontSize=14.sp,color=Color(0xFF9CADBF))}
-  item {Text("Almacenamiento",fontSize=20.sp,fontWeight=FontWeight.SemiBold);XuperOutlinedButton(onClick={scope.launch { status="Limpiando…";val loader=coil3.SingletonImageLoader.get(context);loader.memoryCache?.clear();withContext(Dispatchers.IO){loader.diskCache?.clear()};status="Caché temporal eliminada. Se conservan progreso, favoritos y ajustes." }}){Text("Limpiar caché temporal")};if(status.isNotBlank())Text(status,fontSize=13.sp,color=Accent)}
-  item {Text("Imágenes del carrusel",fontWeight=FontWeight.SemiBold);Text("TMDB · This product uses the TMDB API but is not endorsed or certified by TMDB. Solo las tres imágenes de presentación por sección; resultados guardados hasta 30 días.",fontSize=12.sp,color=XuperStyle.muted)}
-  item {Text("Prueba local",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Row(verticalAlignment=Alignment.CenterVertically){Switch(demo,{vm.demo(it)});Spacer(Modifier.width(12.dp));Text("Usar catálogo y vídeo de prueba")};Text("No utiliza el portal ni representa su catálogo. Sirve para probar mandos, pantallas y reproducción.",fontSize=12.sp,color=XuperStyle.muted)}
- }
-}
 
 private fun categoryCards(state: UiState): List<Pair<Choice,Query>> {
  if(state.section==Section.TV)return state.columns.map { it to Query(column=it.id) }
@@ -243,7 +225,7 @@ private fun categoryCards(state: UiState): List<Pair<Choice,Query>> {
  return genres.take(24).ifEmpty { state.columns.take(20).map { it to Query(column=it.id) } }
 }
 
-@Composable private fun FavoritesScreen(vm: XuperViewModel) {
+@Composable internal fun FavoritesScreen(vm: XuperViewModel) {
  val favorites by vm.favorites.collectAsStateWithLifecycle()
  Column(Modifier.fillMaxSize()){Text("Mi lista",fontSize=28.sp,fontWeight=FontWeight.Bold,modifier=Modifier.padding(bottom=16.dp));if(favorites.isEmpty())Text("Guarda películas, series o canales en tu lista.");LazyVerticalGrid(GridCells.Adaptive(145.dp),horizontalArrangement=Arrangement.spacedBy(14.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){items(favorites,key={"${it.kind}:${it.id}"}){title->Column{PosterCard(title,{vm.detail(title)},modifier=Modifier.fillMaxWidth());Text(title.name,maxLines=2,fontSize=14.sp);TextButton(onClick={vm.favorite(title)}){Text("Quitar de mi lista")}}}}}
 }
