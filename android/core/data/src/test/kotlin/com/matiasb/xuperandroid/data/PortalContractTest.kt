@@ -5,6 +5,14 @@ import org.json.JSONObject
 import okhttp3.*
 class PortalContractTest {
  private val fixture=JSONObject(javaClass.getResourceAsStream("/portal-contract.json")!!.bufferedReader().readText())
+ @Test fun portalProfileMatchesArchivedSharedClient() {
+  val profile=fixture.getJSONObject("profile")
+  assertEquals(profile.getString("appId"),PortalClient.APP_ID)
+  assertEquals(profile.getString("spkgVer"),PortalClient.PROFILE)
+  assertEquals(profile.getInt("sdkVer"),PortalClient.PROTOCOL_SDK)
+  assertEquals(profile.getString("apkVersion"),PortalClient.APK_VERSION)
+  assertEquals(profile.getString("apkVer"),PortalClient.APK_HEADER)
+ }
  @Test fun encryptionMatchesArchivedJavaScriptClient() { assertEquals(fixture.getString("encrypted"),PortalCrypto.encrypt(fixture.getString("plain")));assertEquals(fixture.getString("plain"),PortalCrypto.decrypt(fixture.getString("encrypted"))) }
  @Test fun liveSignatureMatchesJavaScriptForTwoDifferentRequests() { val values=fixture.getJSONArray("signs");for(i in 0 until values.length()){val f=values.getJSONObject(i);assertEquals(f.getString("signature"),PortalCrypto.liveSign(f.getString("token"),f.getLong("moment"))) } }
  @Test fun redirectDoesNotLeakOriginSpecificCredentialsAndKeepsRange() {
