@@ -14,3 +14,7 @@ TV, Películas, Series y búsqueda con filtros. Mismo diseño oscuro inspirado e
 Beta; reproducción según fuentes y códecs disponibles. Instaladores Windows sin firma Authenticode.
 
 [XuperWindows](docs/XUPERWINDOWS-0.1.14.md) · [Instalar en Samsung](docs/INSTALAR-WINDOWS.md) · [Notas](docs/RELEASE-0.10.21-beta.1.md)
+
+## Desarrollo Android
+
+Primera alpha nativa para teléfono, tablet y Android TV/Google TV: [arquitectura, alcance, compilación y validación](android/README.md). Proyecto aislado en `android/`; las descargas actuales de Tizen y Windows se conservan.

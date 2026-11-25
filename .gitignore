@@ -29,3 +29,11 @@ desktop/native/
 # Isolated generated libmpv tester
 desktop-tester/
 desktop/native-libmpv/
+
+# Android local tools, build outputs and signing material
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/local.properties
+android/**/*.keystore
+android/**/*.jks
