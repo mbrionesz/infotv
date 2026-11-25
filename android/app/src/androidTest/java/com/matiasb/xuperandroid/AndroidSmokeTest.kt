@@ -25,7 +25,11 @@ class AndroidSmokeTest {
  @After fun stop() { scenario.onActivity {ViewModelProvider(it)[XuperViewModel::class.java].stopPlayer();it.clearPip()};scenario.close();shell("wm size reset");shell("wm density reset") }
  @Test fun navigationAndSettingsAreAccessible() {
   screenshot("phone-movies");compose.onAllNodesWithText("Series")[0].performClick();compose.waitUntil(30_000){compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty()}
-  screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed();pressBack()
+  screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed()
+  // Use a real hardware Back event after lazy scrolling, rather than Espresso's stale root-focus picker.
+  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+  lateinit var model: XuperViewModel;scenario.onActivity {model=ViewModelProvider(it)[XuperViewModel::class.java]}
+  compose.waitUntil(15000){model.state.value.screen==Screen.HOME}
   compose.onNodeWithContentDescription("Buscar").performClick();compose.onNode(hasSetTextAction()).performTextInput("Horizontes");compose.waitForIdle();assert(compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty())
  }
  @Test fun localMovieDecodesAndAudioMenuOpens() {
@@ -68,6 +72,8 @@ class AndroidSmokeTest {
   var inPip=false
   compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};inPip}
   org.junit.Assert.assertNotNull(vm.player.player)
+  val atEntry=vm.player.snapshot.value.positionMs
+  compose.waitUntil(5000){vm.player.snapshot.value.playing&&vm.player.snapshot.value.positionMs>atEntry+300}
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
   shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
   compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};!inPip}
