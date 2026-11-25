@@ -22,3 +22,12 @@ test('the native layout reserves only the next-episode button and tracks resize'
  const session=openDesktopNative(new Video(),{url:'https://fixture.test/video.ts'},{onState(){},onError:assert.fail});
  try{await session.ready;assert.equal(layouts[0].clipHeight,600);assert.deepEqual(layouts[0].occlusions,[{x:800,y:450,width:180,height:50}]);rect={left:0,top:0,width:1920,height:1080,bottom:1080};button={left:1600,top:950,width:220,height:60};resize();assert.equal(layouts.at(-1).clipHeight,1080);assert.deepEqual(layouts.at(-1).occlusions,[{x:1600,y:950,width:220,height:60}]);}finally{session.destroy();Object.assign(globalThis,old);}
 });
+test('libmpv captions move above the actual HUD content and return to the bottom when it hides',async()=>{
+ const old={window:globalThis.window,document:globalThis.document,getComputedStyle:globalThis.getComputedStyle};let resize,visible=true;const commands=[],layouts=[];
+ const content={getBoundingClientRect:()=>({top:450,bottom:600,height:150})},overlay={querySelector:()=>content,getBoundingClientRect:()=>({top:250,bottom:600,height:350})};
+ globalThis.document={getElementById:()=>({}),querySelector:s=>s==='#player-vod-infobar'?overlay:null};globalThis.getComputedStyle=()=>({display:visible?'block':'none',visibility:'visible',opacity:'1'});
+ globalThis.window={addEventListener:(_event,fn)=>resize=fn,removeEventListener(){},XuperDesktop:{nativeEngine:'libmpv',mediaLayout:b=>layouts.push(b),startMedia:async()=>({id:'caption-layout'}),mediaState:async()=>({time:1,ready:true,tracks:[]}),mediaCommand:async(_id,action,value)=>commands.push({action,value}),onMediaClosed:()=>()=>{},stopMedia(){}}};
+ class Video extends EventTarget{play(){}pause(){}getBoundingClientRect(){return {left:0,top:0,width:1000,height:600,bottom:600};}}
+ const session=openDesktopNative(new Video(),{url:'https://fixture.test/video.ts'},{onState(){},onError:assert.fail});
+ try{await session.ready;await new Promise(r=>setTimeout(r,20));resize();await new Promise(r=>setTimeout(r,0));assert.equal(layouts.at(-1).clipHeight,450);assert.deepEqual(commands.at(-1),{action:'subtitle-position',value:71});visible=false;resize();await new Promise(r=>setTimeout(r,0));assert.equal(layouts.at(-1).clipHeight,600);assert.deepEqual(commands.at(-1),{action:'subtitle-position',value:100});}finally{session.destroy();Object.assign(globalThis,old);}
+});

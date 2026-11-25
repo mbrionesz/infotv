@@ -5311,8 +5311,8 @@
   function ci() {
     (X.infoTimer && clearTimeout(X.infoTimer),
       (X.infoTimer = setTimeout(function () {
-        ((X.infoTimer = null), "player" !== X.screen || X.channelsOpen || ui());
-      }, ei)));
+        ((X.infoTimer = null), "player" !== X.screen || X.channelsOpen || (window.XuperDesktop && document.activeElement && n(document.activeElement,".xw-seek-form input") ? ci() : ui()));
+      }, window.XuperDesktop ? 3000 : ei)));
   }
   function pi() {
     ((X.infobar = !0),

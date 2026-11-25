@@ -16,7 +16,7 @@ export function openDesktopNative(video,stream,options){
   catch(_){reportError('No se pudo renovar la autorización del vídeo.');}finally{refreshing=false;}
  }
  async function poll(){if(closed||notifiedClosed||!id||busy)return;busy=true;try{const next=await bridge.mediaState(id);pollFailures=0;if(next.closed){finishState(next);return;}apply(next);if(next.error&&!next.refreshRequired){reportError(next.error);return;}if(next.refreshRequired&&typeof stream.refreshStream==='function')await renew();}catch(_){if(++pollFailures>=3)reportError('No se pudo consultar el estado del reproductor.');}finally{busy=false;}}
- let previousLayout='';
+ let previousLayout='',previousSubtitlePosition=null,subtitlePositionPending=false;
  function layout(){
   if(closed||!bridge.mediaLayout)return;
   const rect=video.getBoundingClientRect(),screen=document.getElementById('screen-player');
@@ -25,7 +25,7 @@ export function openDesktopNative(video,stream,options){
   // renderer surface; video continues behind them without losing the decoder.
   for(const selector of ['#player-infobar','#player-vod-infobar','.xt-player-chrome','.xt-next-episode','#player-playsetting-view','#dialog-playsettings','.xt-vod-recovery']){
    const overlay=document.querySelector(selector);if(!overlay)continue;
-   const style=getComputedStyle(overlay),box=overlay.getBoundingClientRect();
+   const style=getComputedStyle(overlay),content=selector==='#player-vod-infobar'&&overlay.querySelector?.('.vod-infobar-content'),box=(content||overlay).getBoundingClientRect();
    if(style.display==='none'||style.visibility==='hidden'||Number(style.opacity)===0||box.height<2)continue;
    if(selector==='.xt-next-episode')occlusions.push({x:box.left-rect.left,y:box.top-rect.top,width:box.width,height:box.height});
    else if(selector==='#player-infobar'||selector==='#player-vod-infobar'||selector==='.xt-player-chrome')bottom=Math.min(bottom,box.top);
@@ -33,6 +33,12 @@ export function openDesktopNative(video,stream,options){
   }
   const bounds={x:rect.left,y:rect.top,width:rect.width,height:rect.height,clipHeight:Math.max(0,bottom-rect.top),occlusions,hidden},key=JSON.stringify(bounds);
   if(key!==previousLayout){previousLayout=key;bridge.mediaLayout(bounds);}
+  if(!state.ready)previousSubtitlePosition=null;
+  if(bridge.nativeEngine==='libmpv'&&id&&state.ready&&!subtitlePositionPending){
+   const position=bottom<rect.bottom&&rect.height>0?Math.max(20,Math.min(100,Math.floor((bottom-rect.top-24)/rect.height*100))):100;
+   if(position!==previousSubtitlePosition){subtitlePositionPending=true;bridge.mediaCommand(id,'subtitle-position',position).then(()=>{previousSubtitlePosition=position;},()=>{previousSubtitlePosition=position;}).finally(()=>{subtitlePositionPending=false;});}
+  }
+  if(bridge.nativeEngine==='libmpv'&&id&&state.ready&&rect.height>0){const position=bottom<rect.bottom?Math.max(20,Math.min(100,Math.floor((bottom-rect.top-24)/rect.height*100))):100;if(position!==previousSubtitlePosition){previousSubtitlePosition=position;bridge.mediaCommand(id,'subtitle-position',position).catch(()=>{if(previousSubtitlePosition===position)previousSubtitlePosition=null,subtitlePositionPending=false;});}}
  }
  const layoutTimer=setInterval(layout,150);window.addEventListener?.('resize',layout);layout();
  const ready=Promise.resolve().then(()=>bridge.startMedia({url:stream.url,headers:stream.headers||{},backupUrls:stream.backupUrls||[],name:stream.name||'Reproducción',preferredAudio:options.preferredAudio,startTime:state.time,duration:state.duration,subtitle:window.__xuper?.subtitleForPlayback?.()||null,subtitleStyle:window.__xuper?.subtitleStyleForPlayback?.()||{font:0,size:0,color:0}})).then(result=>{id=result.id;if(closed){bridge.stopMedia(id);return;}off=bridge.onMediaClosed(next=>{if(next.id!==id||closed)return;finishState(next);});timer=setInterval(poll,500);poll();},error=>{if(!closed)options.onError(error.message||'No pudo iniciar el motor compatible.');});
