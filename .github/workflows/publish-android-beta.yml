@@ -1,0 +1,83 @@
+name: Publish verified XuperAndroid beta
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Full source SHA verified by Android tests
+        required: true
+      validation_run:
+        description: Successful Android validation run for this source
+        required: true
+      payload_ref:
+        description: Temporary commit containing only signed public APK and checksums
+        required: true
+      apk_sha256:
+        description: Expected SHA-256 of the locally signed APK
+        required: true
+      tag:
+        description: Existing beta draft tag
+        required: true
+        default: v0.1.1-android-beta.1
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_REF: ${{ inputs.source_ref }}
+      VALIDATION_RUN: ${{ inputs.validation_run }}
+      PAYLOAD_REF: ${{ inputs.payload_ref }}
+      APK_SHA256: ${{ inputs.apk_sha256 }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require successful validation of exactly this source
+        run: |
+          [[ "$SOURCE_REF" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$PAYLOAD_REF" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$APK_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          [[ "$VALIDATION_RUN" =~ ^[0-9]+$ ]]
+          [[ "$RELEASE_TAG" =~ ^v[0-9.]+-android-beta\.[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$VALIDATION_RUN" > "$RUNNER_TEMP/validation.json"
+          python3 - <<'PY'
+          import json,os
+          run=json.load(open(os.environ['RUNNER_TEMP']+'/validation.json'))
+          assert run['conclusion']=='success' and run['head_sha']==os.environ['SOURCE_REF']
+          assert run['path']=='.github/workflows/android-alpha.yml'
+          PY
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.payload_ref }}
+          path: release-payload
+          persist-credentials: false
+      - name: Verify the public payload (no signing keys)
+        run: |
+          python3 - <<'PY'
+          import json,os,pathlib,hashlib
+          folder=pathlib.Path('release-payload');expected={'XuperAndroid-0.1.1-beta1-universal.apk','SHA256SUMS.txt','build-info.json'}
+          assert {p.name for p in folder.iterdir() if p.name!='.git'}==expected
+          apk=folder/'XuperAndroid-0.1.1-beta1-universal.apk';sha=hashlib.sha256(apk.read_bytes()).hexdigest()
+          info=json.loads((folder/'build-info.json').read_text())
+          assert sha==os.environ['APK_SHA256']==info['sha256']
+          assert info['commit']==os.environ['SOURCE_REF'] and info['version']=='0.1.1-beta.1'
+          assert (folder/'SHA256SUMS.txt').read_text().strip()==sha+'  '+apk.name
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: build-tools;37.0.0
+      - name: Verify APK signature and alignment
+        run: |
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose release-payload/XuperAndroid-0.1.1-beta1-universal.apk
+          "$ANDROID_HOME/build-tools/37.0.0/zipalign" -c -P 16 4 release-payload/XuperAndroid-0.1.1-beta1-universal.apk
+      - name: Publish verified beta
+        run: |
+          gh release upload "$RELEASE_TAG" release-payload/*.apk release-payload/SHA256SUMS.txt release-payload/build-info.json --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease --latest=false
