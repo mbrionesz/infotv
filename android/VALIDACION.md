@@ -1,3 +1,16 @@
+# XuperAndroid 0.1.1 beta 4: verificación
+
+- Fuente validada: `b3aaf70de44e4342721ce00267a0adcd0448dc3f`.
+- DNS: Cloudflare, Google y Quad9 en paralelo, DNS Android diferido, plazo global 3,5 s, caché de 64 hosts/60 s y ejecutores/colas separados y acotados. TLS validado y bootstrap por IP. Cinco pruebas cubren lentitud, fallos, respuestas vacías, deadline y caché; no miden proveedores reales desde la red del usuario.
+- Perfil del portal alineado con el cliente compartido archivado: spkgVer/sysVersion `2024-09-10 06:25:30_33_13_`, sdkVer de protocolo 33, apkVersion 49902 y apkVer 43404. Prueba de contrato añadida. Sesiones de otro perfil se renuevan con la identidad propia, conservando biblioteca/preferencias. `companion/lib/magis.js` sin cambios.
+- Primeros resultados visibles antes de finalizar metadatos opcionales; carga inicial limitada a 60 s. Consultas concurrentes de categorías de la misma sección comparten exclusión mutua/caché, evitando la doble petición inicial de VOD.
+- 26 pruebas unitarias y 9 instrumentadas aprobadas, sin fallos/errores/omisiones: https://github.com/mbrionesz/infotv/actions/runs/45661511276 . Incluye reproducción, PiP, navegación táctil/D-pad, pantalla estrecha, contraste y 16 capturas.
+- Release optimizado/R8 y lint correctos; firma v2/v3 y alineación 16 KiB verificadas. Certificado público idéntico al de beta 3. APK universal de 4.735.472 bytes, SHA-256 `6df2f30d753c1c0bfec35343a0b0a0d6c4f96ef03659c1a51425f8daf28b7310`.
+- Publicación exitosa: https://github.com/mbrionesz/infotv/actions/runs/45662760770 . Descarga pública verificada con el mismo SHA-256: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.4 . Solo se transfieren APK público y comprobantes; keystore local.
+- Las pruebas de interfaz usan debug y contenido local. APK release compilado/verificado, pendiente de pruebas físicas. No se confirmó la causa exacta ni la mejora de tiempos del portal real en la conexión del usuario; DNS, perfil y espera de metadatos son diferencias observadas en el código, no diagnósticos probados del dispositivo.
+
+## Registro anterior: beta 3
+
 # XuperAndroid 0.1.1 beta 3: verificación
 
 - Fuente validada: `b0725a339824de14a68cfdce0701770c80d57d6d`.
