@@ -2,6 +2,8 @@ package com.matiasb.xuperandroid.data
 import com.matiasb.xuperandroid.model.*
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 interface CatalogRepository {
  suspend fun browse(section: Section,query: Query=Query(),page: Int=1): Page
  suspend fun categories(section: Section): List<Choice>
@@ -18,11 +20,12 @@ internal fun JSONObject.title(kind: Kind): Title {
 }
 class PortalRepository(private val client: PortalClient): CatalogRepository {
  private val columns=java.util.concurrent.ConcurrentHashMap<Section,List<Choice>>()
+ private val columnLocks=Section.entries.associateWith {Mutex()}
  private suspend fun call(path: String,bean: JSONObject): JSONObject=client.request(path,bean)
- override suspend fun categories(section: Section): List<Choice> {
-  columns[section]?.let { return it }
+ override suspend fun categories(section: Section): List<Choice> = columnLocks.getValue(section).withLock {
+  columns[section]?.let { return@withLock it }
   val result=if(section==Section.TV)call("getNextColumns",JSONObject().put("columnCode","masnew_live").put("pageNum",1).put("pageSize",200).put("version","")) else call("v3/getColumnContents",JSONObject().put("columnId",section.columnId).put("pageNum",1).put("pageSize",1000))
-  return result.optJSONArray(if(section==Section.TV)"recommendList" else "childColumnList").objects().filter { !it.optBoolean("restricted",false) && it.text("restricted")!="1" }.map { Choice(it.text(if(section==Section.TV)"columnId" else "id"),it.text("name").ifBlank { it.text("title") }) }.filter { it.id.isNotBlank()&&it.label.isNotBlank() }.also { columns[section]=it }
+  result.optJSONArray(if(section==Section.TV)"recommendList" else "childColumnList").objects().filter { !it.optBoolean("restricted",false) && it.text("restricted")!="1" }.map { Choice(it.text(if(section==Section.TV)"columnId" else "id"),it.text("name").ifBlank { it.text("title") }) }.filter { it.id.isNotBlank()&&it.label.isNotBlank() }.also { columns[section]=it }
  }
  override suspend fun filters(section: Section): Filters {
   if(section==Section.TV)return Filters()

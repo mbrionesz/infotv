@@ -7,6 +7,7 @@ Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identi
 - Perfil de portal alineado con el cliente compartido archivado: spkgVer/sysVersion de 2024, sdkVer de protocolo 33 y cabeceras coherentes. Las sesiones de otro perfil se renuevan sin borrar historial/favoritos.
 
 - DNS seguro en paralelo mediante Cloudflare, Google y Quad9, con bootstrap por IP y DNS Android como alternativa diferida. Espera global de 3,5 s, caché de 64 hosts/60 s y pools/colas acotados. Un DNS del sistema bloqueado no ocupa los trabajadores de DNS seguro. Se mantiene validación TLS y nombres originales de los hosts.
+- Las peticiones concurrentes de categorías de la misma sección se comparten mediante exclusión mutua y caché, evitando la doble consulta inicial en Películas/Series.
 - La primera página aparece sin esperar categorías/filtros opcionales; carga del catálogo limitada a 60 s y cancelación al cambiar/paginar. No afirma resolver errores de perfil o autorización del portal.
 - Pruebas de DNS cubren proveedor lento, respuesta vacía, alternativa del sistema, plazo global y caché.
 
