@@ -25,7 +25,7 @@ class AndroidScreenshotsTest {
  @get:Rule val compose=createEmptyComposeRule()
  private lateinit var scenario: ActivityScenario<MainActivity>
  private lateinit var model: XuperViewModel
- private fun shell(command: String) {ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use {it.readBytes()}}
+ private fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use {it.readBytes().toString(Charsets.UTF_8)}
  private fun launch(tv: Boolean=false) {
   val app=ApplicationProvider.getApplicationContext<XuperApplication>()
   scenario=ActivityScenario.launch(Intent(app,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",tv).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -38,7 +38,7 @@ class AndroidScreenshotsTest {
   Assert.assertTrue("Navigation must be centered",kotlin.math.abs(nav.center.x-root.center.x)<2)
  }
  private fun settingsPanel(key: String,tv: Boolean=false) {
-  compose.onNodeWithTag("settings-navigation").performScrollToNode(hasTestTag("settings-section-$key"))
+  compose.onNodeWithTag("settings-navigation-list").performScrollToNode(hasTestTag("settings-section-$key"))
   val node=compose.onNodeWithTag("settings-section-$key")
   if(tv)node.performSemanticsAction(SemanticsActions.RequestFocus){action->Assert.assertTrue(action())}else node.performClick()
   compose.waitForIdle()
@@ -48,6 +48,7 @@ class AndroidScreenshotsTest {
   android.os.SystemClock.sleep(350) // Let SurfaceFlinger present the composed frame.
   shell("mkdir -p /data/local/tmp/xuperandroid-qa")
   shell("screencap -p /data/local/tmp/xuperandroid-qa/$name.png")
+  Assert.assertTrue("Screenshot must be saved",(shell("stat -c%s /data/local/tmp/xuperandroid-qa/$name.png").trim().toLongOrNull()?:0)>0)
  }
  private fun section(section: Section,tv: Boolean=false) {
   val node=compose.onAllNodesWithText(section.label)[0]

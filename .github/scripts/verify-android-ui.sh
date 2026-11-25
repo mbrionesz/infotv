@@ -7,14 +7,14 @@ cd "$android_qa_repository/android"
 mkdir -p qa-evidence/pip
 android_qa_cleanup() {
   android_qa_exit=$?
+  adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
   if [ "$android_qa_exit" -ne 0 ]; then
     adb shell dumpsys activity activities > qa-evidence/activity-state.txt || true
-    android_qa_pid=$(adb shell pidof -s com.matiasb.xuperandroid | tr -d '\r')
+    android_qa_pid=$(adb shell pidof -s com.matiasb.xuperandroid | tr -d '\r' || true)
     if [[ "$android_qa_pid" =~ ^[0-9]+$ ]]; then
       adb logcat -d --pid="$android_qa_pid" > qa-evidence/app-logcat.txt || true
     fi
   fi
-  adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
   exit "$android_qa_exit"
 }
 trap android_qa_cleanup EXIT
