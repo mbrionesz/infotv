@@ -17,7 +17,7 @@ on:
       tag:
         description: Existing beta draft tag
         required: true
-        default: v0.1.1-android-beta.1
+        default: v0.1.1-android-beta.2
 permissions:
   contents: write
   actions: read
@@ -57,13 +57,18 @@ jobs:
       - name: Verify the public payload (no signing keys)
         run: |
           python3 - <<'PY'
-          import json,os,pathlib,hashlib
-          folder=pathlib.Path('release-payload');expected={'XuperAndroid-0.1.1-beta1-universal.apk','SHA256SUMS.txt','build-info.json'}
-          assert {p.name for p in folder.iterdir() if p.name!='.git'}==expected
-          apk=folder/'XuperAndroid-0.1.1-beta1-universal.apk';sha=hashlib.sha256(apk.read_bytes()).hexdigest()
+          import json,os,pathlib,hashlib,re
+          folder=pathlib.Path('release-payload')
           info=json.loads((folder/'build-info.json').read_text())
+          version=re.fullmatch(r'([0-9]+\.[0-9]+\.[0-9]+)-beta\.([0-9]+)',info['version'])
+          assert version is not None
+          filename='XuperAndroid-'+version[1]+'-beta'+version[2]+'-universal.apk'
+          assert os.environ['RELEASE_TAG']=='v'+version[1]+'-android-beta.'+version[2]
+          expected={filename,'SHA256SUMS.txt','build-info.json'}
+          assert {p.name for p in folder.iterdir() if p.name!='.git'}==expected
+          apk=folder/filename;sha=hashlib.sha256(apk.read_bytes()).hexdigest()
           assert sha==os.environ['APK_SHA256']==info['sha256']
-          assert info['commit']==os.environ['SOURCE_REF'] and info['version']=='0.1.1-beta.1'
+          assert info['commit']==os.environ['SOURCE_REF']
           assert (folder/'SHA256SUMS.txt').read_text().strip()==sha+'  '+apk.name
           PY
       - uses: actions/setup-java@v4
@@ -75,8 +80,8 @@ jobs:
           packages: build-tools;37.0.0
       - name: Verify APK signature and alignment
         run: |
-          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose release-payload/XuperAndroid-0.1.1-beta1-universal.apk
-          "$ANDROID_HOME/build-tools/37.0.0/zipalign" -c -P 16 4 release-payload/XuperAndroid-0.1.1-beta1-universal.apk
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose release-payload/*.apk
+          "$ANDROID_HOME/build-tools/37.0.0/zipalign" -c -P 16 4 release-payload/*.apk
       - name: Publish verified beta
         run: |
           gh release upload "$RELEASE_TAG" release-payload/*.apk release-payload/SHA256SUMS.txt release-payload/build-info.json --clobber
