@@ -45,6 +45,8 @@ class AndroidSmokeTest {
   scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
   compose.waitUntil(30_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()}
   lateinit var vm: XuperViewModel;scenario.onActivity { vm=ViewModelProvider(it)[XuperViewModel::class.java] }
+  org.junit.Assert.assertEquals(com.matiasb.xuperandroid.model.Section.MOVIES,vm.state.value.section)
+  compose.onAllNodesWithText("Películas")[0].assertIsFocused()
   InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_DPAD_DOWN)
   compose.onNodeWithText("TV").performSemanticsAction(SemanticsActions.RequestFocus) { action -> org.junit.Assert.assertTrue("TV button must accept focus",action()) }
   compose.onNodeWithText("TV").assertIsFocused()

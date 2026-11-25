@@ -69,7 +69,9 @@ class MainActivity: ComponentActivity() {
 }
 @Composable private fun XuperApp(vm: XuperViewModel,tv: Boolean,pip: Boolean=false) {
  val context=LocalContext.current;var exitAt by remember {mutableLongStateOf(0)}
- val inputMode=LocalInputModeManager.current;LaunchedEffect(tv){if(tv)inputMode.requestInputMode(InputMode.Keyboard)}
+ val inputMode=LocalInputModeManager.current
+ val tabFocus=remember {Section.entries.associateWith {FocusRequester()}}
+ var menuFocusReady by remember(tv) {mutableStateOf(!tv)}
  val stats by vm.stats.collectAsStateWithLifecycle()
  val state by vm.state.collectAsStateWithLifecycle();val history by vm.history.collectAsStateWithLifecycle();val settings by vm.settings.collectAsStateWithLifecycle();var removing by remember { mutableStateOf<Title?>(null) }
  LaunchedEffect(state.screen){if(state.screen!=Screen.PLAYER)(context as? MainActivity)?.clearPip()}
@@ -79,10 +81,13 @@ class MainActivity: ComponentActivity() {
  BoxWithConstraints(Modifier.fillMaxSize().background(Background).safeDrawingPadding()) {
   val compact=maxWidth<600.dp
   Column(Modifier.fillMaxSize().padding(horizontal=if(tv)32.dp else 16.dp)) {
+   // Restore the active tab before enabling navigation by focus. This also applies after playback.
+   DisposableEffect(tv){onDispose {if(tv)menuFocusReady=false}}
+   LaunchedEffect(tv){if(tv){inputMode.requestInputMode(InputMode.Keyboard);tabFocus.getValue(state.section).requestFocus();menuFocusReady=true}}
    if(compact) Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically) { Brand(Modifier.weight(1f),stats);Actions(vm) }
    Row(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
     if(!compact)Brand(Modifier.weight(1f),stats)
-    Section.entries.forEach { section->NavigationButton(section.label,state.section==section,{vm.select(section)},Modifier.weight(if(compact)1f else .65f),onFocus={if(tv&&state.section!=section)vm.select(section)}) }
+    Section.entries.forEach { section->NavigationButton(section.label,state.section==section,{vm.select(section)},Modifier.focusRequester(tabFocus.getValue(section)).focusProperties {canFocus=!tv||menuFocusReady||state.section==section}.weight(if(compact)1f else .65f),onFocus={if(tv&&menuFocusReady&&state.section!=section)vm.select(section)}) }
     if(!compact)Actions(vm)
    }
    if(state.demo) Text("MODO DE PRUEBA · Contenido local, no es el catálogo del portal",color=Accent,fontSize=12.sp,modifier=Modifier.padding(bottom=8.dp))
