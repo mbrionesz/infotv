@@ -55,7 +55,7 @@ class AndroidCleanupTest {
   File(app.filesDir,"hero-artwork.json").writeText("{}")
   File(app.filesDir,"hero-artwork.tmp").writeText("temporary")
   val oldLoader=SingletonImageLoader.get(app);val disk=oldLoader.diskCache!!
-  disk.openEditor("cleanup-image")!!.let {editor->editor.data.toFile().writeText("cached image");editor.commit()}
+  disk.openEditor("cleanup-image")!!.let {editor->editor.metadata.toFile().writeText("cached metadata");editor.data.toFile().writeText("cached image");editor.commit()}
   assertNotNull(disk.openSnapshot("cleanup-image")?.also {it.close()})
   lateinit var old: MainActivity
   scenario.onActivity {old=it;vm.changeSetting("font",3);vm.changeAudioPreference("pt")}
@@ -64,6 +64,11 @@ class AndroidCleanupTest {
   compose.onNodeWithTag("settings-section-storage").performClick()
   compose.onNodeWithText("Limpiar caché y reiniciar").performClick()
   compose.waitUntil(60000){!vm.cleaning.value&&vm.state.value.screen==Screen.HOME&&!vm.state.value.loading}
+  compose.waitUntil(30000){
+   var destroyed=false
+   androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().runOnMainSync {destroyed=old.isDestroyed}
+   destroyed
+  }
   scenario.onActivity {assertNotSame("The native Activity must be recreated",old,it)}
   compose.onNodeWithTag("catalog-heading").assertTextEquals("Películas")
   assertFalse(File(app.filesDir,"hero-artwork.json").exists());assertFalse(File(app.filesDir,"hero-artwork.tmp").exists())
