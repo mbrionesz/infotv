@@ -14,6 +14,8 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
       - name: Install the compile SDK
         run: sdkmanager 'platforms;android-37.2' 'build-tools;37.0.0'
@@ -34,6 +36,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: android
           script: ./gradlew :app:connectedDebugAndroidTest
+      - name: Pull Android screenshots
+        if: always()
+        run: adb pull /sdcard/Android/data/com.matiasb.xuperandroid/files/qa android/qa-screenshots || true
       - name: Preserve APK and test evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -43,5 +48,6 @@ jobs:
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/
             android/app/build/reports/lint-results-debug.html
+            android/qa-screenshots/
             android/core/model/build/test-results/
             android/core/data/build/test-results/
