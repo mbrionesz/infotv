@@ -35,9 +35,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: android
-          script: |
-            ./gradlew :app:connectedDebugAndroidTest; result=$?; adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true; exit $result
-            adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
+          script: bash ../.github/scripts/verify-android-ui.sh
       - name: Pull Android screenshots
         if: always()
         run: adb pull /data/local/tmp/xuperandroid-qa android/qa-screenshots || true
@@ -52,5 +50,6 @@ jobs:
             android/app/build/outputs/androidTest-results/
             android/app/build/reports/lint-results-debug.html
             android/qa-screenshots/
+            android/qa-evidence/
             android/core/model/build/test-results/
             android/core/data/build/test-results/

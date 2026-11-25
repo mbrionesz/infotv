@@ -16,6 +16,10 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import org.junit.*
 import org.junit.runner.RunWith
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class PipPlatformTest
+
 @RunWith(AndroidJUnit4::class)
 class AndroidSmokeTest {
  @get:Rule val compose=createEmptyComposeRule()
@@ -66,6 +70,7 @@ class AndroidSmokeTest {
   compose.onAllNodesWithText("Quitar de mi lista")[0].performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}
  }
+ @PipPlatformTest
  @Test fun pipKeepsPhoneVideoAndIsDisabledForTv() {
   org.junit.Assert.assertTrue("Reference emulator must expose PiP",ApplicationProvider.getApplicationContext<XuperApplication>().packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE))
   compose.onNodeWithText("Ver ficha",substring=true).performClick();compose.onNodeWithText("Reproducir").performClick()
