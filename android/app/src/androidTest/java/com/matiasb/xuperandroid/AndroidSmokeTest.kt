@@ -22,7 +22,7 @@ class AndroidSmokeTest {
  @Before fun start() { val context=ApplicationProvider.getApplicationContext<XuperApplication>();scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));compose.waitUntil(90_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()} }
  private fun screenshot(name: String) { val context=ApplicationProvider.getApplicationContext<XuperApplication>();val file=File(context.getExternalFilesDir("qa"),name+".png");file.parentFile!!.mkdirs();InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()?.let { image->file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle() } }
  private fun shell(command: String) { ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use { it.readBytes() } }
- @After fun stop() { scenario.close();shell("wm size reset");shell("wm density reset") }
+ @After fun stop() { scenario.onActivity {ViewModelProvider(it)[XuperViewModel::class.java].stopPlayer();it.clearPip()};scenario.close();shell("wm size reset");shell("wm density reset") }
  @Test fun navigationAndSettingsAreAccessible() {
   screenshot("phone-movies");compose.onAllNodesWithText("Series")[0].performClick();compose.waitUntil(30_000){compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty()}
   screenshot("phone-series");compose.onNodeWithContentDescription("Ajustes").performClick();compose.onNodeWithText("Ajustes").assertIsDisplayed();compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Fuente",substring=true));compose.onNodeWithText("Fuente",substring=true).assertIsDisplayed();pressBack()
@@ -69,7 +69,7 @@ class AndroidSmokeTest {
   compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};inPip}
   org.junit.Assert.assertNotNull(vm.player.player)
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
-  context.startActivity(Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+  shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
   compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};!inPip}
   scenario.close();compose.waitForIdle()
   scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
