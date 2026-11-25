@@ -71,15 +71,21 @@ class AndroidSmokeTest {
   compose.onNodeWithText("Ver ficha",substring=true).performClick();compose.onNodeWithText("Reproducir").performClick()
   lateinit var vm: XuperViewModel;scenario.onActivity {vm=ViewModelProvider(it)[XuperViewModel::class.java]}
   compose.waitUntil(90000){vm.player.snapshot.value.playing}
-  scenario.onActivity {org.junit.Assert.assertTrue(it.enterMiniPlayer())}
-  var inPip=false
-  compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};inPip}
+  lateinit var host: MainActivity
+  scenario.onActivity {host=it;org.junit.Assert.assertTrue(it.enterMiniPlayer())}
+  // PiP pauses Compose's frame clock: use bounded platform polling while the Activity is paused.
+  fun waitPlatform(timeoutMs: Long,condition: ()->Boolean) {
+   val deadline=android.os.SystemClock.uptimeMillis()+timeoutMs
+   while(!condition()&&android.os.SystemClock.uptimeMillis()<deadline)Thread.sleep(50)
+   org.junit.Assert.assertTrue("PiP platform transition must complete",condition())
+  }
+  waitPlatform(15000){host.isInPictureInPictureMode}
   org.junit.Assert.assertNotNull(vm.player.player)
   val atEntry=vm.player.snapshot.value.positionMs
-  compose.waitUntil(5000){vm.player.snapshot.value.playing&&vm.player.snapshot.value.positionMs>atEntry+300}
+  waitPlatform(5000){vm.player.snapshot.value.playing&&vm.player.snapshot.value.positionMs>atEntry+300}
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
   shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
-  compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};!inPip}
+  waitPlatform(15000){!host.isInPictureInPictureMode&&host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)}
   scenario.close();compose.waitForIdle()
   scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
   scenario.onActivity {org.junit.Assert.assertFalse(it.canUsePip());org.junit.Assert.assertFalse(it.enterMiniPlayer())}

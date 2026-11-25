@@ -69,7 +69,6 @@ class MainActivity: ComponentActivity() {
 }
 @Composable private fun XuperApp(vm: XuperViewModel,tv: Boolean,pip: Boolean=false) {
  val context=LocalContext.current;var exitAt by remember {mutableLongStateOf(0)}
- val inputMode=LocalInputModeManager.current
  val tabFocus=remember {Section.entries.associateWith {FocusRequester()}}
  var menuFocusReady by remember(tv) {mutableStateOf(!tv)}
  val stats by vm.stats.collectAsStateWithLifecycle()
@@ -83,11 +82,10 @@ class MainActivity: ComponentActivity() {
   Column(Modifier.fillMaxSize().padding(horizontal=if(tv)32.dp else 16.dp)) {
    // Restore the active tab before enabling navigation by focus. This also applies after playback.
    DisposableEffect(tv){onDispose {if(tv)menuFocusReady=false}}
-   LaunchedEffect(tv){if(tv){inputMode.requestInputMode(InputMode.Keyboard);tabFocus.getValue(state.section).requestFocus();menuFocusReady=true}}
    if(compact) Row(Modifier.fillMaxWidth().padding(top=10.dp),verticalAlignment=Alignment.CenterVertically) { Brand(Modifier.weight(1f),stats);Actions(vm) }
    Row(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
     if(!compact)Brand(Modifier.weight(1f),stats)
-    NavigationGroup(vm,state,tv,menuFocusReady,tabFocus,Modifier.weight(if(compact)1f else 2.2f))
+    NavigationGroup(vm,state,tv,menuFocusReady,tabFocus,Modifier.weight(if(compact)1f else 2.2f)){menuFocusReady=true}
     if(!compact)Actions(vm)
    }
    if(state.demo) Text("MODO DE PRUEBA · Contenido local, no es el catálogo del portal",color=Accent,fontSize=12.sp,modifier=Modifier.padding(bottom=8.dp))
@@ -104,9 +102,12 @@ class MainActivity: ComponentActivity() {
  removing?.let { title->AlertDialog(onDismissRequest={removing=null},title={Text("Quitar de Seguir viendo")},text={Text(title.name)},confirmButton={TextButton(onClick={vm.remove(title);removing=null}){Text("Eliminar")}},dismissButton={TextButton(onClick={removing=null}){Text("Cancelar")}}) }
 }
 @Composable private fun Brand(modifier: Modifier=Modifier,stats: com.matiasb.xuperandroid.data.CatalogStats=com.matiasb.xuperandroid.data.CatalogStats()) { Row(modifier,verticalAlignment=Alignment.CenterVertically) { Icon(painterResource(R.drawable.ic_xuper),null,tint=Color.Unspecified,modifier=Modifier.size(44.dp));Column { Text("XuperAndroid",fontWeight=FontWeight.Bold,fontSize=19.sp);Text("by Matias",fontSize=11.sp,color=XuperStyle.muted);stats.history.lastOrNull()?.let {Text("${it.total} títulos informados",fontSize=10.sp,color=Accent)} } } }
-@Composable private fun NavigationGroup(vm: XuperViewModel,state: UiState,tv: Boolean,ready: Boolean,focus: Map<Section,FocusRequester>,modifier: Modifier=Modifier) {
+@Composable private fun NavigationGroup(vm: XuperViewModel,state: UiState,tv: Boolean,ready: Boolean,focus: Map<Section,FocusRequester>,modifier: Modifier=Modifier,onFocusReady: ()->Unit) {
+ val inputMode=LocalInputModeManager.current
  Surface(modifier.testTag("navigation-group"),shape=RoundedCornerShape(16.dp),color=XuperStyle.secondary,contentColor=XuperStyle.foreground,border=BorderStroke(1.dp,XuperStyle.secondary),shadowElevation=2.dp) {
   BoxWithConstraints(Modifier.padding(4.dp)) {
+   // These focus targets are subcomposed during layout; request focus only after placement.
+   LaunchedEffect(tv){if(tv){withFrameNanos {};inputMode.requestInputMode(InputMode.Keyboard);if(!focus.getValue(state.section).requestFocus()){withFrameNanos {};focus.getValue(state.section).requestFocus()};onFocusReady()}}
    val stacked=maxWidth<330.dp || (maxWidth<440.dp&&LocalConfiguration.current.fontScale>1.25f)
    Column(verticalArrangement=Arrangement.spacedBy(4.dp)) {
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(2.dp),verticalAlignment=Alignment.CenterVertically) {
