@@ -65,7 +65,7 @@ import kotlinx.coroutines.delay
     if((context as? MainActivity)?.canUsePip()==true)IconButton(onClick={(context as MainActivity).enterMiniPlayer()}){Icon(Icons.Default.PictureInPictureAlt,"Ventana flotante",tint=Color.White)}
     IconButton(onClick={vm.back()}){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Volver a la ficha",tint=Color.White)}
     IconButton(onClick={vm.player.seek(snapshot.positionMs-10_000);touch()}){Icon(Icons.Default.Replay10,"Retroceder 10 segundos",tint=Color.White)}
-    FilledTonalButton(shape=XuperStyle.control,onClick={vm.player.toggle();touch()},modifier=Modifier.focusRequester(playFocus)){Icon(if(snapshot.playing)Icons.Default.Pause else Icons.Default.PlayArrow,if(snapshot.playing)"Pausar" else "Continuar")}
+    FilledTonalButton(shape=XuperStyle.control,onClick={vm.player.toggle();touch()},modifier=Modifier.focusRequester(playFocus)){Icon(if(snapshot.playWhenReady)Icons.Default.Pause else Icons.Default.PlayArrow,if(snapshot.playWhenReady)"Pausar" else "Continuar")}
     IconButton(onClick={vm.player.seek(snapshot.positionMs+10_000);touch()}){Icon(Icons.Default.Forward10,"Adelantar 10 segundos",tint=Color.White)}
     XuperOutlinedButton(onClick={tracks=true;touch()}){Icon(Icons.Default.Subtitles,null);Text("Audio",fontSize=12.sp)}
    }

@@ -100,6 +100,10 @@ class AndroidVodFlowTest {
  @Test fun pauseAndSeekDuringRenewalArePreserved() {
   val title=Title("qa-renew-intent","Renovación",Kind.MOVIE)
   scenario.onActivity {vm.play(title)};ready()
+  scenario.onActivity {
+   val native=vm.player.player!!;native.stop();native.playWhenReady=true
+   assertFalse(native.isPlaying);vm.player.toggle();assertFalse(native.playWhenReady)
+  }
   val stream=kotlinx.coroutines.runBlocking {FixtureRepository().resolve(title)}
   val requested=kotlinx.coroutines.CompletableDeferred<Unit>();val resume=kotlinx.coroutines.CompletableDeferred<Unit>()
   scenario.onActivity {vm.player.prepare(Playing(title,stream=stream),Settings(),null,renew={requested.complete(Unit);resume.await();stream})}
