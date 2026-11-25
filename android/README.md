@@ -1,6 +1,11 @@
-# XuperAndroid · 0.1.1 beta 2
+# XuperAndroid · 0.1.1 beta 3
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 3
+
+- Cabecera de tablet/TV compacta: navegación limitada a 520 dp, iconos de 20 dp y logo de 36 dp, manteniendo objetivos de interacción de 48 dp y foco visible. En ventanas menores de 720 dp usa dos filas para evitar apretar la marca y los controles.
+- Se conserva el contador del portal, su historial y todas las funciones de beta 2.
 
 ## Novedades de beta 2
 
