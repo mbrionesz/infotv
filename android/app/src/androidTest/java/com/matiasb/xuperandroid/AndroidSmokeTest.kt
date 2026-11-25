@@ -98,7 +98,12 @@ class AndroidSmokeTest {
   lateinit var vm: XuperViewModel;scenario.onActivity {vm=ViewModelProvider(it)[XuperViewModel::class.java]}
   compose.waitUntil(90000){vm.player.snapshot.value.playing}
   lateinit var host: MainActivity
-  scenario.onActivity {host=it;org.junit.Assert.assertTrue(it.enterMiniPlayer())}
+  scenario.onActivity {
+   // Keep the 12-second local fixture alive through a slow cold-emulator transition.
+   // This exercises long-running PiP rather than racing media completion.
+   vm.player.player!!.repeatMode=androidx.media3.common.Player.REPEAT_MODE_ONE
+   host=it;org.junit.Assert.assertTrue(it.enterMiniPlayer())
+  }
   // PiP pauses Compose's frame clock: use bounded platform polling while the Activity is paused.
   fun waitPlatform(timeoutMs: Long,label: String,condition: ()->Boolean) {
    // Activity/lifecycle state belongs to the main thread; polling it from the
@@ -118,7 +123,11 @@ class AndroidSmokeTest {
   waitPlatform(15000,"PiP entry must complete"){host.isInPictureInPictureMode}
   org.junit.Assert.assertNotNull(vm.player.player)
   val atEntry=vm.player.snapshot.value.positionMs
-  waitPlatform(5000,"Video must advance while in PiP"){vm.player.snapshot.value.playing&&vm.player.snapshot.value.positionMs>atEntry+300}
+  waitPlatform(5000,"Video must advance while in PiP"){
+   val now=vm.player.snapshot.value
+   val advanced=if(now.positionMs>=atEntry)now.positionMs-atEntry else now.durationMs-atEntry+now.positionMs
+   now.playing&&advanced>300
+  }
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
   shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
   // The software-rendered emulator may stall WindowManager during cold-boot Google services.
