@@ -1,0 +1,14 @@
+{
+  "app": "XuperAndroid",
+  "version": "0.1.1-beta.2",
+  "versionCode": 3,
+  "commit": "f2c1e092d13490ed76aae3ff6792a6b17b02db56",
+  "validationRun": "45555844009",
+  "minSdk": 26,
+  "targetSdk": 37,
+  "apkBytes": 4735472,
+  "sha256": "668ce40a51d00d872040681fa26b0718248fa113a36428388f8e0060557d47a5",
+  "signature": "same development certificate as beta 1",
+  "build": "optimized release; R8 + resource shrinking",
+  "changes": "dark foreground contrast; neutral shared palette and native controls"
+}
