@@ -50,4 +50,40 @@ class AndroidSmokeTest {
   compose.waitUntil(15_000){vm.state.value.section==com.matiasb.xuperandroid.model.Section.SERIES};screenshot("tv-series")
  }
 
+ @Test fun favoritesAndRelatedTitlesAreReachable() {
+  compose.onNodeWithText("Ver ficha",substring=true).performClick()
+  compose.waitUntil(30000){compose.onAllNodesWithText("Similares").fetchSemanticsNodes().isNotEmpty()}
+  compose.onNodeWithText("Mi lista").performClick()
+  pressBack();compose.onNodeWithContentDescription("Mi lista").performClick()
+  compose.waitUntil(30000){compose.onAllNodesWithText("Quitar de mi lista").fetchSemanticsNodes().isNotEmpty()}
+  compose.onAllNodesWithText("Quitar de mi lista")[0].performClick()
+  compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}
+ }
+ @Test fun pipKeepsPhoneVideoAndIsDisabledForTv() {
+  org.junit.Assume.assumeTrue(ApplicationProvider.getApplicationContext<XuperApplication>().packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE))
+  compose.onNodeWithText("Ver ficha",substring=true).performClick();compose.onNodeWithText("Reproducir").performClick()
+  lateinit var vm: XuperViewModel;scenario.onActivity {vm=ViewModelProvider(it)[XuperViewModel::class.java]}
+  compose.waitUntil(90000){vm.player.snapshot.value.playing}
+  scenario.onActivity {org.junit.Assert.assertTrue(it.enterMiniPlayer())}
+  var inPip=false
+  compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};inPip}
+  org.junit.Assert.assertNotNull(vm.player.player)
+  val context=ApplicationProvider.getApplicationContext<XuperApplication>()
+  context.startActivity(Intent(context,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+  compose.waitUntil(15000){scenario.onActivity {inPip=it.isInPictureInPictureMode};!inPip}
+  scenario.close();compose.waitForIdle()
+  scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+  scenario.onActivity {org.junit.Assert.assertFalse(it.canUsePip());org.junit.Assert.assertFalse(it.enterMiniPlayer())}
+ }
+ @Test fun renewedConnectionPreservesPausedPosition() {
+  compose.onNodeWithText("Ver ficha",substring=true).performClick();compose.onNodeWithText("Reproducir").performClick()
+  lateinit var vm: XuperViewModel;scenario.onActivity {vm=ViewModelProvider(it)[XuperViewModel::class.java]}
+  compose.waitUntil(90000){vm.player.snapshot.value.width==640}
+  scenario.onActivity {vm.player.pause();vm.player.seek(4000)}
+  compose.waitUntil(15000){vm.player.snapshot.value.positionMs>=3800&&!vm.player.snapshot.value.playing}
+  scenario.onActivity {org.junit.Assert.assertTrue(vm.player.recoverConnection())}
+  compose.waitUntil(15000){!vm.player.snapshot.value.loading&&vm.player.snapshot.value.positionMs>=3800&&vm.player.snapshot.value.width==640}
+  org.junit.Assert.assertFalse(vm.player.snapshot.value.playing)
+ }
+
 }

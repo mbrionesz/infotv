@@ -14,7 +14,7 @@ data class Query(val text: String = "", val genre: String = "", val year: String
 data class Page(val items: List<Title>, val page: Int, val hasMore: Boolean, val reportedTotal: Int? = null)
 data class Source(val url: String, val headers: Map<String, String> = emptyMap())
 data class Subtitle(val url: String, val language: String, val mime: String, val label: String = "")
-data class Stream(val sources: List<Source>, val mime: String = "", val durationSeconds: Long = 0, val subtitles: List<Subtitle> = emptyList(), val quality: String = "", val fps: Float = 0f)
+data class Stream(val sources: List<Source>, val mime: String = "", val durationSeconds: Long = 0, val subtitles: List<Subtitle> = emptyList(), val quality: String = "", val fps: Float = 0f, val portalAudio: List<Track> = emptyList())
 data class Playing(val title: Title, val episode: Episode? = null, val seasonId: String = "", val stream: Stream, val resumeMs: Long = 0)
 data class WatchProgress(val title: Title, val episodeId: String = "", val episodeNumber: Int = 0, val seasonNumber: Int = 1, val seasonId: String = "", val positionMs: Long, val durationMs: Long, val updatedAt: Long, val completed: Boolean = false) {
  val label: String get() = title.name + if (title.kind == Kind.SERIES && episodeNumber > 0) " · EP. $episodeNumber · T$seasonNumber" else ""

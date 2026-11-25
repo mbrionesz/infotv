@@ -1,4 +1,4 @@
-name: XuperAndroid alpha
+name: XuperAndroid beta
 on:
   workflow_dispatch:
 permissions:
@@ -45,7 +45,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperAndroid-0.1.0-alpha1
+          name: XuperAndroid-0.1.1-beta1
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/

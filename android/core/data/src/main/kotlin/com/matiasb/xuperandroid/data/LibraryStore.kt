@@ -24,13 +24,13 @@ data class ProgressEntity(@PrimaryKey val titleKey: String,val kind: String,val 
 @Database(entities=[ProgressEntity::class,FavoriteEntity::class],version=1,exportSchema=true)
 abstract class LibraryDatabase: RoomDatabase() { abstract fun library(): LibraryDao }
 private val Context.dataStore by preferencesDataStore("preferences")
-data class Settings(val audio: String="es-419",val subtitleMode: Int=0,val font: Int=0,val fontSize: Int=0,val fontColor: Int=0)
+data class Settings(val audio: String="es-419",val subtitleMode: Int=0,val font: Int=0,val fontSize: Int=0,val fontColor: Int=0,val videoFit: Int=0)
 class LibraryStore(context: Context) {
  private val db=Room.databaseBuilder(context.applicationContext,LibraryDatabase::class.java,"library.db").build();private val dao=db.library();private val preferences=context.applicationContext.dataStore
- val settings=preferences.data.map { Settings(it[stringPreferencesKey("audio")]?:"es-419",it[intPreferencesKey("subtitles")]?:0,it[intPreferencesKey("font")]?:0,it[intPreferencesKey("fontSize")]?:0,it[intPreferencesKey("fontColor")]?:0) }
+ val settings=preferences.data.map { Settings(it[stringPreferencesKey("audio")]?:"es-419",it[intPreferencesKey("subtitles")]?:0,it[intPreferencesKey("font")]?:0,it[intPreferencesKey("fontSize")]?:0,it[intPreferencesKey("fontColor")]?:0,it[intPreferencesKey("videoFit")]?:0) }
  val progress=dao.progress().map { list->list.mapNotNull { row->runCatching { WatchProgress(decodeTitle(row.titleJson),row.episodeId,row.episodeNumber,row.seasonNumber,row.seasonId,row.positionMs,row.durationMs,row.updatedAt,row.completed) }.getOrNull() } }
  val favorites=dao.favorites().map { list->list.mapNotNull { runCatching { decodeTitle(it.titleJson) }.getOrNull() } }
- suspend fun set(key: String,value: Int) { require(key in listOf("subtitles","font","fontSize","fontColor"));preferences.edit { it[intPreferencesKey(key)]=value } }
+ suspend fun set(key: String,value: Int) { require(key in listOf("subtitles","font","fontSize","fontColor","videoFit"));preferences.edit { it[intPreferencesKey(key)]=value } }
  suspend fun audio(value: String) { preferences.edit { it[stringPreferencesKey("audio")]=value } }
  suspend fun find(title: Title)=dao.find(key(title))?.let { WatchProgress(decodeTitle(it.titleJson),it.episodeId,it.episodeNumber,it.seasonNumber,it.seasonId,it.positionMs,it.durationMs,it.updatedAt,it.completed) }
  suspend fun checkpoint(playing: Playing,position: Long,duration: Long,ended: Boolean=false) {

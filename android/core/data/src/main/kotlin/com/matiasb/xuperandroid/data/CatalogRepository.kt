@@ -7,7 +7,7 @@ interface CatalogRepository {
  suspend fun categories(section: Section): List<Choice>
  suspend fun filters(section: Section): Filters
  suspend fun details(title: Title,seasonId: String=""): Details
- suspend fun resolve(title: Title,episode: Episode?=null,seasonId: String="",maxHeight: Int=0): Stream
+ suspend fun resolve(title: Title,episode: Episode?=null,seasonId: String="",maxHeight: Int=0,preferredAudio: String=""): Stream
 }
 internal fun JSONArray?.objects() = (0 until (this?.length()?:0)).mapNotNull { this?.optJSONObject(it) }
 internal fun JSONObject.text(key: String) = optString(key,"").takeUnless { it=="null" }.orEmpty()
@@ -63,19 +63,20 @@ class PortalRepository(private val client: PortalClient): CatalogRepository {
   val seasons=asset.optJSONArray("sameSeasonSeriesList").objects().map { Season(it.text("contentId"),it.optInt("seasonNumber",1)) }
   return Details(asset.title(title.kind).copy(id=title.id,kind=title.kind),episodes,seasons)
  }
- override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int): Stream {
+ override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int,preferredAudio: String): Stream {
   if(title.kind==Kind.LIVE)return resolveLive(title)
   val play=call("v10/startPlayVOD",JSONObject().put("contentId",episode?.id?:title.id).put("seriesContentId",if(episode!=null)seasonId.ifBlank { title.id } else "").put("startTime",0).put("type","1").put("columnId",0).put("authType",""))
   val program=play.optJSONArray("episodeList")?.optJSONObject(0)?:throw java.io.IOException("No hay pistas disponibles")
   val tracks=program.optJSONArray("totalMovieList").objects().flatMap { group->group.optJSONArray("movieList").objects().map { if(it.text("quality").isBlank())it.put("quality",group.text("quality"));it } }.filter { it.text("contentId").isNotBlank() }
   fun height(item: JSONObject): Int { val label=item.text("videoHeight").ifBlank { item.text("height").ifBlank { item.text("quality") } };return if(label.contains("4k",true))2160 else Regex("(2160|1440|1080|720|480)").find(label)?.value?.toInt()?:0 }
   val chosenHeight=DataPolicy.chooseHeight(tracks.map { height(it) },maxHeight)
-  val selected=tracks.filter { chosenHeight==0||height(it)==chosenHeight }.sortedWith(compareByDescending<JSONObject> { height(it) }.thenByDescending { PlaybackPolicy.audioScore(it.text("audioInfo"),it.text("languageName")) }).firstOrNull()?:throw java.io.IOException("No hay vídeo disponible")
+  val available=tracks.filter { chosenHeight==0||height(it)==chosenHeight }
+  val selected=available.sortedWith(compareByDescending<JSONObject> { if(preferredAudio.isNotBlank()&&(it.text("contentId")==preferredAudio||it.text("audioInfo").equals(preferredAudio,true)))1 else 0 }.thenByDescending { height(it) }.thenByDescending { PlaybackPolicy.audioScore(it.text("audioInfo"),it.text("languageName")) }).firstOrNull()?:throw java.io.IOException("No hay vídeo disponible")
   val license=selected.optJSONArray("licenseList")?.optJSONObject(0)?.text("license").orEmpty();if(license.isBlank())throw java.io.IOException("El portal no entregó autorización de vídeo")
   val extension=if(selected.text("videoFormat").equals("ts",true))"ts" else "mp4"
   val sources=cdnSources("vod",license,"/vod/${selected.text("contentId")}_media.$extension")
   val subtitles=program.optJSONArray("subtitleList").objects().mapNotNull { item->val file=item.optJSONArray("file")?.optJSONObject(0)?:return@mapNotNull null;val url=file.text("url");if(!url.startsWith("http"))return@mapNotNull null;Subtitle(url,item.text("language"),if(file.text("fileType").equals("vtt",true))"text/vtt" else "application/x-subrip",item.text("name")) }
-  return Stream(sources,if(extension=="ts")"video/mp2t" else "video/mp4",PlaybackPolicy.duration(selected.text("duration").ifBlank { program.text("duration") }),subtitles,selected.text("quality"),selected.optDouble("frameRate",0.0).toFloat())
+  return Stream(sources,if(extension=="ts")"video/mp2t" else "video/mp4",PlaybackPolicy.duration(selected.text("duration").ifBlank { program.text("duration") }),subtitles,selected.text("quality"),selected.optDouble("frameRate",0.0).toFloat(),available.distinctBy {it.text("audioInfo")+it.text("languageName")}.map {Track(it.text("contentId"),it.text("audioInfo"),it.text("languageName").ifBlank {it.text("audioInfo")},it.text("contentId")==selected.text("contentId"))})
  }
  private suspend fun resolveLive(title: Title): Stream {
   val result=call("v4/startPlayLive",JSONObject().put("channelCode",title.id).put("type","1"));val address=result.optJSONArray("liveAddressList").objects().firstOrNull { it.text("license").isNotBlank() }?:throw java.io.IOException("No hay autorización para el canal")
@@ -101,5 +102,5 @@ class FixtureRepository: CatalogRepository {
  override suspend fun categories(section: Section)=listOf(Choice("action","Acción"),Choice("drama","Drama"),Choice("crime","Crimen"),Choice("thriller","Suspenso"))
  override suspend fun filters(section: Section)=Filters(listOf(Choice("Action","Acción"),Choice("Drama","Drama")),listOf(Choice("2026","2026")))
  override suspend fun details(title: Title,seasonId: String)=Details(title,if(title.kind==Kind.SERIES)(1..3).map { Episode("demo-episode-$it",it,"Episodio $it",12) } else emptyList(),if(title.kind==Kind.SERIES)listOf(Season(title.id,1)) else emptyList())
- override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int)=Stream(listOf(Source("asset:///demo.mp4")),"video/mp4",12,listOf(Subtitle("asset:///demo.srt","es","application/x-subrip","Español de prueba")))
+ override suspend fun resolve(title: Title,episode: Episode?,seasonId: String,maxHeight: Int,preferredAudio: String)=Stream(listOf(Source("asset:///demo.mp4")),"video/mp4",12,listOf(Subtitle("asset:///demo.srt","es","application/x-subrip","Español de prueba")))
 }

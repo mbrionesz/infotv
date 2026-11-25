@@ -23,7 +23,7 @@ suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation 
   override fun onResponse(call: Call,response: Response) { if(continuation.isActive)continuation.resume(response) else response.close() }
  })
 }
-class PortalClient(private val vault: SessionVault, val http: OkHttpClient=networkClient()) {
+class PortalClient(private val vault: SessionVault, val http: OkHttpClient=networkClient(),private val observe: suspend (Map<String,String>)->Unit={}) {
  private val mutex=Mutex();@Volatile private var session: JSONObject?=vault.read();@Volatile private var preferred=""
  private val hosts=listOf("ftmrmy.jdfey0cd.com","fuxok.nguvmqhpk.com","eajmnp.hcgv1dt8.com","mptec.dhkrxuzcy.com","hinumz.a878kkoyc.com","krdwvd.swcaw7qx.com","osuhk.m3x8o50te.com","oogoy.f30c96w8.com","dtgrd.txhnojlbu.com","c2tgd.izvhrdcjb.com")
  private fun device()=JSONObject().put("loginType","2").put("appLanguage","en").put("hardwareInfo",Build.HARDWARE).put("model",Build.MODEL).put("product",Build.PRODUCT).put("cpu",Build.SUPPORTED_ABIS.firstOrNull().orEmpty()).put("B29","").put("reserve1","583442714b345572434a4d5769637461545a735936413d3d").put("deviceToken","").put("drmId",Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(vault.installationId.toByteArray()))).put("sdkVer",36).put("apkVersion","49902").put("sysVersion",PROFILE).put("appId",APP_ID).put("sn",session?.optString("sn").orEmpty())
@@ -41,6 +41,7 @@ class PortalClient(private val vault: SessionVault, val http: OkHttpClient=netwo
       val source=response.body?.source() ?: throw IOException("Respuesta vacía");source.request(8*1024*1024L+1);if(source.buffer.size>8*1024*1024)throw IOException("Respuesta del portal demasiado grande")
       val envelope=JSONObject(source.readUtf8());val code=envelope.optString("returnCode",envelope.optString("code","0"));if(code.isNotEmpty()&&code!="0")throw PortalException(code)
       val raw=envelope.opt("data");val data=when(raw){is String->if(raw.isNotBlank())JSONObject(PortalCrypto.decrypt(raw)) else JSONObject();is JSONObject->raw;else->envelope}
+      val versions=mutableMapOf<String,String>();for(obj in listOf(envelope,data))for(key in listOf("apkVersion","apkver","apkVer","spkgVer","sysVersion")){val value=obj.opt(key);if(value is String||value is Number)versions[key]=value.toString().take(100)};observe(versions)
       preferred=host;data
      }
     }
