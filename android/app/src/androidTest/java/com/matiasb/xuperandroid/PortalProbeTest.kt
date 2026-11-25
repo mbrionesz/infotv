@@ -20,6 +20,7 @@ annotation class PortalProbe
 class PortalProbeTest {
  private fun shell(command: String) {ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use {it.readBytes()}}
  @Test fun recordOwnSessionMetadataFlow()=runBlocking {
+  check(InstrumentationRegistry.getArguments().getString("allowPortalNetwork")=="true") {"Real portal diagnostic requires explicit authorization; no network request was sent"}
   val app=ApplicationProvider.getApplicationContext<XuperApplication>()
   val report=JSONObject().put("diagnosticOnly",true).put("mode","metadata-resolution-only").put("usesOwnInstallationSession",true)
   val rows=JSONArray();report.put("sections",rows);val started=SystemClock.elapsedRealtime();var row: JSONObject?=null

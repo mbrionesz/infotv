@@ -57,5 +57,5 @@ cp -a app/build/outputs/androidTest-results qa-evidence/captures/results
 
 if [ "${XUPER_PORTAL_PROBE:-0}" = 1 ]; then
   # This produces a redacted diagnostic, not an assertion that the real portal is available.
-  timeout 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PortalProbe
+  timeout 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PortalProbe -Pandroid.testInstrumentationRunnerArguments.allowPortalNetwork=true
 fi
