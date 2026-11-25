@@ -16,6 +16,12 @@ class HeroArtwork(context: Context,client: OkHttpClient) {
  private val gate=Mutex()
  private val http=client.newBuilder().callTimeout(8,TimeUnit.SECONDS).build()
  private var cache: JSONObject?=null
+ suspend fun clear()=withContext(Dispatchers.IO){gate.withLock {
+  cache=null
+  for(target in listOf(file,File(file.parentFile,"hero-artwork.tmp"))) {
+   if(target.exists()&&!target.delete())throw java.io.IOException("No se pudo eliminar la caché de presentación")
+  }
+ }}
  suspend fun image(title: Title): String?=withContext(Dispatchers.IO){gate.withLock {
   val entries=cache?:runCatching {JSONObject(file.readText())}.getOrDefault(JSONObject()).also {cache=it}
   val key="${title.kind}:${title.id}:${title.name}:${title.year}"

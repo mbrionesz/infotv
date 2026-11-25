@@ -26,6 +26,10 @@ internal fun JSONObject.title(kind: Kind): Title {
 class PortalRepository(private val client: PortalRequests): CatalogRepository {
  private val columns=java.util.concurrent.ConcurrentHashMap<Section,List<Choice>>()
  private val columnLocks=Section.entries.associateWith {Mutex()}
+ suspend fun clearTemporary() {
+  // The caller cancels and joins catalogue work before invalidating its metadata.
+  for(section in Section.entries)columnLocks.getValue(section).withLock {columns.remove(section)}
+ }
  private suspend fun call(path: String,bean: JSONObject): JSONObject=client.request(path,bean)
  override suspend fun categories(section: Section): List<Choice> = columnLocks.getValue(section).withLock {
   columns[section]?.let { return@withLock it }

@@ -39,13 +39,13 @@ private enum class SettingsPage(val key: String,val group: String,val title: Str
 
 /** Mirrors the shared Tizen/Windows sidebar and detail surfaces using native controls. */
 @Composable internal fun SettingsScreen(vm: XuperViewModel,settings: Settings,demo: Boolean,tv: Boolean) {
- var selectedKey by rememberSaveable {mutableStateOf(SettingsPage.PLAYBACK.key)}
- var opened by rememberSaveable {mutableStateOf(false)}
+ var selectedKey by rememberSaveable {mutableStateOf(if(vm.cleanupError.value!=null)SettingsPage.STORAGE.key else SettingsPage.PLAYBACK.key)}
+ var opened by rememberSaveable {mutableStateOf(vm.cleanupError.value!=null)}
  val selected=SettingsPage.entries.first {it.key==selectedKey}
  val navState=rememberLazyListState();val bodyState=rememberLazyListState();val initialFocus=remember {FocusRequester()}
  var focusReady by remember(tv) {mutableStateOf(!tv)}
  val stats by vm.stats.collectAsStateWithLifecycle();val report by vm.networkReport.collectAsStateWithLifecycle();val diagnosing by vm.diagnosing.collectAsStateWithLifecycle()
- val context=LocalContext.current;val scope=rememberCoroutineScope();var status by remember {mutableStateOf("")};var cleaning by remember {mutableStateOf(false)}
+ val context=LocalContext.current;val cleaning by vm.cleaning.collectAsStateWithLifecycle();val cleanupError by vm.cleanupError.collectAsStateWithLifecycle()
  fun select(page: SettingsPage) {selectedKey=page.key;opened=true}
  BoxWithConstraints(Modifier.fillMaxSize().backgroundForSettings().safeDrawingPadding()) {
   val wide=maxWidth>=840.dp&&LocalConfiguration.current.fontScale<1.6f
@@ -108,13 +108,9 @@ private enum class SettingsPage(val key: String,val group: String,val title: Str
         item {SettingsInset {Text("Versión del portal",fontWeight=FontWeight.SemiBold);Text(stats.version.ifBlank {"Versión no informada"},fontSize=14.sp,lineHeight=18.sp);Text("Se revisa cada siete días cuando el portal publica este dato.",fontSize=12.sp,lineHeight=16.sp,color=XuperStyle.muted)}}
        }
        SettingsPage.STORAGE->{
-        item {SettingsInset {Icon(Icons.Default.Storage,null,tint=XuperStyle.muted,modifier=Modifier.size(30.dp));Text("Caché temporal",fontSize=18.sp,lineHeight=23.sp,fontWeight=FontWeight.SemiBold);Text("Libera las imágenes guardadas temporalmente. Se conservan progreso, favoritos y preferencias.",fontSize=14.sp,lineHeight=18.sp,color=XuperStyle.muted)}}
-        item {XuperOutlinedButton(enabled=!cleaning,onClick={scope.launch {
-         cleaning=true;status="Limpiando…"
-         try {val loader=coil3.SingletonImageLoader.get(context);loader.memoryCache?.clear();withContext(Dispatchers.IO){loader.diskCache?.clear()};status="Caché temporal eliminada."}
-         catch(error: CancellationException){throw error}catch(_: Exception){status="No se pudo limpiar la caché. Puedes reintentar."}finally{cleaning=false}
-        }}){Icon(Icons.Default.CleaningServices,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text(if(cleaning)"Limpiando…"else "Limpiar caché temporal")}}
-        if(status.isNotBlank())item {Text(status,fontSize=14.sp,lineHeight=18.sp,color=XuperStyle.foreground)}
+        item {SettingsInset {Icon(Icons.Default.Storage,null,tint=XuperStyle.muted,modifier=Modifier.size(30.dp));Text("Caché y datos temporales",fontSize=18.sp,lineHeight=23.sp,fontWeight=FontWeight.SemiBold);Text("Limpia portadas, metadatos, búsquedas, DNS y conexiones temporales. Cierra el reproductor y reinicia la interfaz desde Películas.",fontSize=14.sp,lineHeight=18.sp,color=XuperStyle.muted);Text("Se conservan progreso, historial, favoritos, estadísticas y preferencias.",fontSize=14.sp,lineHeight=18.sp,color=XuperStyle.muted)}}
+        item {XuperOutlinedButton(enabled=!cleaning,onClick={vm.cleanTemporaryData {(context as? MainActivity)?.restartAfterCleanup()}}){Icon(Icons.Default.CleaningServices,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text(if(cleaning)"Limpiando…"else "Limpiar caché y reiniciar")}}
+        if(cleanupError!=null)item {Text(cleanupError.orEmpty(),fontSize=14.sp,lineHeight=18.sp,color=XuperStyle.foreground)}
        }
        SettingsPage.ABOUT->{
         item {SettingsInset {Text("XuperAndroid",fontSize=24.sp,lineHeight=31.sp,fontWeight=FontWeight.SemiBold);Text("Versión ${BuildConfig.VERSION_NAME}",fontSize=14.sp,lineHeight=18.sp,color=XuperStyle.muted);Text("by Matias",color=XuperStyle.muted,fontSize=12.sp,lineHeight=16.sp);Text("Para teléfono, tablet y Android TV.",fontSize=14.sp,lineHeight=18.sp)}}

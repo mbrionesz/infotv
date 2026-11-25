@@ -25,7 +25,11 @@ class BoundedDns(
  private val systemDelayMs: Long = 350
 ) : Dns {
  private val cache=ConcurrentHashMap<String,Pair<Long,List<InetAddress>>>()
+ private val generation=java.util.concurrent.atomic.AtomicLong()
+ private val cacheLock=Any()
+ fun clear() {synchronized(cacheLock){generation.incrementAndGet();cache.clear()}}
  override fun lookup(hostname: String): List<InetAddress> {
+  val run=generation.get()
   cache[hostname]?.takeIf { System.currentTimeMillis()-it.first<60_000 }?.let { return it.second }
   val answers=LinkedBlockingQueue<Result<List<InetAddress>>>()
   val tasks=mutableListOf<Future<*>>()
@@ -50,8 +54,10 @@ class BoundedDns(
     val result=answers.poll(remaining,TimeUnit.NANOSECONDS)
      ?:throw java.net.UnknownHostException("DNS agotó su tiempo de espera: $hostname")
     result.getOrNull()?.let { addresses->
-     if(cache.size>=64)cache.clear()
-     cache[hostname]=System.currentTimeMillis() to addresses
+     synchronized(cacheLock) {if(run==generation.get()){
+      if(cache.size>=64)cache.clear()
+      cache[hostname]=System.currentTimeMillis() to addresses
+     }}
      return addresses
     }
     last=result.exceptionOrNull()

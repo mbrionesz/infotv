@@ -18,6 +18,14 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  val stats=app.insights.stats.stateIn(viewModelScope,SharingStarted.Eagerly,CatalogStats())
  val networkReport=MutableStateFlow<NetworkReport?>(null)
  val diagnosing=MutableStateFlow(false)
+ val cleaning=MutableStateFlow(false)
+ val cleanupError=MutableStateFlow<String?>(null)
+ private val libraryWrites=java.util.concurrent.ConcurrentHashMap.newKeySet<Job>()
+ private fun writeLibrary(action: suspend ()->Unit) {
+  if(cleaning.value)return
+  val job=viewModelScope.launch(start=CoroutineStart.LAZY){action()}
+  libraryWrites.add(job);job.invokeOnCompletion {libraryWrites.remove(job)};job.start()
+ }
  private var countJob: Job?=null;private var diagnosticJob: Job?=null
  private var lastOrigins=listOf("https://ftmrmy.jdfey0cd.com","https://fuxok.nguvmqhpk.com")
  val settings=library.settings.stateIn(viewModelScope,SharingStarted.Eagerly,Settings())
@@ -142,15 +150,45 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  fun choosePortalAudio(track: Track) {
   val current=state.value.playing?:return
   val snapshot=player.snapshot.value
-  viewModelScope.launch {library.saveTitleAudio(current.title,track.language,track.name)}
+  writeLibrary {library.saveTitleAudio(current.title,track.language,track.name)}
   play(current.title,current.episode,overridePosition=snapshot.positionMs,audioChoice=track.id,autoplay=snapshot.playing)
  }
- fun chooseAudio(track: Track) { val selected=player.audio(track.id)?:return;val title=state.value.playing?.title?:return;viewModelScope.launch { library.saveTitleAudio(title,selected.language,selected.name) } }
- fun favorite(title: Title) { viewModelScope.launch { library.favorite(title,favorites.value.none { it.id==title.id&&it.kind==title.kind }) } }
- fun remove(title: Title) { viewModelScope.launch { library.remove(title) } }
- fun changeAudioPreference(value: String) {viewModelScope.launch {library.audio(value)}}
- fun changeSetting(key: String,value: Int) { viewModelScope.launch { library.set(key,value) } }
- fun checkpoint() { val playing=state.value.playing?:return;val snapshot=player.snapshot.value;if(snapshot.positionMs<=0)return;viewModelScope.launch { library.checkpoint(playing,snapshot.positionMs,snapshot.durationMs) } }
+ fun chooseAudio(track: Track) { val selected=player.audio(track.id)?:return;val title=state.value.playing?.title?:return;writeLibrary { library.saveTitleAudio(title,selected.language,selected.name) } }
+ fun favorite(title: Title) { writeLibrary { library.favorite(title,favorites.value.none { it.id==title.id&&it.kind==title.kind }) } }
+ fun remove(title: Title) { writeLibrary { library.remove(title) } }
+ fun changeAudioPreference(value: String) {writeLibrary {library.audio(value)}}
+ fun changeSetting(key: String,value: Int) { writeLibrary { library.set(key,value) } }
+ fun checkpoint() { val playing=state.value.playing?:return;val snapshot=player.snapshot.value;if(snapshot.positionMs<=0)return;writeLibrary { library.checkpoint(playing,snapshot.positionMs,snapshot.durationMs) } }
+ fun cleanTemporaryData(restart: ()->Unit) {
+  if(cleaning.value)return
+  cleaning.value=true;cleanupError.value=null
+  viewModelScope.launch {
+   var complete=false
+   try {
+    withTimeout(25000) {
+     // Stop producers before deleting caches, and await durable personal writes.
+     player.pause()
+     val jobs=listOfNotNull(request,searchJob,countJob,diagnosticJob)
+     jobs.forEach {it.cancel()};jobs.joinAll()
+     libraryWrites.toList().joinAll()
+     state.value.playing?.let {playing->val snapshot=player.snapshot.value;library.checkpoint(playing,snapshot.positionMs,snapshot.durationMs)}
+     player.release()
+     app.clearTemporaryData()
+    }
+    networkReport.value=null;diagnosing.value=false;beforePlayer=Screen.HOME
+    lastOrigins=listOf("https://ftmrmy.jdfey0cd.com","https://fuxok.nguvmqhpk.com")
+    mutable.value=UiState(demo=state.value.demo)
+    restart();complete=true
+   } catch(error: CancellationException) {
+    if(error is TimeoutCancellationException)cleanupError.value="La limpieza tardó demasiado. Tus datos personales se conservan; puedes reintentar." else throw error
+   } catch(_: Exception) {
+    cleanupError.value="No se pudo completar la limpieza. Tu biblioteca se conserva; puedes reintentar."
+   } finally {
+    cleaning.value=false
+    if(complete)reload()
+   }
+  }
+ }
  fun background() {
   checkpoint();player.pause()
   val current=state.value

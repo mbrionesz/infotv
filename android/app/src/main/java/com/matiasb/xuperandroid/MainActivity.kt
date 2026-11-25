@@ -57,6 +57,7 @@ class MainActivity: ComponentActivity() {
  fun canUsePip()=(getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).currentModeType!=Configuration.UI_MODE_TYPE_TELEVISION&&!(BuildConfig.DEBUG&&intent.getBooleanExtra("force_tv",false))&&packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE)
  fun updatePip(snapshot: PlaybackSnapshot) { if(!canUsePip())return;val ratio=if(snapshot.height>0)(snapshot.width.toFloat()/snapshot.height).coerceIn(.42f,2.39f) else 16f/9f;val params=android.app.PictureInPictureParams.Builder().setAspectRatio(android.util.Rational((ratio*1000).toInt(),1000));if(android.os.Build.VERSION.SDK_INT>=31)params.setAutoEnterEnabled(snapshot.playing&&model.state.value.screen==Screen.PLAYER);runCatching { setPictureInPictureParams(params.build()) } }
  fun clearPip() {if(canUsePip()&&android.os.Build.VERSION.SDK_INT>=31)runCatching {setPictureInPictureParams(android.app.PictureInPictureParams.Builder().setAutoEnterEnabled(false).build())}}
+ fun restartAfterCleanup() {clearPip();if(!isFinishing&&!isDestroyed)recreate()}
  fun enterMiniPlayer(): Boolean {if(!canUsePip()||model.state.value.screen!=Screen.PLAYER||model.state.value.playing==null)return false;updatePip(model.player.snapshot.value);return runCatching { enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().build()) }.getOrDefault(false)}
  override fun onUserLeaveHint() {super.onUserLeaveHint();if(model.state.value.screen==Screen.PLAYER&&model.player.snapshot.value.playing)enterMiniPlayer()}
  override fun onPictureInPictureModeChanged(active: Boolean,newConfig: Configuration) {super.onPictureInPictureModeChanged(active,newConfig);pipMode=active;if(!active&&!lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED))model.background()}
@@ -73,7 +74,19 @@ class MainActivity: ComponentActivity() {
  var menuFocusReady by remember(tv) {mutableStateOf(!tv)}
  val stats by vm.stats.collectAsStateWithLifecycle()
  val state by vm.state.collectAsStateWithLifecycle();val history by vm.history.collectAsStateWithLifecycle();val settings by vm.settings.collectAsStateWithLifecycle();var removing by remember { mutableStateOf<Title?>(null) }
- LaunchedEffect(state.screen){if(state.screen!=Screen.PLAYER)(context as? MainActivity)?.clearPip()}
+ val cleaning by vm.cleaning.collectAsStateWithLifecycle()
+ LaunchedEffect(state.screen,cleaning){if(cleaning||state.screen!=Screen.PLAYER)(context as? MainActivity)?.clearPip()}
+ if(cleaning) {
+  BackHandler {}
+  Box(Modifier.fillMaxSize().background(Background).safeDrawingPadding(),contentAlignment=Alignment.Center) {
+   Column(Modifier.padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
+    CircularProgressIndicator(color=Accent)
+    Text("Limpiando y reiniciando…",color=XuperStyle.foreground)
+    Text("Conservamos tu progreso, favoritos y ajustes.",color=XuperStyle.muted,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+   }
+  }
+  return
+ }
  BackHandler(enabled=state.screen==Screen.HOME){val now=android.os.SystemClock.uptimeMillis();if(now-exitAt<2000){vm.stopPlayer();(context as? MainActivity)?.finish()}else{exitAt=now;android.widget.Toast.makeText(context,"Pulsa Atrás otra vez para salir",android.widget.Toast.LENGTH_SHORT).show()}}
  BackHandler(enabled=state.screen!=Screen.HOME) { vm.back() }
  if(state.screen==Screen.PLAYER) { PlayerScreen(vm,state,settings,tv,pip);return }

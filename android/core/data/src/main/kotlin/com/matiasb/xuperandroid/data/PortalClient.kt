@@ -71,6 +71,6 @@ class PortalClient(private val vault: SessionVault, val http: OkHttpClient=netwo
   session=JSONObject().put("sn",sn).put("userId",active.optString("userId")).put("userToken",active.optString("userToken")).put("at",System.currentTimeMillis()).put("profile",PROFILE);vault.save(session!!)
  }
 
- fun reset() { session=null;vault.clear() }
+ suspend fun reset()=mutex.withLock {session=null;preferred="";vault.clear()}
  companion object { const val APP_ID="com.android.msandroid";const val PROFILE="2024-09-10 06:25:30_33_13_";const val PROTOCOL_SDK=33;const val APK_VERSION="49902";const val APK_HEADER="43404" }
 }

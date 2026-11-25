@@ -30,6 +30,22 @@ class BoundedDnsTest {
   val calls=AtomicInteger();val resolver=BoundedDns(listOf(dns {calls.incrementAndGet();listOf(address)}),failed,500,100)
   resolver.lookup("portal.example");resolver.lookup("portal.example");assertEquals(1,calls.get())
  }
+ @Test fun explicitCleanupForcesFreshDns() {
+  val calls=AtomicInteger();val resolver=BoundedDns(listOf(dns {calls.incrementAndGet();listOf(address)}),failed,500,100)
+  resolver.lookup("portal.example");resolver.clear();resolver.lookup("portal.example")
+  assertEquals(2,calls.get())
+ }
+ @Test fun lookupStartedBeforeCleanupCannotRepopulateTheCache() {
+  val entered=java.util.concurrent.CountDownLatch(1);val resume=java.util.concurrent.CountDownLatch(1);val calls=AtomicInteger()
+  val resolver=BoundedDns(listOf(dns {if(calls.incrementAndGet()==1){entered.countDown();assertTrue(resume.await(2,java.util.concurrent.TimeUnit.SECONDS))};listOf(address)}),failed,2000,100)
+  val pool=java.util.concurrent.Executors.newSingleThreadExecutor()
+  try {
+   val pending=pool.submit<List<InetAddress>> {resolver.lookup("portal.example")}
+   assertTrue(entered.await(2,java.util.concurrent.TimeUnit.SECONDS));resolver.clear();resume.countDown()
+   assertEquals(listOf(address),pending.get(2,java.util.concurrent.TimeUnit.SECONDS))
+   resolver.lookup("portal.example");assertEquals(2,calls.get())
+  } finally {resume.countDown();pool.shutdownNow()}
+ }
  @Test fun lastResolverCanSucceedAfterEarlierEndpointsFail() {
   val calls=AtomicInteger()
   val resolvers=List(17) {index->dns {calls.incrementAndGet();if(index==16)listOf(address)else throw UnknownHostException("fixture-$index")} }
