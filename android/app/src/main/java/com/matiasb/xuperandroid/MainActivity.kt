@@ -7,6 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.shadow
 import androidx.activity.viewModels
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -16,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -44,9 +48,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
-private val Background=Color(0xFF090B10)
-private val Panel=Color(0xFF151D2B)
-private val Accent=Color(0xFF64D9FF)
+private val Background=XuperStyle.background
+private val Panel=XuperStyle.card
+private val Accent=XuperStyle.ring
 class MainActivity: ComponentActivity() {
  private val model: XuperViewModel by viewModels()
  private var pipMode by mutableStateOf(false)
@@ -57,9 +61,9 @@ class MainActivity: ComponentActivity() {
  override fun onUserLeaveHint() {super.onUserLeaveHint();if(model.state.value.screen==Screen.PLAYER&&model.player.snapshot.value.playing)enterMiniPlayer()}
  override fun onPictureInPictureModeChanged(active: Boolean,newConfig: Configuration) {super.onPictureInPictureModeChanged(active,newConfig);pipMode=active;if(!active&&!lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED))model.background()}
 
- override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState);enableEdgeToEdge();setContent {
+ override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT));setContent {
   val tv=(getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).currentModeType==Configuration.UI_MODE_TYPE_TELEVISION || BuildConfig.DEBUG&&intent.getBooleanExtra("force_tv",false)
-  MaterialTheme(colorScheme=darkColorScheme(primary=Accent,background=Background,surface=Panel,onSurface=Color(0xFFE8EEF7))) { XuperApp(model,tv,pipMode) }
+  XuperTheme { XuperApp(model,tv,pipMode) }
  };if(BuildConfig.DEBUG&&intent.getBooleanExtra("demo",false))model.demo(true) }
  override fun onStop() { if(!isChangingConfigurations&&!isInPictureInPictureMode)model.background();super.onStop() }
 }
@@ -94,16 +98,28 @@ class MainActivity: ComponentActivity() {
  }
  removing?.let { title->AlertDialog(onDismissRequest={removing=null},title={Text("Quitar de Seguir viendo")},text={Text(title.name)},confirmButton={TextButton(onClick={vm.remove(title);removing=null}){Text("Eliminar")}},dismissButton={TextButton(onClick={removing=null}){Text("Cancelar")}}) }
 }
-@Composable private fun Brand(modifier: Modifier=Modifier,stats: com.matiasb.xuperandroid.data.CatalogStats=com.matiasb.xuperandroid.data.CatalogStats()) { Row(modifier,verticalAlignment=Alignment.CenterVertically) { Icon(painterResource(R.drawable.ic_xuper),null,tint=Color.Unspecified,modifier=Modifier.size(44.dp));Column { Text("XuperAndroid",fontWeight=FontWeight.Bold,fontSize=19.sp);Text("by Matias",fontSize=11.sp,color=Color(0xFF96A4B8));stats.history.lastOrNull()?.let {Text("${it.total} títulos informados",fontSize=10.sp,color=Accent)} } } }
-@Composable private fun Actions(vm: XuperViewModel) { IconButton(onClick=vm::search,modifier=Modifier.semantics { contentDescription="Buscar películas y series" }){Icon(Icons.Default.Search,"Buscar")};IconButton(onClick=vm::openFavorites){Icon(Icons.Default.FavoriteBorder,"Mi lista")};IconButton(onClick=vm::settingsScreen){Icon(Icons.Default.Settings,"Ajustes")} }
+@Composable private fun Brand(modifier: Modifier=Modifier,stats: com.matiasb.xuperandroid.data.CatalogStats=com.matiasb.xuperandroid.data.CatalogStats()) { Row(modifier,verticalAlignment=Alignment.CenterVertically) { Icon(painterResource(R.drawable.ic_xuper),null,tint=Color.Unspecified,modifier=Modifier.size(44.dp));Column { Text("XuperAndroid",fontWeight=FontWeight.Bold,fontSize=19.sp);Text("by Matias",fontSize=11.sp,color=XuperStyle.muted);stats.history.lastOrNull()?.let {Text("${it.total} títulos informados",fontSize=10.sp,color=Accent)} } } }
+@Composable private fun Actions(vm: XuperViewModel) {
+ Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+  HeaderAction(Icons.Default.Search,"Buscar",vm::search)
+  HeaderAction(Icons.Default.FavoriteBorder,"Mi lista",vm::openFavorites)
+  HeaderAction(Icons.Outlined.Settings,"Ajustes",vm::settingsScreen)
+ }
+}
+@Composable private fun HeaderAction(icon: ImageVector,label: String,click: ()->Unit) {
+ var focused by remember {mutableStateOf(false)}
+ Surface(onClick=click,shape=XuperStyle.control,color=if(focused)XuperStyle.secondary else Panel,contentColor=XuperStyle.foreground,border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)XuperStyle.ring else XuperStyle.secondary),modifier=Modifier.size(48.dp).testTag("header-$label").onFocusChanged {focused=it.hasFocus}) {
+  Box(contentAlignment=Alignment.Center){Icon(icon,label,Modifier.size(23.dp))}
+ }
+}
 @Composable private fun NavigationButton(label: String,selected: Boolean,click: ()->Unit,modifier: Modifier=Modifier,onFocus: ()->Unit={}) {
  var focused by remember { mutableStateOf(false) }
- OutlinedButton(onClick=click,modifier=modifier.onFocusChanged { focused=it.hasFocus;if(it.hasFocus)onFocus() },shape=RoundedCornerShape(12.dp),border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)Accent else if(selected)Color(0xFF527285)else Color(0xFF293447)),colors=ButtonDefaults.outlinedButtonColors(containerColor=if(selected)Color(0xFF20384B)else Color.Transparent,contentColor=Color.White),contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp)){Text(label,maxLines=1)}
+ XuperOutlinedButton(onClick=click,modifier=modifier.shadow(if(selected||focused)4.dp else 0.dp,XuperStyle.control).onFocusChanged { focused=it.hasFocus;if(it.hasFocus)onFocus() },shape=RoundedCornerShape(12.dp),border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)Accent else if(selected)XuperStyle.foreground else XuperStyle.secondary),colors=ButtonDefaults.outlinedButtonColors(containerColor=if(selected)XuperStyle.foreground else if(focused)XuperStyle.secondary else Panel,contentColor=if(selected)XuperStyle.primaryText else XuperStyle.foreground),contentPadding=PaddingValues(horizontal=12.dp,vertical=12.dp)){Text(label,maxLines=1)}
 }
 @Composable private fun CatalogHome(vm: XuperViewModel,state: UiState,history: List<WatchProgress>,compact: Boolean,tv: Boolean,remove: (Title)->Unit) {
  val cards=categoryCards(state);val grid=rememberLazyGridState();LaunchedEffect(state.section){grid.scrollToItem(0)};val pad=if(tv)20.dp else 12.dp
  LazyVerticalGrid(columns=if(tv)GridCells.Fixed(4)else GridCells.Adaptive(if(compact)135.dp else 170.dp),state=grid,verticalArrangement=Arrangement.spacedBy(16.dp),horizontalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(bottom=32.dp),modifier=Modifier.fillMaxSize()) {
-  item(span={GridItemSpan(maxLineSpan)}) { Text(if(state.section==Section.TV)"TV en vivo" else state.section.label,fontSize=28.sp,fontWeight=FontWeight.Bold) }
+  item(span={GridItemSpan(maxLineSpan)}) { Text(if(state.section==Section.TV)"TV en vivo" else state.section.label,modifier=Modifier.testTag("catalog-heading"),fontSize=28.sp,fontWeight=FontWeight.Bold) }
   if(state.section!=Section.TV&&state.items.isNotEmpty())item(span={GridItemSpan(maxLineSpan)}) { Hero(state.items.take(3),vm::detail,compact,state.demo) }
   if(history.isNotEmpty()) {
    item(span={GridItemSpan(maxLineSpan)}) { Text("Seguir viendo",fontSize=21.sp,fontWeight=FontWeight.SemiBold) }
@@ -117,7 +133,7 @@ class MainActivity: ComponentActivity() {
   if(state.error!=null)item(span={GridItemSpan(maxLineSpan)}) { ErrorCard(state.error,vm::reload,{vm.demo(true)}) }
   items(state.items,key={"title:${it.kind}:${it.id}"}) { title->if(title.kind==Kind.LIVE)ChannelCard(title,{vm.play(title)},{vm.favorite(title)}) else Column {PosterCard(title,{vm.detail(title)},modifier=Modifier.fillMaxWidth());Text(title.name,fontSize=14.sp,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.padding(top=8.dp))} }
   if(state.loading)item(span={GridItemSpan(maxLineSpan)}) { Box(Modifier.fillMaxWidth().padding(pad),contentAlignment=Alignment.Center){CircularProgressIndicator(Modifier.size(30.dp))} }
-  if(state.hasMore&&!state.loading)item(span={GridItemSpan(maxLineSpan)}) { OutlinedButton(onClick=vm::more){Text("Cargar más") } }
+  if(state.hasMore&&!state.loading)item(span={GridItemSpan(maxLineSpan)}) { XuperOutlinedButton(onClick=vm::more){Text("Cargar más") } }
  }
  val nearEnd by remember { derivedStateOf { grid.layoutInfo.visibleItemsInfo.lastOrNull()?.index?.let { it>=grid.layoutInfo.totalItemsCount-5 }?:false } }
  LaunchedEffect(nearEnd,state.page) { if(nearEnd&&state.page>0&&state.hasMore&&!state.loading)vm.more() }
@@ -132,13 +148,13 @@ class MainActivity: ComponentActivity() {
   Box { AsyncImage(images[title.id]?:title.backdrop.ifBlank { title.poster },null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop);Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(Background.copy(alpha=.96f),Background.copy(alpha=.25f)))));Column(Modifier.align(Alignment.BottomStart).padding(22.dp).fillMaxWidth(if(compact).95f else .65f),verticalArrangement=Arrangement.spacedBy(10.dp)) {Text("PARA EXPLORAR",color=Accent,fontSize=12.sp);Text(title.name,fontSize=if(compact)24.sp else 32.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis);Text(title.synopsis.ifBlank { title.genres.joinToString(" · ") },maxLines=2,fontSize=14.sp,overflow=TextOverflow.Ellipsis);Text("Ver ficha   ›",fontWeight=FontWeight.SemiBold)};Row(Modifier.align(Alignment.BottomEnd).padding(16.dp),horizontalArrangement=Arrangement.spacedBy(5.dp)) {titles.forEachIndexed { i,_->Box(Modifier.size(if(i==index)9.dp else 6.dp).background(if(i==index)Accent else Color.Gray,RoundedCornerShape(9.dp)))} } }
  }
 }
-@Composable private fun CategoryCard(choice: Choice,click: ()->Unit) { var focused by remember { mutableStateOf(false) };Surface(onClick=click,shape=RoundedCornerShape(15.dp),color=Panel,border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)Accent else Color(0xFF2B3749)),modifier=Modifier.fillMaxWidth().height(90.dp).onFocusChanged { focused=it.isFocused }) { Box(Modifier.background(Brush.linearGradient(listOf(Color(0xFF203A4D),Panel))).padding(16.dp)){Text(choice.label,fontWeight=FontWeight.SemiBold,fontSize=16.sp,modifier=Modifier.align(Alignment.CenterStart),maxLines=2,overflow=TextOverflow.Ellipsis)} } }
+@Composable private fun CategoryCard(choice: Choice,click: ()->Unit) { var focused by remember { mutableStateOf(false) };Surface(onClick=click,shape=RoundedCornerShape(15.dp),color=Panel,border=BorderStroke(if(focused)2.dp else 1.dp,if(focused)Accent else XuperStyle.secondary),modifier=Modifier.fillMaxWidth().height(90.dp).onFocusChanged { focused=it.isFocused }) { Box(Modifier.background(Brush.linearGradient(listOf(Color(0xFF232326),Color(0xFF141416)))).padding(16.dp)){Text(choice.label,fontWeight=FontWeight.SemiBold,fontSize=16.sp,modifier=Modifier.align(Alignment.CenterStart),maxLines=2,overflow=TextOverflow.Ellipsis)} } }
 @Composable private fun PosterCard(title: Title,click: ()->Unit,longClick: ()->Unit={},modifier: Modifier=Modifier,progress: Float?=null) {
  var focused by remember { mutableStateOf(false) }
- Column(modifier.clip(RoundedCornerShape(13.dp)).background(Panel).border(if(focused)2.dp else 1.dp,if(focused)Accent else Color(0xFF242E3A),RoundedCornerShape(13.dp)).onFocusChanged { focused=it.isFocused }.combinedClickable(onClick=click,onLongClick=longClick).semantics { contentDescription=title.name }) { Box(Modifier.fillMaxWidth().aspectRatio(2f/3f),contentAlignment=Alignment.Center){if(title.poster.isNotBlank())AsyncImage(title.poster,null,Modifier.fillMaxSize(),contentScale=ContentScale.Fit)else Icon(Icons.Default.Movie,null,Modifier.size(40.dp),tint=Color(0xFF657C92))};if(progress!=null)Box(Modifier.fillMaxWidth().height(4.dp).background(Color.DarkGray)){Box(Modifier.fillMaxWidth(progress.coerceIn(0f,1f)).fillMaxHeight().background(Color(0xFFEF4359)))} }
+ Column(modifier.clip(RoundedCornerShape(13.dp)).background(Panel).border(if(focused)2.dp else 1.dp,if(focused)Accent else XuperStyle.secondary,RoundedCornerShape(13.dp)).onFocusChanged { focused=it.isFocused }.combinedClickable(onClick=click,onLongClick=longClick).semantics { contentDescription=title.name }) { Box(Modifier.fillMaxWidth().aspectRatio(2f/3f),contentAlignment=Alignment.Center){if(title.poster.isNotBlank())AsyncImage(title.poster,null,Modifier.fillMaxSize(),contentScale=ContentScale.Fit)else Icon(Icons.Default.Movie,null,Modifier.size(40.dp),tint=XuperStyle.muted)};if(progress!=null)Box(Modifier.fillMaxWidth().height(4.dp).background(Color.DarkGray)){Box(Modifier.fillMaxWidth(progress.coerceIn(0f,1f)).fillMaxHeight().background(Color(0xFFEF4359)))} }
 }
 @Composable private fun ChannelCard(title: Title,click: ()->Unit,favorite: ()->Unit={}) { var focused by remember { mutableStateOf(false) };Surface(onClick=click,shape=RoundedCornerShape(12.dp),color=Panel,border=if(focused)BorderStroke(2.dp,Accent)else null,modifier=Modifier.onFocusChanged { focused=it.isFocused }) { Column(Modifier.padding(14.dp),horizontalAlignment=Alignment.CenterHorizontally) { Box(Modifier.fillMaxWidth().height(70.dp).clip(RoundedCornerShape(8.dp)).background(Color.White),contentAlignment=Alignment.Center){if(title.poster.isBlank())Icon(Icons.Default.LiveTv,null,tint=Color.DarkGray)else AsyncImage(title.poster,null,Modifier.fillMaxSize().padding(8.dp),contentScale=ContentScale.Fit)};Text(title.name,maxLines=2,fontSize=14.sp,modifier=Modifier.padding(top=10.dp));IconButton(onClick=favorite){Icon(Icons.Default.FavoriteBorder,"Guardar canal")} } } }
-@Composable private fun ErrorCard(message: String,retry: ()->Unit,demo: (()->Unit)?=null) { Column(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {Text(message,color=Color(0xFFFFC9C9));Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){OutlinedButton(retry){Text("Reintentar")};if(demo!=null)TextButton(demo){Text("Probar interfaz local")}} } }
+@Composable private fun ErrorCard(message: String,retry: ()->Unit,demo: (()->Unit)?=null) { Column(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {Text(message,color=Color(0xFFFFC9C9));Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){XuperOutlinedButton(retry){Text("Reintentar")};if(demo!=null)TextButton(demo){Text("Probar interfaz local")}} } }
 @Composable private fun SearchScreen(vm: XuperViewModel,state: UiState) {
  Column(Modifier.fillMaxSize()) {
   OutlinedTextField(value=state.query.text,onValueChange={vm.query(state.query.copy(text=it))},label={Text(if(state.section==Section.TV)"Buscar canal" else "Buscar en ${state.section.label.lowercase()}")},leadingIcon={Icon(Icons.Default.Search,null)},singleLine=true,modifier=Modifier.fillMaxWidth(),trailingIcon={if(state.query.text.isNotBlank())IconButton(onClick={vm.query(state.query.copy(text=""))}){Icon(Icons.Default.Close,"Borrar búsqueda")}})
@@ -146,53 +162,53 @@ class MainActivity: ComponentActivity() {
    item { FilterPicker("Categoría",state.columns,state.query.column){vm.query(state.query.copy(column=it))} }
    if(state.section!=Section.TV){item {FilterPicker("Género",state.filters.genres,state.query.genre){vm.query(state.query.copy(genre=it))}};item {FilterPicker("Año",state.filters.years,state.query.year){vm.query(state.query.copy(year=it))}};item {FilterPicker("País",state.filters.countries,state.query.country){vm.query(state.query.copy(country=it))}}}
   }
-  if(state.query.text.isNotBlank()&&listOf(state.query.genre,state.query.year,state.query.country,state.query.column).any { it.isNotBlank() })Text("Los filtros se aplican al explorar categorías; la búsqueda por título usa la ruta de búsqueda del portal.",fontSize=12.sp,color=Color.Gray,modifier=Modifier.padding(bottom=8.dp))
+  if(state.query.text.isNotBlank()&&listOf(state.query.genre,state.query.year,state.query.country,state.query.column).any { it.isNotBlank() })Text("Los filtros se aplican al explorar categorías; la búsqueda por título usa la ruta de búsqueda del portal.",fontSize=12.sp,color=XuperStyle.muted,modifier=Modifier.padding(bottom=8.dp))
   LazyVerticalGrid(GridCells.Adaptive(135.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(16.dp),contentPadding=PaddingValues(bottom=30.dp)) {
    if(state.error!=null)item(span={GridItemSpan(maxLineSpan)}){ErrorCard(state.error,vm::reload)}
    items(state.items,key={it.id}) { title->Column { if(title.kind==Kind.LIVE)ChannelCard(title,{vm.play(title)},{vm.favorite(title)})else PosterCard(title,{vm.detail(title)},modifier=Modifier.fillMaxWidth());Text(title.name,maxLines=2,fontSize=13.sp,overflow=TextOverflow.Ellipsis) } }
    if(state.loading)item(span={GridItemSpan(maxLineSpan)}){CircularProgressIndicator(Modifier.padding(18.dp))}
-   if(state.hasMore&&!state.loading)item(span={GridItemSpan(maxLineSpan)}){OutlinedButton(vm::more){Text("Cargar más")}}
+   if(state.hasMore&&!state.loading)item(span={GridItemSpan(maxLineSpan)}){XuperOutlinedButton(vm::more){Text("Cargar más")}}
    if(!state.loading&&state.items.isEmpty()&&state.error==null)item(span={GridItemSpan(maxLineSpan)}){Text("No hay resultados para esta selección.",modifier=Modifier.padding(20.dp))}
   }
  }
 }
-@Composable internal fun FilterPicker(label: String,choices: List<Choice>,selected: String,select: (String)->Unit) {
- var open by remember { mutableStateOf(false) };OutlinedButton(onClick={open=true}) {Text(label+" · "+(choices.firstOrNull { it.id==selected }?.label?:"Todos"));Icon(Icons.Default.ArrowDropDown,null)}
- if(open)AlertDialog(onDismissRequest={open=false},title={Text(label)},text={LazyColumn(Modifier.heightIn(max=380.dp)){item{TextButton(onClick={select("");open=false}){Text("Todos")}};items(choices,key={it.id}){choice->TextButton(onClick={select(choice.id);open=false},modifier=Modifier.fillMaxWidth()){Text(choice.label)}}}},confirmButton={TextButton(onClick={open=false}){Text("Cerrar")}})
+@Composable internal fun FilterPicker(label: String,choices: List<Choice>,selected: String,allowAll: Boolean=true,select: (String)->Unit) {
+ var open by remember { mutableStateOf(false) };XuperOutlinedButton(onClick={open=true}) {Text(label+" · "+(choices.firstOrNull { it.id==selected }?.label?:"Todos"));Icon(Icons.Default.ArrowDropDown,null)}
+ if(open)AlertDialog(onDismissRequest={open=false},title={Text(label)},text={LazyColumn(Modifier.heightIn(max=380.dp)){if(allowAll)item{TextButton(onClick={select("");open=false}){Text((if(selected.isBlank())"✓ "else"")+"Todos")}};items(choices,key={it.id}){choice->TextButton(onClick={select(choice.id);open=false},modifier=Modifier.fillMaxWidth()){Text((if(choice.id==selected)"✓ "else"")+choice.label)}}}},confirmButton={TextButton(onClick={open=false}){Text("Cerrar")}})
 }
 @Composable private fun DetailScreen(vm: XuperViewModel,state: UiState) {
  val details=state.details?:return;val title=details.title;val favorite by vm.favorites.collectAsStateWithLifecycle()
  LazyColumn(contentPadding=PaddingValues(bottom=36.dp),verticalArrangement=Arrangement.spacedBy(16.dp)) {
-  item {Row(horizontalArrangement=Arrangement.spacedBy(18.dp),verticalAlignment=Alignment.Top){AsyncImage(title.poster,null,Modifier.width(110.dp).height(165.dp).clip(RoundedCornerShape(12.dp)),contentScale=ContentScale.Fit);Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){Text(title.name,fontSize=26.sp,fontWeight=FontWeight.Bold);Text(listOf(title.year,title.genres.joinToString(" · "),title.country).filter { it.isNotBlank() }.joinToString("  •  "),fontSize=13.sp,color=Color(0xFF9CADBF));Button(onClick={vm.play(title,details.episodes.firstOrNull())},enabled=!state.loading&&(title.kind==Kind.MOVIE||details.episodes.isNotEmpty())){Icon(Icons.Default.PlayArrow,null);Text(if(title.kind==Kind.SERIES)"Ver episodio" else "Reproducir")};OutlinedButton(onClick={vm.favorite(title)}){Icon(if(favorite.any {it.id==title.id&&it.kind==title.kind})Icons.Default.Favorite else Icons.Default.FavoriteBorder,null);Text("Mi lista")}}} }
+  item {Row(horizontalArrangement=Arrangement.spacedBy(18.dp),verticalAlignment=Alignment.Top){AsyncImage(title.poster,null,Modifier.width(110.dp).height(165.dp).clip(RoundedCornerShape(12.dp)),contentScale=ContentScale.Fit);Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){Text(title.name,fontSize=26.sp,fontWeight=FontWeight.Bold);Text(listOf(title.year,title.genres.joinToString(" · "),title.country).filter { it.isNotBlank() }.joinToString("  •  "),fontSize=13.sp,color=Color(0xFF9CADBF));XuperButton(onClick={vm.play(title,details.episodes.firstOrNull())},enabled=!state.loading&&(title.kind==Kind.MOVIE||details.episodes.isNotEmpty())){Icon(Icons.Default.PlayArrow,null);Text(if(title.kind==Kind.SERIES)"Ver episodio" else "Reproducir")};XuperOutlinedButton(onClick={vm.favorite(title)}){Icon(if(favorite.any {it.id==title.id&&it.kind==title.kind})Icons.Default.Favorite else Icons.Default.FavoriteBorder,null);Text("Mi lista")}}} }
   if(title.synopsis.isNotBlank())item{Text(title.synopsis,fontSize=16.sp,lineHeight=24.sp)}
   if(state.loading)item{CircularProgressIndicator()}
   if(state.error!=null)item{ErrorCard(state.error,{vm.detail(title,state.seasonId)})}
   if(details.seasons.isNotEmpty())item{LazyRow(horizontalArrangement=Arrangement.spacedBy(10.dp)){items(details.seasons,key={it.id}){season->NavigationButton("Temporada ${season.number}",state.seasonId==season.id,{vm.detail(title,season.id)})}}}
   if(state.similar.isNotEmpty())item {Text("Similares",fontSize=21.sp,fontWeight=FontWeight.SemiBold);LazyRow(horizontalArrangement=Arrangement.spacedBy(12.dp)){items(state.similar,key={it.id}){related->Column(Modifier.width(145.dp)){PosterCard(related,{vm.detail(related)},modifier=Modifier.fillMaxWidth());Text(related.name,maxLines=2,fontSize=13.sp)}}}}
-  items(details.episodes,key={it.id}){ep->OutlinedButton(onClick={vm.play(title,ep)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp)){Column(Modifier.fillMaxWidth().padding(6.dp)){Text("EP. ${ep.number} · ${ep.name}",fontWeight=FontWeight.Medium);if(ep.durationSeconds>0)Text("${ep.durationSeconds/60} min",fontSize=12.sp)}}}
+  items(details.episodes,key={it.id}){ep->XuperOutlinedButton(onClick={vm.play(title,ep)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp)){Column(Modifier.fillMaxWidth().padding(6.dp)){Text("EP. ${ep.number} · ${ep.name}",fontWeight=FontWeight.Medium);if(ep.durationSeconds>0)Text("${ep.durationSeconds/60} min",fontSize=12.sp)}}}
  }
 }
 @Composable private fun SettingsScreen(vm: XuperViewModel,settings: Settings,demo: Boolean) {
  val stats by vm.stats.collectAsStateWithLifecycle();val report by vm.networkReport.collectAsStateWithLifecycle();val diagnosing by vm.diagnosing.collectAsStateWithLifecycle()
  val context=LocalContext.current;val scope=rememberCoroutineScope();var status by remember { mutableStateOf("") }
  LazyColumn(verticalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(bottom=32.dp)) {
-  item {Text("Ajustes",fontSize=28.sp,fontWeight=FontWeight.Bold)}
-  item {Text("XuperAndroid · "+BuildConfig.VERSION_NAME,color=Accent);Text("TV, teléfono y tablet · Media3 nativo",fontSize=14.sp)}
-  item {OutlinedButton(onClick=vm::openFavorites){Icon(Icons.Default.Favorite,null);Text("Mi lista")}}
-  item {Text("Estadísticas del catálogo",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Text(stats.history.lastOrNull()?.let {"✓ ${it.total} títulos informados · Películas ${it.movies} · Series ${it.series}"}?:"Sin conteo confirmado",color=Accent);Text("Totales declarados por el portal; no verifica títulos únicos.",fontSize=12.sp,color=Color.Gray);OutlinedButton(onClick={vm.refreshStats(true)},enabled=!demo){Text("Actualizar conteo")}}
+  item {Text("Ajustes",modifier=Modifier.testTag("settings-heading"),fontSize=28.sp,fontWeight=FontWeight.Bold)}
+  item {Text("XuperAndroid · "+BuildConfig.VERSION_NAME,color=Accent);Text("Diseñado para teléfono, tablet y Android TV",fontSize=14.sp,color=XuperStyle.muted)}
+  item {XuperOutlinedButton(onClick=vm::openFavorites){Icon(Icons.Default.Favorite,null);Text("Mi lista")}}
+  item {Text("Estadísticas del catálogo",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Text(stats.history.lastOrNull()?.let {"✓ ${it.total} títulos informados · Películas ${it.movies} · Series ${it.series}"}?:"Sin conteo confirmado",color=Accent);Text("Totales declarados por el portal; no verifica títulos únicos.",fontSize=12.sp,color=XuperStyle.muted);XuperOutlinedButton(onClick={vm.refreshStats(true)},enabled=!demo){Text("Actualizar conteo")}}
   items(stats.history.asReversed(),key={"count:${it.at}"}) {record->Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text("${record.total} títulos",fontWeight=FontWeight.Bold);Text(java.text.DateFormat.getDateTimeInstance().format(java.util.Date(record.at)),fontSize=12.sp)}}}
-  item {Text("Versión observada del portal",fontWeight=FontWeight.SemiBold);Text(stats.version.ifBlank {"El portal no ha declarado una versión en sus respuestas"},fontSize=13.sp);Text("Solo respuestas de nuestra sesión; observación cada 7 días cuando se publica ese dato.",fontSize=12.sp,color=Color.Gray)}
-  item {Text("Diagnóstico de conexión",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Text("Mide conexiones y descarga hasta 1 MiB. No borra historial ni favoritos.",fontSize=12.sp,color=Color.Gray);OutlinedButton(onClick=vm::diagnose,enabled=!diagnosing){Text(if(diagnosing)"Comprobando…" else "Diagnosticar")}}
-  report?.let {network->items(network.hosts,key={"host:${it.host}"}) {host->Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text((if(host.status!=null)"✓ "else"! ")+host.host,color=if(host.status!=null)Accent else Color(0xFFFFC9C9));Text(if(host.status!=null)"${host.elapsedMs} ms · HTTP ${host.status}"else host.error.orEmpty(),fontSize=13.sp)}}};item {Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text(network.megabits?.let {"%.2f Mbps · medición puntual".format(it)}?:network.error.orEmpty());Text(when(network.consistent){true->"Latencia consistente entre los hosts medidos";false->"Latencia variable entre los hosts medidos";null->"No hay suficientes respuestas para comparar estabilidad"},fontSize=12.sp)}}}}
+  item {Text("Versión observada del portal",fontWeight=FontWeight.SemiBold);Text(stats.version.ifBlank {"El portal no ha declarado una versión en sus respuestas"},fontSize=13.sp);Text("Solo respuestas de nuestra sesión; observación cada 7 días cuando se publica ese dato.",fontSize=12.sp,color=XuperStyle.muted)}
+  item {Text("Diagnóstico de conexión",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Text("Mide conexiones y descarga hasta 1 MiB. No borra historial ni favoritos.",fontSize=12.sp,color=XuperStyle.muted);XuperOutlinedButton(onClick=vm::diagnose,enabled=!diagnosing){Text(if(diagnosing)"Comprobando…" else "Diagnosticar")}}
+  report?.let {network->items(network.hosts,key={"host:${it.host}"}) {host->Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text((if(host.status!=null)"✓ "else"! ")+host.host,color=if(host.status!=null)Color(0xFF86EFAC) else Color(0xFFFFC9C9));Text(if(host.status!=null)"${host.elapsedMs} ms · HTTP ${host.status}"else host.error.orEmpty(),fontSize=13.sp)}}};item {Surface(shape=RoundedCornerShape(12.dp),color=Panel){Column(Modifier.fillMaxWidth().padding(16.dp)){Text(network.megabits?.let {"%.2f Mbps · medición puntual".format(it)}?:network.error.orEmpty());Text(when(network.consistent){true->"Latencia consistente entre los hosts medidos";false->"Latencia variable entre los hosts medidos";null->"No hay suficientes respuestas para comparar estabilidad"},fontSize=12.sp)}}}}
   item {Text("Subtítulos",fontSize=20.sp,fontWeight=FontWeight.SemiBold)}
-  item {FilterPicker("Modo",listOf(Choice("0","Automáticos si no hay español"),Choice("1","Desactivados"),Choice("2","Activados si existen")),settings.subtitleMode.toString()){vm.changeSetting("subtitles",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Fuente",listOf("Sistema","Condensada","Serif","Monoespaciada").mapIndexed { i,s->Choice(i.toString(),s) },settings.font.toString()){vm.changeSetting("font",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Tamaño",listOf("Normal","Grande","Pequeño").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontSize.toString()){vm.changeSetting("fontSize",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Color",listOf("Blanco","Amarillo","Cian").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontColor.toString()){vm.changeSetting("fontColor",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Modo",listOf(Choice("0","Automáticos si no hay español"),Choice("1","Desactivados"),Choice("2","Activados si existen")),settings.subtitleMode.toString(),allowAll=false){vm.changeSetting("subtitles",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Fuente",listOf("Sistema","Condensada","Serif","Monoespaciada").mapIndexed { i,s->Choice(i.toString(),s) },settings.font.toString(),allowAll=false){vm.changeSetting("font",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Tamaño",listOf("Normal","Grande","Pequeño").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontSize.toString(),allowAll=false){vm.changeSetting("fontSize",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Color",listOf("Blanco","Amarillo","Cian").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontColor.toString(),allowAll=false){vm.changeSetting("fontColor",it.toIntOrNull()?:0)}}
   item {Text("Audio: español latino cuando esté identificado. Las elecciones por título tienen prioridad.",fontSize=14.sp,color=Color(0xFF9CADBF))}
-  item {Text("Almacenamiento",fontSize=20.sp,fontWeight=FontWeight.SemiBold);OutlinedButton(onClick={scope.launch { status="Limpiando…";val loader=coil3.SingletonImageLoader.get(context);loader.memoryCache?.clear();withContext(Dispatchers.IO){loader.diskCache?.clear()};status="Caché temporal eliminada. Se conservan progreso, favoritos y ajustes." }}){Text("Limpiar caché temporal")};if(status.isNotBlank())Text(status,fontSize=13.sp,color=Accent)}
-  item {Text("Imágenes del carrusel",fontWeight=FontWeight.SemiBold);Text("TMDB · This product uses the TMDB API but is not endorsed or certified by TMDB. Solo las tres imágenes de presentación por sección; resultados guardados hasta 30 días.",fontSize=12.sp,color=Color.Gray)}
-  item {Text("Prueba local",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Row(verticalAlignment=Alignment.CenterVertically){Switch(demo,{vm.demo(it)});Spacer(Modifier.width(12.dp));Text("Usar catálogo y vídeo de prueba")};Text("No utiliza el portal ni representa su catálogo. Sirve para probar mandos, pantallas y reproducción.",fontSize=12.sp,color=Color.Gray)}
+  item {Text("Almacenamiento",fontSize=20.sp,fontWeight=FontWeight.SemiBold);XuperOutlinedButton(onClick={scope.launch { status="Limpiando…";val loader=coil3.SingletonImageLoader.get(context);loader.memoryCache?.clear();withContext(Dispatchers.IO){loader.diskCache?.clear()};status="Caché temporal eliminada. Se conservan progreso, favoritos y ajustes." }}){Text("Limpiar caché temporal")};if(status.isNotBlank())Text(status,fontSize=13.sp,color=Accent)}
+  item {Text("Imágenes del carrusel",fontWeight=FontWeight.SemiBold);Text("TMDB · This product uses the TMDB API but is not endorsed or certified by TMDB. Solo las tres imágenes de presentación por sección; resultados guardados hasta 30 días.",fontSize=12.sp,color=XuperStyle.muted)}
+  item {Text("Prueba local",fontSize=20.sp,fontWeight=FontWeight.SemiBold);Row(verticalAlignment=Alignment.CenterVertically){Switch(demo,{vm.demo(it)});Spacer(Modifier.width(12.dp));Text("Usar catálogo y vídeo de prueba")};Text("No utiliza el portal ni representa su catálogo. Sirve para probar mandos, pantallas y reproducción.",fontSize=12.sp,color=XuperStyle.muted)}
  }
 }
 

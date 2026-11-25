@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModelProvider
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import android.view.KeyEvent
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
@@ -90,6 +91,17 @@ class AndroidSmokeTest {
   scenario.onActivity {org.junit.Assert.assertTrue(vm.player.recoverConnection())}
   compose.waitUntil(15000){!vm.player.snapshot.value.loading&&vm.player.snapshot.value.positionMs>=3800&&vm.player.snapshot.value.width==640}
   org.junit.Assert.assertFalse(vm.player.snapshot.value.playing)
+ }
+
+ @Test fun headingsAndHeaderIconsStayReadableOnDarkBackground() {
+  fun assertBright(tag: String) {
+   val pixels=compose.onNodeWithTag(tag).captureToImage().toPixelMap()
+   var bright=0
+   for(y in 0 until pixels.height)for(x in 0 until pixels.width){val color=pixels[x,y];if(color.red>.85f&&color.green>.85f&&color.blue>.85f)bright++}
+   org.junit.Assert.assertTrue("$tag must render readable foreground pixels on the dark surface",bright>20)
+  }
+  assertBright("catalog-heading");assertBright("header-Buscar");assertBright("header-Ajustes")
+  compose.onNodeWithContentDescription("Ajustes").performClick();assertBright("settings-heading")
  }
 
 }

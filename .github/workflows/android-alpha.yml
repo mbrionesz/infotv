@@ -36,16 +36,16 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: android
           script: |
-            ./gradlew :app:connectedDebugAndroidTest; result=$?; adb pull /sdcard/Android/data/com.matiasb.xuperandroid/files/qa qa-screenshots || true; exit $result
-            adb pull /sdcard/Android/data/com.matiasb.xuperandroid/files/qa qa-screenshots || true
+            ./gradlew :app:connectedDebugAndroidTest; result=$?; adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true; exit $result
+            adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
       - name: Pull Android screenshots
         if: always()
-        run: adb pull /sdcard/Android/data/com.matiasb.xuperandroid/files/qa android/qa-screenshots || true
+        run: adb pull /data/local/tmp/xuperandroid-qa android/qa-screenshots || true
       - name: Preserve APK and test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperAndroid-0.1.1-beta1
+          name: XuperAndroid-0.1.1-beta2
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/

@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
   if(playing!=null)AndroidView(factory={c->PlayerView(c).apply { useController=false;player=vm.player.player;keepScreenOn=true }},onRelease={it.player=null},update={view->view.player=vm.player.player;vm.player.style(view,settings);view.subtitleView?.setBottomPaddingFraction(if(controls&&!pip).38f else .08f)},modifier=Modifier.fillMaxSize())
   if(state.loading||snapshot.loading)CircularProgressIndicator(Modifier.align(Alignment.Center),color=Color(0xFF64D9FF))
   val error=state.error?:snapshot.error
-  if(error!=null&&!pip)Column(Modifier.align(Alignment.Center).fillMaxWidth(.85f).background(Color(0xE6192231)).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Text(error,color=Color.White);Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){Button(onClick=vm::retry,enabled=playing!=null){Text("Reintentar")};OutlinedButton(onClick={vm.back()}){Text("Volver")}}}
+  if(error!=null&&!pip)Column(Modifier.align(Alignment.Center).fillMaxWidth(.85f).background(Color(0xE6192231)).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Text(error,color=Color.White);Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){XuperButton(onClick=vm::retry,enabled=playing!=null){Text("Reintentar")};XuperOutlinedButton(onClick={vm.back()}){Text("Volver")}}}
   if(controls&&!pip)Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent,Color.Black.copy(alpha=.8f)))).safeDrawingPadding().padding(horizontal=20.dp,vertical=16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
    val title=playing?.let { it.title.name+(it.episode?.let { ep -> " · EP. ${ep.number} · T${ep.season}" }?:"") }?:"Preparando reproducción…"
    Text(title,color=Color.White,fontWeight=FontWeight.SemiBold,fontSize=19.sp,maxLines=2,overflow=TextOverflow.Ellipsis)
@@ -63,25 +63,25 @@ import kotlinx.coroutines.delay
     if((context as? MainActivity)?.canUsePip()==true)IconButton(onClick={(context as MainActivity).enterMiniPlayer()}){Icon(Icons.Default.PictureInPictureAlt,"Ventana flotante",tint=Color.White)}
     IconButton(onClick={vm.back()}){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Volver a la ficha",tint=Color.White)}
     IconButton(onClick={vm.player.seek(snapshot.positionMs-10_000);touch()}){Icon(Icons.Default.Replay10,"Retroceder 10 segundos",tint=Color.White)}
-    FilledTonalButton(onClick={vm.player.toggle();touch()},modifier=Modifier.focusRequester(playFocus)){Icon(if(snapshot.playing)Icons.Default.Pause else Icons.Default.PlayArrow,if(snapshot.playing)"Pausar" else "Continuar")}
+    FilledTonalButton(shape=XuperStyle.control,onClick={vm.player.toggle();touch()},modifier=Modifier.focusRequester(playFocus)){Icon(if(snapshot.playing)Icons.Default.Pause else Icons.Default.PlayArrow,if(snapshot.playing)"Pausar" else "Continuar")}
     IconButton(onClick={vm.player.seek(snapshot.positionMs+10_000);touch()}){Icon(Icons.Default.Forward10,"Adelantar 10 segundos",tint=Color.White)}
-    OutlinedButton(onClick={tracks=true;touch()}){Icon(Icons.Default.Subtitles,null);Text("Audio",fontSize=12.sp)}
+    XuperOutlinedButton(onClick={tracks=true;touch()}){Icon(Icons.Default.Subtitles,null);Text("Audio",fontSize=12.sp)}
    }
   }
   val next=vm.nextEpisode()
-  if(!pip&&next!=null&&snapshot.positionMs>=PlaybackPolicy.nextEpisodeThreshold(snapshot.durationMs)&&!tracks)Button(onClick=vm::next,modifier=Modifier.align(Alignment.CenterEnd).safeDrawingPadding().padding(20.dp)){Text("Siguiente capítulo ${next.number} ›")}
+  if(!pip&&next!=null&&snapshot.positionMs>=PlaybackPolicy.nextEpisodeThreshold(snapshot.durationMs)&&!tracks)XuperButton(onClick=vm::next,modifier=Modifier.align(Alignment.CenterEnd).safeDrawingPadding().padding(20.dp)){Text("Siguiente capítulo ${next.number} ›")}
  }
  if(tracks&&!pip)AlertDialog(onDismissRequest={tracks=false;touch()},title={Text("Audio y subtítulos")},text={LazyColumn(Modifier.heightIn(max=420.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
-  item {FilterPicker("Imagen",listOf("Ajustar","Ampliar","Estirar").mapIndexed {i,s->Choice(i.toString(),s)},settings.videoFit.toString()){vm.changeSetting("videoFit",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Imagen",listOf("Ajustar","Ampliar","Estirar").mapIndexed {i,s->Choice(i.toString(),s)},settings.videoFit.toString(),allowAll=false){vm.changeSetting("videoFit",it.toIntOrNull()?:0)}}
   item{Text("Idioma de audio",fontWeight=FontWeight.Bold)}
   if((playing?.stream?.portalAudio?.size?:0)>1)items(playing!!.stream.portalAudio,key={"portal-audio:${it.id}"}){track->TextButton(onClick={vm.choosePortalAudio(track)},modifier=Modifier.fillMaxWidth()){Text((if(track.selected)"✓ " else "")+languageLabel(track.language,track.name))}}
   items(if((playing?.stream?.portalAudio?.size?:0)>1&&snapshot.audio.size<=1)emptyList()else snapshot.audio,key={"audio:${it.id}"}){track->TextButton(onClick={vm.chooseAudio(track)},modifier=Modifier.fillMaxWidth()){Text((if(track.selected)"✓ " else "")+languageLabel(track.language,track.name))}}
   item{HorizontalDivider();Text("Subtítulos",fontWeight=FontWeight.Bold)}
   item{TextButton(onClick={vm.player.subtitles(null)}){Text((if(snapshot.subtitles.none {it.selected})"✓ " else "")+"Desactivados")}}
   item {HorizontalDivider();Text("Estilo de subtítulos",fontWeight=FontWeight.Bold)}
-  item {FilterPicker("Fuente",listOf("Sistema","Condensada","Serif","Monoespaciada").mapIndexed { i,s->Choice(i.toString(),s) },settings.font.toString()){vm.changeSetting("font",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Tamaño",listOf("Normal","Grande","Pequeño").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontSize.toString()){vm.changeSetting("fontSize",it.toIntOrNull()?:0)}}
-  item {FilterPicker("Color",listOf("Blanco","Amarillo","Cian").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontColor.toString()){vm.changeSetting("fontColor",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Fuente",listOf("Sistema","Condensada","Serif","Monoespaciada").mapIndexed { i,s->Choice(i.toString(),s) },settings.font.toString(),allowAll=false){vm.changeSetting("font",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Tamaño",listOf("Normal","Grande","Pequeño").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontSize.toString(),allowAll=false){vm.changeSetting("fontSize",it.toIntOrNull()?:0)}}
+  item {FilterPicker("Color",listOf("Blanco","Amarillo","Cian").mapIndexed { i,s->Choice(i.toString(),s) },settings.fontColor.toString(),allowAll=false){vm.changeSetting("fontColor",it.toIntOrNull()?:0)}}
   items(snapshot.subtitles,key={"sub:${it.id}"}){track->TextButton(onClick={vm.player.subtitles(track.id)},modifier=Modifier.fillMaxWidth()){Text((if(track.selected)"✓ " else "")+languageLabel(track.language,track.name))}}
  }},confirmButton={TextButton(onClick={tracks=false;touch()}){Text("Listo")}})
 }
