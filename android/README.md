@@ -81,3 +81,7 @@ Ver ../docs/ARQUITECTURA-ANDROID-Y-TIZEN10.md para la decisión original y las f
 ## Wi-Fi y datos celulares
 
 Sin selector de modos. La app usa la red que proporciona Android y admite Wi-Fi y datos celulares 3G/4G/5G según el dispositivo y el operador. No cambia ni selecciona bandas del módem. En conexiones celulares se aplica un presupuesto inicial de hasta 720p, o 480p cuando el ahorro de Android está activo, si el portal ofrece esas variantes; en Wi-Fi no se impone ese límite. Media3 adapta fuentes HLS/DASH según la velocidad y variantes disponibles. Una fuente progresiva fija no se transcodifica: si solo existe 720p no se inventa 480p. El presupuesto inicial se decide al abrir el vídeo; cambiar la red no fuerza un reinicio del actual. No requiere permisos telefónicos.
+
+## Publicación de esta beta
+
+La validación de Android y la publicación son workflows separados. `publish-android-beta.yml` exige un run exitoso de `android-alpha.yml` correspondiente al mismo SHA de fuente y verifica el APK público ya firmado mediante SHA-256, apksigner y zipalign. El keystore no se sube a GitHub. Los tres archivos públicos se transfieren en una rama temporal que se retira después de la publicación. Ver VALIDACION.md para el run, el commit y la descarga de esta beta.
