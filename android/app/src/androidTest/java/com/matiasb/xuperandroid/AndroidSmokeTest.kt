@@ -110,7 +110,10 @@ class AndroidSmokeTest {
    }
    val deadline=android.os.SystemClock.uptimeMillis()+timeoutMs
    while(!platformState()&&android.os.SystemClock.uptimeMillis()<deadline)Thread.sleep(50)
-   org.junit.Assert.assertTrue(label,platformState())
+   val complete=platformState()
+   var details=""
+   InstrumentationRegistry.getInstrumentation().runOnMainSync {details="pip=${host.isInPictureInPictureMode}, lifecycle=${host.lifecycle.currentState}, focus=${host.hasWindowFocus()}, size=${host.window.decorView.width}x${host.window.decorView.height}"}
+   org.junit.Assert.assertTrue("$label ($details)",complete)
   }
   waitPlatform(15000,"PiP entry must complete"){host.isInPictureInPictureMode}
   org.junit.Assert.assertNotNull(vm.player.player)
@@ -118,7 +121,8 @@ class AndroidSmokeTest {
   waitPlatform(5000,"Video must advance while in PiP"){vm.player.snapshot.value.playing&&vm.player.snapshot.value.positionMs>atEntry+300}
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
   shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
-  waitPlatform(15000,"PiP exit must resume the full-screen Activity"){!host.isInPictureInPictureMode&&host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)}
+  // The software-rendered emulator may stall WindowManager during cold-boot Google services.
+  waitPlatform(45000,"PiP exit must resume the full-screen Activity"){!host.isInPictureInPictureMode&&host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)}
   scenario.close();compose.waitForIdle()
   scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
   scenario.onActivity {org.junit.Assert.assertFalse(it.canUsePip());org.junit.Assert.assertFalse(it.enterMiniPlayer())}
