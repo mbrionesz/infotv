@@ -1,3 +1,16 @@
+# XuperAndroid 0.1.1 beta 7: identidad compartida
+
+- Fuente validada: `a71cebd85d9ea9f0679d9200dfceb61577dafc90`.
+- Referencia visual: cabecera compartida de `browser/tv-shell.js`, Ajustes de `app/js/app.js` y estilos `app/css/cinema.css` / `app/css/shadcn-tv.css`. Implementación nativa Compose: logo conservado, TV/Películas/Series/lupa centrados, engranaje a la derecha, menú lateral por grupos y panel de opciones en tablet/TV. Teléfono utiliza menú y páginas de sección con los mismos componentes y navegación atrás.
+- Selección única de fuente/tamaño/color, vista previa, acciones reales de biblioteca, reproducción, imagen, diagnóstico, conteo y limpieza de imágenes temporales. Las preferencias de audio reconocen códigos ISO de tres letras. Transporte, 17 resolutores, perfil y búfer de beta 6 conservados; `companion/lib/magis.js` no modificado.
+- 38 pruebas unitarias (7 modelo y 31 datos) y 15 instrumentadas (PiP 1, funcionales 13 y capturas 1), cero fallos/errores/omisiones en la ejecución final: https://github.com/mbrionesz/infotv/actions/runs/45713949552 . Incluyen centrado independiente del logo, fuente seleccionada y persistida en el estado, Mi lista desde Ajustes, cambio de panel con D-pad, navegación atrás, reproducción y recuperación VOD, PiP con avance del tiempo, retorno a pantalla completa y exclusión de TV.
+- 20 PNG reales de la interfaz nativa en el artefacto `XuperAndroid-0.1.1-beta7/qa-screenshots`: celular normal/estrecho, tablet y disposición TV. Android 15/API 35 Google APIs con `force_tv` para la disposición TV; la barra del sistema de las capturas pertenece al emulador de teléfono. Revisión visual de alineación, lectura, menú/panel, botones y secciones Diagnóstico/Catálogo/Almacenamiento/Acerca de. Contenido local identificado como prueba; sin imágenes inventadas ni portal real. Ausencia de `portal-probe.json` comprobada, `portal_probe=false`.
+- Durante la validación se corrigió el recorrido de capturas para desplazar la LazyColumn real y conservar imágenes aun cuando falla un test. Una descarga de la imagen SDK falló antes de ejecutar pruebas. El emulador también atascó una salida de PiP con las animaciones desactivadas; la prueba usa ahora relojes de animación normales durante PiP y consulta Activity/lifecycle en el hilo principal, sin omitir aserciones. Una falla de PiP mantiene la ejecución global fallida, conservando informes funcionales y capturas. La ejecución final pasó completa.
+- Release R8 optimizado y lint correctos. Firma v2/v3, alineación 16 KiB y mismo certificado de desarrollo que beta 6 verificados. APK universal de 4.768.240 bytes; SHA-256 `42d41a1609d2d5c7f31274480f0110f81ae32c7f290a67870eaf1cf43416fc8f`.
+- Publicación verificada: https://github.com/mbrionesz/infotv/actions/runs/45715253042 . Descarga pública comprobada con el mismo SHA-256: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.7 . Solo APK firmado, SHA256SUMS.txt y build-info.json; clave privada local. El release optimizado y dispositivos físicos quedan pendientes de prueba, sin atribuir al portal la validación de fixtures locales.
+
+## Registro anterior: beta 6
+
 # XuperAndroid 0.1.1 beta 6: revisión del flujo VOD
 
 - Fuente validada: `819a77189ce383a63cf8bf5ebe4ffa59af5c8166`.
