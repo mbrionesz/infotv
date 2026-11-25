@@ -1,3 +1,16 @@
+# XuperAndroid 0.1.1 beta 6: revisión del flujo VOD
+
+- Fuente validada: `819a77189ce383a63cf8bf5ebe4ffa59af5c8166`.
+- Errores corregidos: reintento inicial deshabilitado antes de obtener un enlace; identificación de películas como episodios; búsqueda con debounce capaz de cancelar ficha/apertura; contexto de episodios de otra temporada al reanudar; inicio tardío tras ir a segundo plano; selección de pistas sin licencia y primera licencia vacía; ausencia de alternativa SLB tras fallo de transporte; ficha `type=1` para `portal100006`; elección manual de audio en otra calidad y distinción por nombre de variantes del mismo idioma. Preparación de fuentes inválidas produce un error recuperable en vez de una excepción sin manejar.
+- Resolución inicial VOD limitada a 60 s, metadatos opcionales de temporada separados de una reproducción ya iniciada. El estado conserva título/episodio/posición para reintentar. Biblioteca, preferencias, 17 resolutores, perfil, búfer y diseño anteriores conservados.
+- 37 pruebas unitarias y 15 instrumentadas aprobadas, sin fallos/errores/omisiones en las suites controladas: https://github.com/mbrionesz/infotv/actions/runs/45705217250 . Nueve pruebas nuevas de contrato VOD (JSON simulado) y seis nuevas de interfaz nativa (MP4 H.264/AAC/SRT local): fallo inicial y reintento, siguiente episodio/vuelta a ficha, búsqueda pendiente, cambio de temporada, cancelación con Volver y cancelación al pasar al fondo con reintento.
+- El corredor de pruebas utiliza una Application de test que inyecta repositorios controlados; esa implementación y las pruebas no forman parte del APK release. Las suites se separan en PiP (1), funcional (13) y capturas (1), conservando sus informes en qa-evidence. Capturas al final para aislar cambios globales de tamaño/densidad; eventos de teclado esperan foco real de la ventana. No se omiten aserciones.
+- El diagnóstico opcional del portal real NO se ejecutó y no se incluye en las 15 pruebas. La revisión automática rechazó ejecutarlo y transferir metadatos de esa sesión a artefactos de GitHub sin autorización explícita. La ejecución publicada usa `portal_probe=false`; un segundo opt-in de instrumentación impide cualquier petición real del diagnóstico si se incluyera accidentalmente. Se comprobó ausencia de `portal-probe.json` en el artefacto. No se afirma una prueba integral contra el portal ni disponibilidad de sus CDN/códecs físicos.
+- Release optimizado/R8 y lint correctos; firma v2/v3, certificado idéntico a beta 5 y alineación de 16 KiB verificados. APK universal de 4.735.472 bytes; SHA-256 `58e32191c0db2693016baee64ed31ca2836fe032107583361edf223049cce756`.
+- Publicación exitosa: https://github.com/mbrionesz/infotv/actions/runs/45706510478 . Descarga pública comprobada con el mismo SHA-256: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.6 . Solo APK público, SHA256SUMS.txt y build-info.json; keystore local y `realPortalChecked=false` explícito.
+
+## Registro anterior: beta 5
+
 # XuperAndroid 0.1.1 beta 5: verificación
 
 - Fuente validada: `4a658a2e7f6016d2c2cb3d747e61feda06ad245a`.
