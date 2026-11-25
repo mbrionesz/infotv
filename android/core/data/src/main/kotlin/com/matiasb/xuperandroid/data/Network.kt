@@ -5,16 +5,66 @@ import okhttp3.dnsoverhttps.DnsOverHttps
 import java.net.InetAddress
 import java.util.concurrent.*
 import java.io.IOException
-class BoundedDns : Dns {
- private val executor=Executors.newFixedThreadPool(2) { task -> Thread(task,"xuper-dns").apply { isDaemon=true } }
- private val secure=DnsOverHttps.Builder().client(OkHttpClient.Builder().callTimeout(2500,TimeUnit.MILLISECONDS).build()).url("https://cloudflare-dns.com/dns-query".toHttpUrl()).bootstrapDnsHosts(InetAddress.getByName("1.1.1.1"),InetAddress.getByName("1.0.0.1")).build()
+/** Race independent secure resolvers; retain Android DNS as a bounded, delayed fallback. */
+class BoundedDns(
+ private val resolvers: List<Dns> = secureResolvers(),
+ private val systemDns: Dns = Dns.SYSTEM,
+ private val budgetMs: Long = 3500,
+ private val systemDelayMs: Long = 350
+) : Dns {
  private val cache=ConcurrentHashMap<String,Pair<Long,List<InetAddress>>>()
  override fun lookup(hostname: String): List<InetAddress> {
   cache[hostname]?.takeIf { System.currentTimeMillis()-it.first<60_000 }?.let { return it.second }
-  val system=executor.submit<List<InetAddress>> { Dns.SYSTEM.lookup(hostname) }
-  val addresses=try { system.get(1200,TimeUnit.MILLISECONDS) } catch (_: Exception) { system.cancel(true);secure.lookup(hostname) }
-  if(addresses.isEmpty())throw java.net.UnknownHostException(hostname)
-  if(cache.size>=64)cache.clear();cache[hostname]=System.currentTimeMillis() to addresses;return addresses
+  val answers=LinkedBlockingQueue<Result<List<InetAddress>>>()
+  val tasks=mutableListOf<Future<*>>()
+  fun submit(pool: ThreadPoolExecutor,dns: Dns,delayMs: Long=0) {
+   try { tasks+=pool.submit {
+    val result=runCatching {
+     if(delayMs>0)Thread.sleep(delayMs)
+     dns.lookup(hostname).distinct().sortedBy { if(it is java.net.Inet4Address)0 else 1 }
+      .also { if(it.isEmpty())throw java.net.UnknownHostException(hostname) }
+    }
+    answers.offer(result)
+   } } catch(error: RejectedExecutionException) { answers.offer(Result.failure(error)) }
+  }
+  resolvers.forEach {submit(securePool,it)}
+  submit(systemPool,systemDns,systemDelayMs)
+  val deadline=System.nanoTime()+TimeUnit.MILLISECONDS.toNanos(budgetMs)
+  var last: Throwable?=null
+  try {
+   repeat(resolvers.size+1) {
+    val remaining=deadline-System.nanoTime()
+    if(remaining<=0)throw java.net.UnknownHostException("DNS agotó su tiempo de espera: $hostname")
+    val result=answers.poll(remaining,TimeUnit.NANOSECONDS)
+     ?:throw java.net.UnknownHostException("DNS agotó su tiempo de espera: $hostname")
+    result.getOrNull()?.let { addresses->
+     if(cache.size>=64)cache.clear()
+     cache[hostname]=System.currentTimeMillis() to addresses
+     return addresses
+    }
+    last=result.exceptionOrNull()
+   }
+   throw java.net.UnknownHostException("No se pudo resolver $hostname").apply {initCause(last)}
+  } catch(error: InterruptedException) {
+   Thread.currentThread().interrupt()
+   throw java.net.UnknownHostException("Consulta DNS cancelada: $hostname").apply {initCause(error)}
+  } finally {tasks.forEach {it.cancel(true)};securePool.purge();systemPool.purge()}
+ }
+ companion object {
+  // Separate bounded pools keep a stuck platform resolver from starving secure DNS.
+  private fun pool(size: Int,name: String)=ThreadPoolExecutor(size,size,0L,TimeUnit.MILLISECONDS,ArrayBlockingQueue<Runnable>(32),{task->Thread(task,name).apply {isDaemon=true}})
+  private val securePool=pool(6,"xuper-secure-dns")
+  private val systemPool=pool(2,"xuper-system-dns")
+  private fun secureResolvers(): List<Dns> {
+   val http=OkHttpClient.Builder().callTimeout(2500,TimeUnit.MILLISECONDS).build()
+   return listOf(
+    "https://cloudflare-dns.com/dns-query" to listOf("1.1.1.1","1.0.0.1"),
+    "https://dns.google/dns-query" to listOf("8.8.8.8","8.8.4.4"),
+    "https://dns.quad9.net/dns-query" to listOf("9.9.9.9","149.112.112.112")
+   ).map { (url,ips)->DnsOverHttps.Builder().client(http).url(url.toHttpUrl())
+    .bootstrapDnsHosts(ips.map {InetAddress.getByName(it)})
+    .includeIPv6(false).build() }
+  }
  }
 }
 /** Each request, including HLS segments, gets credentials only for its own origin. */

@@ -27,15 +27,23 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  fun select(section: Section) { if(state.value.section==section&&state.value.screen==Screen.HOME)return;request?.cancel();searchJob?.cancel();mutable.value=UiState(section=section,demo=state.value.demo);reload() }
  fun reload() {
   request?.cancel();request=viewModelScope.launch {
-   val repo=withContext(Dispatchers.IO){repository};val section=state.value.section;val query=state.value.query;mutable.update { it.copy(loading=true,error=null,page=0,items=emptyList()) }
-   try { supervisorScope {
-    val categories=async(Dispatchers.IO) { runCatching { repo.categories(section) }.getOrDefault(emptyList()) }
-    val filters=async(Dispatchers.IO) { runCatching { repo.filters(section) }.getOrDefault(Filters()) }
-    val page=withContext(Dispatchers.IO){repo.browse(section,query,1)};ensureActive();mutable.update { it.copy(items=page.items,page=page.page,hasMore=page.hasMore,total=page.reportedTotal,columns=categories.await(),filters=filters.await(),loading=false) }
-   };if(!state.value.demo)refreshStats() } catch(error: CancellationException){if(error is TimeoutCancellationException)mutable.update { it.copy(loading=false,error=message(error)) } else throw error} catch(error: Exception){mutable.update { it.copy(loading=false,error=message(error)) }}
+   val section=state.value.section;val query=state.value.query
+   mutable.update {it.copy(loading=true,error=null,page=0,items=emptyList())}
+   try { withTimeout(60_000) { supervisorScope {
+    val repo=withContext(Dispatchers.IO){repository}
+    val categories=async(Dispatchers.IO) { try {repo.categories(section)} catch(error: CancellationException){throw error} catch(_: Exception){emptyList()} }
+    val filters=async(Dispatchers.IO) { try {repo.filters(section)} catch(error: CancellationException){throw error} catch(_: Exception){Filters()} }
+    val page=withContext(Dispatchers.IO){repo.browse(section,query,1)};ensureActive()
+    // Render usable results immediately; optional metadata must not hold the spinner open.
+    mutable.update {it.copy(items=page.items,page=page.page,hasMore=page.hasMore,total=page.reportedTotal,loading=false)}
+    val loadedCategories=categories.await();val loadedFilters=filters.await();ensureActive()
+    mutable.update {it.copy(columns=loadedCategories,filters=loadedFilters)}
+   } };if(!state.value.demo)refreshStats()
+   } catch(error: CancellationException){if(error is TimeoutCancellationException)mutable.update {it.copy(loading=false,error=if(it.items.isEmpty())message(error)else it.error)} else throw error
+   } catch(error: Exception){mutable.update {it.copy(loading=false,error=message(error))}}
   }
  }
- fun more() { if(state.value.loading||!state.value.hasMore)return;request=viewModelScope.launch { val old=state.value;mutable.update { it.copy(loading=true,error=null) };try { val page=repository.browse(old.section,old.query,old.page+1);ensureActive();mutable.update { it.copy(items=(it.items+page.items).distinctBy { title->title.id },page=page.page,hasMore=page.hasMore,loading=false) } }catch(error: CancellationException){if(error is TimeoutCancellationException)mutable.update { it.copy(loading=false,error=message(error)) } else throw error}catch(error: Exception){mutable.update { it.copy(loading=false,error=message(error)) }} } }
+ fun more() { if(state.value.loading||!state.value.hasMore)return;request?.cancel();request=viewModelScope.launch { val old=state.value;mutable.update { it.copy(loading=true,error=null) };try { val page=repository.browse(old.section,old.query,old.page+1);ensureActive();mutable.update { it.copy(items=(it.items+page.items).distinctBy { title->title.id },page=page.page,hasMore=page.hasMore,loading=false) } }catch(error: CancellationException){if(error is TimeoutCancellationException)mutable.update { it.copy(loading=false,error=message(error)) } else throw error}catch(error: Exception){mutable.update { it.copy(loading=false,error=message(error)) }} } }
  fun category(choice: Choice) { openCategory(Query(column=choice.id)) }
  fun openCategory(query: Query) { mutable.update { it.copy(screen=Screen.SEARCH,query=query) };reload() }
  fun search() { request?.cancel();mutable.update { it.copy(screen=Screen.SEARCH,query=Query()) };reload() }

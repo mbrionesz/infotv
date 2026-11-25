@@ -1,6 +1,12 @@
-# XuperAndroid · 0.1.1 beta 3
+# XuperAndroid · 0.1.1 beta 4
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 4
+
+- DNS seguro en paralelo mediante Cloudflare, Google y Quad9, con bootstrap por IP y DNS Android como alternativa diferida. Espera global de 3,5 s, caché de 64 hosts/60 s y pools/colas acotados. Un DNS del sistema bloqueado no ocupa los trabajadores de DNS seguro. Se mantiene validación TLS y nombres originales de los hosts.
+- La primera página aparece sin esperar categorías/filtros opcionales; carga del catálogo limitada a 60 s y cancelación al cambiar/paginar. No afirma resolver errores de perfil o autorización del portal.
+- Pruebas de DNS cubren proveedor lento, respuesta vacía, alternativa del sistema, plazo global y caché.
 
 ## Novedades de beta 3
 
