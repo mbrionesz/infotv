@@ -1,3 +1,16 @@
+# XuperAndroid 0.1.1 beta 3: verificación
+
+- Fuente validada: `b0725a339824de14a68cfdce0701770c80d57d6d`.
+- Cabecera compacta de tablet/TV: navegación limitada a 520 dp, iconos de 20 dp, logo de 36 dp y áreas de interacción de 48 dp. Ventanas menores de 720 dp conservan la cabecera en dos filas. Contador, historial y funciones existentes conservados.
+- 20 pruebas unitarias y 9 instrumentadas aprobadas, cero fallos, errores u omisiones: https://github.com/mbrionesz/infotv/actions/runs/45652342427 . Incluye PiP, reproducción, navegación táctil/D-pad, pantalla estrecha, contraste y 16 capturas de emulador.
+- Release optimizado y lint correctos; firma v2/v3 y alineación de 16 KiB verificadas. Mismo certificado de desarrollo que beta 1; actualización sin reinstalación limpia.
+- APK universal: 4.735.472 bytes, SHA-256 `9e99aa2eee56529638a03c2317eaf3e5dd4af0298560cb2945b6c4988c293278`.
+- Publicación exitosa: https://github.com/mbrionesz/infotv/actions/runs/45653287670 . Se suben solo APK público, SHA256SUMS.txt y build-info.json. Keystore privado local.
+- Descarga: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.3 . Incluye los cambios de beta 2, cuya publicación quedó en borrador por un fallo temporal del servicio.
+- Las capturas y pruebas instrumentadas usan debug y contenido local identificado como prueba. Release optimizado compilado y verificado, pendiente de pruebas físicas. No certifica cada modelo, códec ni CDN del portal.
+
+## Registro anterior: beta 2
+
 # XuperAndroid 0.1.1 beta 2: verificación
 
 - Fuente validada: `dee82646b3288a26e7492e757769046b578d1b82`.
