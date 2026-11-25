@@ -68,15 +68,15 @@ class PortalRepository(private val client: PortalClient): CatalogRepository {
   val play=call("v10/startPlayVOD",JSONObject().put("contentId",episode?.id?:title.id).put("seriesContentId",if(episode!=null)seasonId.ifBlank { title.id } else "").put("startTime",0).put("type","1").put("columnId",0).put("authType",""))
   val program=play.optJSONArray("episodeList")?.optJSONObject(0)?:throw java.io.IOException("No hay pistas disponibles")
   val tracks=program.optJSONArray("totalMovieList").objects().flatMap { group->group.optJSONArray("movieList").objects().map { if(it.text("quality").isBlank())it.put("quality",group.text("quality"));it } }.filter { it.text("contentId").isNotBlank() }
-  fun height(item: JSONObject): Int { val label=item.text("videoHeight").ifBlank { item.text("height").ifBlank { item.text("quality") } };return if(label.contains("4k",true))2160 else Regex("(2160|1440|1080|720|480)").find(label)?.value?.toInt()?:0 }
-  val chosenHeight=DataPolicy.chooseHeight(tracks.map { height(it) },maxHeight)
-  val available=tracks.filter { chosenHeight==0||height(it)==chosenHeight }
-  val selected=available.sortedWith(compareByDescending<JSONObject> { if(preferredAudio.isNotBlank()&&(it.text("contentId")==preferredAudio||it.text("audioInfo").equals(preferredAudio,true)))1 else 0 }.thenByDescending { height(it) }.thenByDescending { PlaybackPolicy.audioScore(it.text("audioInfo"),it.text("languageName")) }).firstOrNull()?:throw java.io.IOException("No hay vídeo disponible")
+
+  val chosenHeight=DataPolicy.chooseHeight(tracks.map { vodHeight(it) },maxHeight)
+  val available=tracks.filter { chosenHeight==0||vodHeight(it)==chosenHeight }
+  val selected=available.sortedWith(compareByDescending<JSONObject> { if(preferredAudio.isNotBlank()&&(it.text("contentId")==preferredAudio||vodAudio(it).equals(preferredAudio,true)))1 else 0 }.thenByDescending { vodHeight(it) }.thenByDescending { PlaybackPolicy.audioScore(vodAudio(it),it.text("languageName")) }).firstOrNull()?:throw java.io.IOException("No hay vídeo disponible")
   val license=selected.optJSONArray("licenseList")?.optJSONObject(0)?.text("license").orEmpty();if(license.isBlank())throw java.io.IOException("El portal no entregó autorización de vídeo")
   val extension=if(selected.text("videoFormat").equals("ts",true))"ts" else "mp4"
   val sources=cdnSources("vod",license,"/vod/${selected.text("contentId")}_media.$extension")
   val subtitles=program.optJSONArray("subtitleList").objects().mapNotNull { item->val file=item.optJSONArray("file")?.optJSONObject(0)?:return@mapNotNull null;val url=file.text("url");if(!url.startsWith("http"))return@mapNotNull null;Subtitle(url,item.text("language"),if(file.text("fileType").equals("vtt",true))"text/vtt" else "application/x-subrip",item.text("name")) }
-  return Stream(sources,if(extension=="ts")"video/mp2t" else "video/mp4",PlaybackPolicy.duration(selected.text("duration").ifBlank { program.text("duration") }),subtitles,selected.text("quality"),selected.optDouble("frameRate",0.0).toFloat(),available.distinctBy {it.text("audioInfo")+it.text("languageName")}.map {Track(it.text("contentId"),it.text("audioInfo"),it.text("languageName").ifBlank {it.text("audioInfo")},it.text("contentId")==selected.text("contentId"))})
+  return Stream(sources,if(extension=="ts")"video/mp2t" else "video/mp4",PlaybackPolicy.duration(selected.text("duration").ifBlank { program.text("duration") }),subtitles,selected.text("quality"),vodFps(selected),available.distinctBy {vodAudio(it)+it.text("languageName")}.map {Track(it.text("contentId"),vodAudio(it),it.text("languageName").ifBlank {vodAudio(it)},it.text("contentId")==selected.text("contentId"))})
  }
  private suspend fun resolveLive(title: Title): Stream {
   val result=call("v4/startPlayLive",JSONObject().put("channelCode",title.id).put("type","1"));val address=result.optJSONArray("liveAddressList").objects().firstOrNull { it.text("license").isNotBlank() }?:throw java.io.IOException("No hay autorización para el canal")
