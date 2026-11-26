@@ -110,6 +110,9 @@ class AndroidSmokeTest {
    // Activity/lifecycle state belongs to the main thread; polling it from the
    // instrumentation thread can observe stale transition state.
    fun platformState(): Boolean {
+    // Native PiP waits for application frames. Polling only with Thread.sleep
+    // freezes Compose's test clock and can strand the platform transition.
+    compose.mainClock.advanceTimeByFrame()
     var result=false
     InstrumentationRegistry.getInstrumentation().runOnMainSync {result=condition()}
     return result
@@ -132,7 +135,7 @@ class AndroidSmokeTest {
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
   fun waitSystemControl(label: String,condition: ()->Boolean) {
    val deadline=android.os.SystemClock.uptimeMillis()+10000
-   while(!condition()&&android.os.SystemClock.uptimeMillis()<deadline)Thread.sleep(50)
+   while(!condition()&&android.os.SystemClock.uptimeMillis()<deadline){compose.mainClock.advanceTimeByFrame();Thread.sleep(50)}
    val done=condition()
    if(!done) {
     shell("mkdir -p /data/local/tmp/xuperandroid-qa")
