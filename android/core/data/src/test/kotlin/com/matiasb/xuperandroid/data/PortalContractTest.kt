@@ -5,8 +5,8 @@ import org.json.JSONObject
 import okhttp3.*
 class PortalContractTest {
  private val fixture=JSONObject(javaClass.getResourceAsStream("/portal-contract.json")!!.bufferedReader().readText())
- @Test fun portalProfileMatchesArchivedSharedClient() {
-  val profile=fixture.getJSONObject("profile")
+ @Test fun portalProfileMatchesEffectiveSharedBuildProfile() {
+  val profile=JSONObject(javaClass.getResourceAsStream("/portal-profile.json")!!.bufferedReader().readText())
   assertEquals(profile.getString("appId"),PortalClient.APP_ID)
   assertEquals(profile.getString("spkgVer"),PortalClient.PROFILE)
   assertEquals(profile.getInt("sdkVer"),PortalClient.PROTOCOL_SDK)

@@ -84,7 +84,7 @@ for (const [folder, license] of [['events','LICENSE'], ['hls.js','LICENSE'], ['m
 copyFileSync(path.join(root,'LICENSE-UPSTREAM'),path.join(root,'app/vendor/UPSTREAM-LICENSE.txt'));
 copyFileSync(path.join(root,'docs/THIRD_PARTY-UPSTREAM.md'),path.join(root,'app/vendor/UPSTREAM-NOTICES.txt'));
 console.log('Standalone bundle: browser runtime, HLS.js, portal protocol; Chrome 56 target (Tizen 4.0).');
-const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','companion/lib/magis.js','companion/lib/audio-language.js','app/css/shadcn-tv.css','design/shadcn-tv.json',
+const sources = ['package.json','package-lock.json','tools/build-standalone.mjs','tools/portal-profile-adapter.mjs','shared/portal-profile.json','companion/lib/magis.js','companion/lib/audio-language.js','app/css/shadcn-tv.css','design/shadcn-tv.json',
   ...readdirSync(path.join(root,'browser')).filter(name=>name.endsWith('.js')).map(name=>'browser/'+name)].sort();
 const hash = createHash('sha256');
 for(const name of sources){hash.update(name+'\0');hash.update(readFileSync(path.join(root,name)));}

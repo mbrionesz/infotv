@@ -1,6 +1,7 @@
 // Preserve the archived upstream magis.js; adapt the effective client at build time.
 // Observed in Samsung 1.19.4; own bootstrap verified against the provider, without borrowed sessions.
-export const portalClientProfile=Object.freeze({apkVersion:'49902',apkVer:'43404',spkgVer:'2025-08-07 05:40:11_36_16_',sdkVer:36});
+import {readFileSync} from 'node:fs';
+export const portalClientProfile=Object.freeze(JSON.parse(readFileSync(new URL('../shared/portal-profile.json',import.meta.url),'utf8')));
 export function patchPortalProfile(source){
  const old='  SPKG_VER = "2024-09-10 06:25:30_33_13_",';
  if(!source.includes(old)||!source.includes('  APK_VERSION = "49902",')||!source.includes('  APK_VER_HEADER = "43404",'))throw Error('Unexpected upstream portal profile');

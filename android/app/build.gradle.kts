@@ -1,7 +1,7 @@
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.plugin.compose") }
 android {
  namespace = "com.matiasb.xuperandroid"; compileSdk { version = release(37) { minorApiLevel = 2 } }
- defaultConfig { applicationId = "com.matiasb.xuperandroid"; minSdk = 26; targetSdk = 37; versionCode = 10; versionName = "0.1.1-beta.9"; testInstrumentationRunner = "com.matiasb.xuperandroid.XuperTestRunner" }
+ defaultConfig { applicationId = "com.matiasb.xuperandroid"; minSdk = 26; targetSdk = 37; versionCode = 11; versionName = "0.1.1-beta.10"; testInstrumentationRunner = "com.matiasb.xuperandroid.XuperTestRunner" }
  buildFeatures { compose = true; buildConfig = true }
  buildTypes { release { isMinifyEnabled = true; isShrinkResources = true; proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro") } }
 }

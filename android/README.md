@@ -1,6 +1,14 @@
-# XuperAndroid · 0.1.1 beta 9
+# XuperAndroid · 0.1.1 beta 10
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 10
+
+- Perfil efectivo del portal compartido con Tizen/Windows desde `shared/portal-profile.json`: APK 49902, cabecera 43404, sistema/paquete `2025-08-07 05:40:11_36_16_` y SDK de protocolo 36. Android genera sus constantes al compilar; se elimina la comparación con el archivo archivado sin adaptar. Este SDK de protocolo no aumenta el mínimo Android 8 de la app.
+- Las sesiones del perfil anterior se renuevan con la identidad propia de la instalación; progreso, favoritos y preferencias se conservan. Cabeceras, cuerpo y activación usan el mismo perfil.
+- Cada petición captura su sesión. Una respuesta tardía `aaa100083` de una consulta vieja no borra una sesión que otra consulta ya renovó. La sesión solo se publica después de completar la activación, con usuario y token válidos.
+- Un reintento de sesión por petición; un rechazo persistente conserva su código y se muestra en español. No promete resolver rechazos del servidor por actualizar o limpiar caché.
+- Pruebas con respuestas cifradas simuladas verifican migración, perfil enviado, recuperación concurrente y rechazo persistente. No se consulta el portal real ni se importan sesiones ajenas.
 
 ## Novedades de beta 9
 

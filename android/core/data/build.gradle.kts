@@ -41,3 +41,32 @@ val generateResolverCatalog=tasks.register<GenerateResolverCatalog>("generateRes
 androidComponents.onVariants { variant->
  variant.sources.kotlin?.addGeneratedSourceDirectory(generateResolverCatalog) {it.outputDirectory}
 }
+
+// Generate Android's wire profile from the same configuration used by the
+// Tizen/Windows build adapter, not the unpatched archived magis.js.
+abstract class GeneratePortalProfile : DefaultTask() {
+ @get:InputFile abstract val catalog: RegularFileProperty
+ @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+ @TaskAction fun generate() {
+  @Suppress("UNCHECKED_CAST")
+  val profile=JsonSlurper().parse(catalog.get().asFile) as Map<String,Any>
+  val fields=mapOf("appId" to "APP_ID","apkVersion" to "APK_VERSION","apkVer" to "APK_HEADER","spkgVer" to "PROFILE","sdkVer" to "PROTOCOL_SDK")
+  require(profile.keys==fields.keys)
+  val constants=fields.entries.joinToString("\n") { (key,name)->
+   val value=profile.getValue(key)
+   require(if(key=="sdkVer")value is Number&&value.toInt()>0 else value is String&&value.isNotBlank())
+   " const val $name="+groovy.json.JsonOutput.toJson(value)
+  }
+  val output=outputDirectory.get().file("com/matiasb/xuperandroid/data/SharedPortalProfile.kt").asFile
+  output.parentFile.mkdirs()
+  output.writeText("package com.matiasb.xuperandroid.data\n// Generated from shared/portal-profile.json.\ninternal object SharedPortalProfile {\n$constants\n}\n")
+ }
+}
+val generatePortalProfile=tasks.register<GeneratePortalProfile>("generatePortalProfile") {
+ catalog.set(rootProject.file("../shared/portal-profile.json"))
+ outputDirectory.set(layout.buildDirectory.dir("generated/portalProfile"))
+}
+androidComponents.onVariants { variant->
+ variant.sources.kotlin?.addGeneratedSourceDirectory(generatePortalProfile) {it.outputDirectory}
+}
+android.sourceSets.getByName("test").resources.srcDir(rootProject.file("../shared"))

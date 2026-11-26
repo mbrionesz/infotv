@@ -17,7 +17,7 @@ def build(output=None):
     app = ROOT / 'app'
     info = json.loads((app / 'vendor/build-info.json').read_text())
     assert info.get('targetPlatform', 'tizen') == 'tizen', 'Windows UI must not be packaged as a Samsung WGT'
-    sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs', 'companion/lib/magis.js', 'companion/lib/audio-language.js', 'app/css/shadcn-tv.css', 'design/shadcn-tv.json']
+    sources = ['package.json', 'package-lock.json', 'tools/build-standalone.mjs','tools/portal-profile-adapter.mjs','shared/portal-profile.json', 'companion/lib/magis.js', 'companion/lib/audio-language.js', 'app/css/shadcn-tv.css', 'design/shadcn-tv.json']
     sources += [str(p.relative_to(ROOT)) for p in (ROOT / 'browser').glob('*.js')]
     digest = hashlib.sha256()
     for name in sorted(sources):
@@ -52,7 +52,7 @@ def build(output=None):
         provisioned.replace(widget)
     kit = out / f'XuperTizen-{version}-source.zip'
     with zipfile.ZipFile(kit, 'w') as archive:
-        for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github', 'design', 'desktop']:
+        for name in ['app', 'browser', 'native', 'companion', 'tools', 'docs', 'tests', '.github', 'design', 'desktop', 'shared']:
             for file in sorted((ROOT / name).rglob('*')):
                 if file.is_file() and not set(file.parts) & {'__pycache__', '.buildResult', 'ux-tour-0.6.6', 'ux-redesign', 'ux-usability', 'qa-security-0.7', 'node_modules', 'ui'}:
                     add(archive, file, Path('XuperTizen') / file.relative_to(ROOT))

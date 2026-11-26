@@ -12,12 +12,5 @@
       "moment": 1795000000000,
       "signature": "7d93f7ca9994ccef72e2c21e0a2589dd"
     }
-  ],
-  "profile": {
-    "appId": "com.android.msandroid",
-    "spkgVer": "2024-09-10 06:25:30_33_13_",
-    "sdkVer": 33,
-    "apkVersion": "49902",
-    "apkVer": "43404"
-  }
+  ]
 }
