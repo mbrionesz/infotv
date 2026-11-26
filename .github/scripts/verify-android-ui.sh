@@ -22,8 +22,6 @@ trap android_qa_cleanup EXIT
 # Dismiss Android's one-time immersive tutorial in the test image. It owns a
 # separate focusable system window and can intercept hardware keys/PiP taps.
 adb shell settings put secure immersive_mode_confirmations confirmed
-# Exercise the device IME even though the emulator exposes a hardware keyboard.
-adb shell settings put secure show_ime_with_hard_keyboard 1
 android_qa_pip_status=0
 if [ "${XUPER_QA_SUITE:-complete}" != functional ]; then
 # PiP is a WindowManager transition. Run it with the platform animation clocks
@@ -51,6 +49,9 @@ done
 
 if [ "${XUPER_QA_SUITE:-complete}" = pip ]; then exit "$android_qa_pip_status"; fi
 fi
+
+# Exercise the device IME only in the functional/capture instance.
+adb shell settings put secure show_ime_with_hard_keyboard 1
 
 # Keep viewport captures after functional tests: global wm overrides can steal window focus.
 timeout -k 15s 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe

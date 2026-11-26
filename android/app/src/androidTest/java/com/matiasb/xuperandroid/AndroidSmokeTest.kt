@@ -192,11 +192,21 @@ class AndroidSmokeTest {
   val settledAt=android.os.SystemClock.uptimeMillis()+1200
   waitPlatform(3000,"Native PiP entry animation must settle"){android.os.SystemClock.uptimeMillis()>=settledAt}
   println("PiP window bounds: $bounds")
-  shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
-  // Click Android's own PiP expansion button, as a user would. Relaunching a
-  // singleTask Activity is not equivalent to expanding its pinned task.
-  var expanded=false
+  // Android exposes a native accessibility Expand action on the pinned window.
+  // Prefer that semantic control over timing a tap against SurfaceFlinger.
+  // Both paths exercise WindowManager; neither calls our Activity directly.
+  var lastActions=""
+  fun expandAccessiblePip(): Boolean {
+   val root=automation.windows.firstOrNull {it.isInPictureInPictureMode}?.root?:return false
+   val actions=root.actionList.map {it.id}
+   val description=actions.joinToString()
+   if(description!=lastActions){println("Native PiP actions: $description");lastActions=description}
+   return android.view.accessibility.AccessibilityNodeInfo.ACTION_EXPAND in actions && root.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_EXPAND)
+  }
+  var expanded=expandAccessiblePip()
+  if(!expanded)shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
   waitSystemControl("Native PiP expand control must be actionable") {
+   if(!expanded)expanded=expandAccessiblePip()
    if(!expanded) {
     val queue=java.util.ArrayDeque<android.view.accessibility.AccessibilityNodeInfo>()
     automation.windows.mapNotNull {it.root}.forEach {queue.add(it)}
