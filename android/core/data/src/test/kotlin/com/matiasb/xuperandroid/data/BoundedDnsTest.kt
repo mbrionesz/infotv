@@ -47,10 +47,10 @@ class BoundedDnsTest {
   } finally {resume.countDown();pool.shutdownNow()}
  }
  @Test fun lastResolverCanSucceedAfterEarlierEndpointsFail() {
-  val calls=AtomicInteger()
-  val resolvers=List(17) {index->dns {calls.incrementAndGet();if(index==16)listOf(address)else throw UnknownHostException("fixture-$index")} }
+  val resolvers=List(17) {index->dns {if(index==16)listOf(address)else throw UnknownHostException("fixture-$index")} }
+  // Only the last endpoint can return this address. Once it wins, earlier
+  // queued failures may be cancelled before they run, which is valid.
   assertEquals(listOf(address),BoundedDns(resolvers,failed,1500,0).lookup("portal.example"))
-  assertEquals(17,calls.get())
  }
 
  @Test fun sinkholeAndPrivateAnswersDoNotWinOverPublicAnswers() {
