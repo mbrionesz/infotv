@@ -9,3 +9,9 @@ Las respuestas difieren entre hosts: algunos devuelven `portal200001` mientras o
 Se probaron solicitudes propias, sin descargar ni reutilizar sesiones de otros clientes. `v3/snToken` devolvió éxito y el intento de activación llegó a `portal100024` (región denegada desde este entorno). Esto verifica que el bloqueo de versión no es inevitable con el perfil nuevo, pero no demuestra reproducción ni catálogo completos desde la región del usuario. No se intenta eludir el rechazo regional.
 
 Pruebas automáticas: conservación del fuente original, perfil coherente, carrera entre host rechazado y host sano, ausencia de HTTP plano como respuesta a versión retirada, conservación del error entre rutas y mensajes en español. La revisión 3 conserva el cargador Vulkan local, los controles y la caché del tester revisión 2. Actualizarla no borra el perfil.
+
+## Configuración compartida y Android beta 10
+
+Los valores efectivos anteriores se centralizan en `shared/portal-profile.json`. El adaptador Tizen/Windows lo lee al compilar; Android genera las constantes Kotlin del mismo archivo. No se utiliza el perfil del `magis.js` archivado como referencia del perfil efectivo. Beta 8/9 de Android todavía enviaban el perfil archivado de 2024; beta 10 corrige esa diferencia y renueva las sesiones antiguas conservando la identidad de instalación.
+
+El reporte Android `aaa100083` corresponde a una sesión no iniciada, distinto del rechazo de versión `portal200001`. Se corrigió además una carrera reproducida con transporte simulado: una consulta antigua podía invalidar la sesión que otra ya había renovado. El rechazo tardío ahora conserva la sesión nueva y cada petición utiliza sus propias credenciales. No se comprobó la causa exacta en la tablet física ni se hicieron nuevas consultas reales al portal durante esta corrección. Ver `android/VALIDACION.md`.

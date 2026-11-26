@@ -1,3 +1,19 @@
+# XuperAndroid 0.1.1 beta 10: perfil y renovación de sesión
+
+- Fuente validada: `eb3ebffad53d276f44ba20ac9d48b067682e0fd9`.
+- El reporte del usuario fue `aaa100083` (sesión no iniciada), no `portal200001` (perfil retirado). No se reprodujo la respuesta en la tablet física ni se atribuye el fallo exacto a una causa confirmada. La auditoría encontró dos defectos relacionados e independientes.
+- Android beta 8/9 comparaba el perfil con el `magis.js` archivado de 2024, mientras Tizen/Windows aplicaban un adaptador de compilación de 2025. Las tres plataformas ahora leen `shared/portal-profile.json`: APP com.android.msandroid, APK 49902, cabecera APK 43404, paquete/sistema `2025-08-07 05:40:11_36_16_`, SDK de protocolo 36. Gradle genera las constantes y los tests de Android leen el mismo recurso. El mínimo de Android sigue en API 26/Android 8. Se incluyen los nuevos inputs en el hash de compilación y en el kit de fuentes Tizen; su código generado permanece sin diferencias funcionales.
+- Cada solicitud captura las credenciales de su propia sesión. Ante códigos de sesión caducada solo se invalida esa sesión si aún es la actual. Se evita que un rechazo tardío de otra consulta borre una sesión más reciente. El test concurrente falla al restaurar la invalidación anterior: provoca dos activaciones en lugar de una. La versión corregida pasa.
+- El bootstrap usa su SN local y publica una sesión solo después de activarla con usuario/token válidos; la migración de perfil conserva la identidad de instalación y los datos personales. Un rechazo persistente tras renovar se informa con su código, sin bucle de reintentos. El mensaje de aaa100083 se explica en español.
+- 43 pruebas unitarias (7 modelo, 36 datos), incluidas tres nuevas pruebas de transporte simulado cifrado: perfil real enviado en cabeceras/cuerpo y migración, recuperación concurrente y rechazo persistente limitado. Pruebas del adaptador compartido, compilación de bundles y hash de frescura correctos. Sin consulta al portal real, sesiones prestadas ni metadatos privados exportados.
+- 20 pruebas instrumentadas (18 funcionales, 1 PiP y 1 de capturas), sin fallos, errores u omisiones: https://github.com/mbrionesz/infotv/actions/runs/45759468760 . Evidencia en los artefactos `XuperAndroid-0.1.1-beta10-pip` y `XuperAndroid-0.1.1-beta10-functional`, con 20 PNG de celular/tablet/disposición TV. Android 15/API 35 Google APIs con contenido local, `portal_probe=false`; la disposición TV se fuerza en el emulador y no certifica un TCL físico.
+- Release optimizado/R8 y lint correctos; APK universal de 4.768.240 bytes. Firma v2/v3 idéntica a beta 9 y alineación 16 KiB verificadas. El DEX contiene el perfil 2025 y no contiene el perfil 2024. SHA-256 `4242ca0464a1b0666fc07f772daa854d94ec2b1cafa09a2f1eba87a9cdf87a36`.
+- Publicación exitosa: https://github.com/mbrionesz/infotv/actions/runs/45760457404 . Descarga pública verificada con el mismo SHA-256: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.10 . Se transfirieron solo el APK firmado y sus comprobantes públicos; la clave privada permanece local.
+- Se mantienen los 17 DNS, diseño, PiP y política de memoria/búfer. Estos cambios no garantizan que el servidor acepte cada instalación ni demuestran una mejora de velocidad. Pendiente probar el APK release optimizado en la tablet afectada y otros dispositivos físicos con su red/portal.
+- `companion/lib/magis.js` permanece intacto, SHA-256 `fa910167e612539f54cad7535f96da1dce7abb5b3525b499a1a1edcc8c4cbf77`. Tizen/Windows utilizan los mismos valores efectivos que antes de este cambio.
+
+## Registro anterior: beta 9
+
 # XuperAndroid 0.1.1 beta 9: reproducción y PiP
 
 - Fuente validada: `2cb54a49affc95ebbde1548d424fcd282f8eb5dc`. El APK optimizado se compiló desde `c40a8284333090ef2068532f64d158d38bb980d3`; los commits posteriores hasta la fuente validada solo modifican pruebas y su configuración, sin diferencias de código de producción.
