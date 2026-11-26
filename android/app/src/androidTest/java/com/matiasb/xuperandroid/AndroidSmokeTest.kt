@@ -98,11 +98,12 @@ class AndroidSmokeTest {
   lateinit var vm: XuperViewModel;scenario.onActivity {vm=ViewModelProvider(it)[XuperViewModel::class.java]}
   compose.waitUntil(90000){vm.player.snapshot.value.playing}
   lateinit var host: MainActivity
+  var fullScreenWidth=0
   scenario.onActivity {
    // Keep the 12-second local fixture alive through a slow cold-emulator transition.
    // This exercises long-running PiP rather than racing media completion.
    vm.player.player!!.repeatMode=androidx.media3.common.Player.REPEAT_MODE_ONE
-   host=it;org.junit.Assert.assertTrue(it.canUsePip())
+   host=it;fullScreenWidth=it.window.decorView.width;org.junit.Assert.assertTrue(it.canUsePip())
   }
   shell("input keyevent KEYCODE_HOME")
   // PiP pauses Compose's frame clock: use bounded platform polling while the Activity is paused.
@@ -154,7 +155,7 @@ class AndroidSmokeTest {
    println("Pinned task: $line")
    val match=Regex("bounds=\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]").find(line)
    bounds=match?.groupValues?.drop(1)?.map {it.toInt()}?.let {android.graphics.Rect(it[0],it[1],it[2],it[3])}
-   bounds!=null&&bounds!!.width()<context.resources.displayMetrics.widthPixels&&bounds!!.width()>0
+   bounds!=null&&bounds!!.width()<fullScreenWidth&&bounds!!.width()>0
   }
   println("PiP window bounds: $bounds")
   shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
