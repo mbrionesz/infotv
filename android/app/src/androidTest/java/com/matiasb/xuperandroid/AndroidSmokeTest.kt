@@ -28,8 +28,13 @@ class AndroidSmokeTest {
  @Before fun start() { val context=ApplicationProvider.getApplicationContext<XuperApplication>();(context as? XuperTestApplication)?.catalogOverride=null;scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));compose.waitUntil(90_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()} }
  private fun hardwareKey(code: Int) {
   lateinit var host: MainActivity;scenario.onActivity {host=it}
-  compose.waitUntil(30000){host.hasWindowFocus()}
-  InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(code)
+  val instrumentation=InstrumentationRegistry.getInstrumentation()
+  fun focused(): Boolean {var result=false;instrumentation.runOnMainSync {result=host.hasWindowFocus()};return result}
+  // A resized/cold emulator may leave the launcher or test invoker in front.
+  // Select the app task before sending real hardware events; retain view focus.
+  if(!focused())shell("am task focus ${host.taskId}")
+  compose.waitUntil(30000){focused()}
+  instrumentation.sendKeyDownUpSync(code)
  }
  private fun screenshot(name: String) { val context=ApplicationProvider.getApplicationContext<XuperApplication>();val file=File(context.getExternalFilesDir("qa"),name+".png");file.parentFile!!.mkdirs();InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()?.let { image->file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle() } }
  private fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use { it.readBytes().toString(Charsets.UTF_8) }
