@@ -130,7 +130,29 @@ class AndroidSmokeTest {
    now.playing&&advanced>300
   }
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
-  shell("am start -W --windowingMode 1 -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
+  val automation=InstrumentationRegistry.getInstrumentation().uiAutomation
+  automation.serviceInfo=automation.serviceInfo.apply {flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS}
+  var bounds: android.graphics.Rect?=null
+  waitPlatform(10000,"PiP accessibility window must be available") {
+   automation.windows.firstOrNull {it.isInPictureInPictureMode}?.let {window->bounds=android.graphics.Rect().also {window.getBoundsInScreen(it)}}
+   bounds!=null
+  }
+  shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
+  // Click Android's own PiP expansion button, as a user would. Relaunching a
+  // singleTask Activity is not equivalent to expanding its pinned task.
+  var expanded=false
+  waitPlatform(10000,"Native PiP expand control must be actionable") {
+   if(!expanded) {
+    val queue=java.util.ArrayDeque<android.view.accessibility.AccessibilityNodeInfo>()
+    automation.windows.mapNotNull {it.root}.forEach {queue.add(it)}
+    while(queue.isNotEmpty()&&!expanded) {
+     val node=queue.removeFirst();val label=node.contentDescription?.toString().orEmpty()
+     if(node.viewIdResourceName?.endsWith(":id/expand_button")==true||label.equals("Expand",true)||label.equals("Full screen",true))expanded=node.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+     for(i in 0 until node.childCount)node.getChild(i)?.let {queue.add(it)}
+    }
+   }
+   expanded
+  }
   // The software-rendered emulator may stall WindowManager during cold-boot Google services.
   waitPlatform(45000,"PiP exit must resume the full-screen Activity"){!host.isInPictureInPictureMode&&host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)}
   scenario.close();compose.waitForIdle()
