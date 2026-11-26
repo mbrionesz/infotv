@@ -1,4 +1,5 @@
 export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()=>{},mode='search',onSubmit=()=>{},mount,onBoundary}={}){
+  if(mode==='search'&&window.XuperDesktop?.platform==='windows')return openDesktopSearchInput({title,value,onChange,onClose,onSubmit,mount});
   const panel=document.createElement('section');panel.className='xt-keyboard';
   const privateInput=mode==='url'||mode==='secret';
   const rows=privateInput?['qwertyuiop','asdfghjkl','zxcvbnm','1234567890','./:-_?=&%+#@~']:['QWERTYUIOP','ASDFGHJKL','ZXCVBNM','1234567890'];
@@ -41,4 +42,36 @@ export function openKeyboard({title='Buscar',value='',onChange=()=>{},onClose=()
     render();
   }
   (mount||document.getElementById('app')).appendChild(panel);render();return {handle,close,node:panel};
+}
+
+// Desktop text editing belongs to the OS/browser: caret, paste, selection and IME.
+// TV keeps the existing key grid and remote-control handling above.
+function openDesktopSearchInput({title,value,onChange,onClose,onSubmit,mount}) {
+ const panel=document.createElement('section');panel.className='xt-keyboard xt-keyboard-native';
+ const heading=document.createElement('h2');heading.textContent=title;panel.appendChild(heading);
+ const form=document.createElement('form'),input=document.createElement('input');
+ input.type='search';input.value=String(value||'').slice(0,100);input.maxLength=100;input.placeholder='Escribe el nombre…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('aria-label',title);
+ form.appendChild(input);
+ const actions=document.createElement('div');actions.className='xt-native-search-actions';
+ const submit=document.createElement('button');submit.type='submit';submit.textContent='Buscar';actions.appendChild(submit);
+ const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cerrar';actions.appendChild(cancel);
+ form.appendChild(actions);panel.appendChild(form);
+ const help=document.createElement('p');help.textContent='Enter · Buscar   Esc · Cerrar';panel.appendChild(help);
+ let closed=false;
+ function close(){if(closed)return;closed=true;panel.remove();onClose(input.value);}
+ function apply(){onSubmit(input.value);if(!mount)close();}
+ function focus(){if(!closed){input.focus({preventScroll:true});}}
+ input.addEventListener('input',()=>onChange(input.value));
+ input.addEventListener('keydown',event=>{
+  // Let Tab reach the containing dialog's focus handling; keep native editing
+  // keys away from the TV navigation dispatcher (including composition Enter).
+  if(event.key!=='Tab')event.stopPropagation();
+  if(event.isComposing||event.keyCode===229)return;
+  if(event.key==='Escape'){event.preventDefault();close();}
+  else if(event.key==='Enter'){event.preventDefault();apply();}
+ });
+ form.onsubmit=event=>{event.preventDefault();apply();};cancel.onclick=close;
+ if(!mount)panel.addEventListener('keydown',event=>{event.stopPropagation();if(event.key==='Escape'){event.preventDefault();close();}});
+ (mount||document.getElementById('app')).appendChild(panel);focus();
+ return {node:panel,close,focus,handle(event){if([10009,461,27].includes(event.keyCode)){close();return true;}if(event.keyCode===13){apply();return true;}return false;}};
 }

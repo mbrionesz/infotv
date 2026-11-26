@@ -17,7 +17,7 @@ on:
       tag:
         description: Existing beta draft tag
         required: true
-        default: v0.1.1-android-beta.10
+        default: v0.1.1-android-beta.11
 permissions:
   contents: write
   actions: read

@@ -61,15 +61,15 @@ import kotlinx.coroutines.delay
    Text(title,color=Color.White,fontWeight=FontWeight.SemiBold,fontSize=19.sp,maxLines=2,overflow=TextOverflow.Ellipsis)
    Text(listOf(if(snapshot.height>0)"${snapshot.width} × ${snapshot.height}" else "",if(snapshot.fps>0)"${"%.2f".format(snapshot.fps)} FPS" else "", "Búfer ${snapshot.bufferMs/1000} s").filter { it.isNotBlank() }.joinToString(" · "),color=Color(0xFFB6C8DA),fontSize=12.sp)
    if(playing?.title?.kind!=Kind.LIVE&&snapshot.durationMs>0) {
-    Slider(value=seek?:(snapshot.positionMs.toFloat()/snapshot.durationMs).coerceIn(0f,1f),onValueChange={seek=it;touch()},onValueChangeFinished={seek?.let {vm.player.seek((it*snapshot.durationMs).toLong())};seek=null;touch()},modifier=Modifier.fillMaxWidth().semantics { contentDescription="Posición de reproducción" })
+    Slider(enabled=snapshot.seekable,value=seek?:(snapshot.positionMs.toFloat()/snapshot.durationMs).coerceIn(0f,1f),onValueChange={seek=it;touch()},onValueChangeFinished={seek?.let {vm.player.seek((it*snapshot.durationMs).toLong())};seek=null;touch()},modifier=Modifier.fillMaxWidth().semantics { contentDescription="Posición de reproducción" })
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(clock(snapshot.positionMs),color=Color.White,fontSize=12.sp);Text(clock(snapshot.durationMs),color=Color.White,fontSize=12.sp)}
    }
    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalAlignment=Alignment.CenterVertically) {
     if((context as? MainActivity)?.canUsePip()==true)IconButton(onClick={(context as MainActivity).enterMiniPlayer()}){Icon(Icons.Default.PictureInPictureAlt,"Ventana flotante",tint=Color.White)}
     IconButton(onClick={vm.back()}){Icon(Icons.AutoMirrored.Filled.ArrowBack,"Volver a la ficha",tint=Color.White)}
-    IconButton(onClick={vm.player.seek(snapshot.positionMs-10_000);touch()}){Icon(Icons.Default.Replay10,"Retroceder 10 segundos",tint=Color.White)}
+    IconButton(enabled=snapshot.seekable,onClick={vm.player.seek(snapshot.positionMs-10_000);touch()}){Icon(Icons.Default.Replay10,"Retroceder 10 segundos",tint=Color.White)}
     FilledTonalButton(shape=XuperStyle.control,onClick={vm.player.toggle();touch()},modifier=Modifier.focusRequester(playFocus)){Icon(if(snapshot.playWhenReady)Icons.Default.Pause else Icons.Default.PlayArrow,if(snapshot.playWhenReady)"Pausar" else "Continuar")}
-    IconButton(onClick={vm.player.seek(snapshot.positionMs+10_000);touch()}){Icon(Icons.Default.Forward10,"Adelantar 10 segundos",tint=Color.White)}
+    IconButton(enabled=snapshot.seekable,onClick={vm.player.seek(snapshot.positionMs+10_000);touch()}){Icon(Icons.Default.Forward10,"Adelantar 10 segundos",tint=Color.White)}
     XuperOutlinedButton(onClick={tracks=true;touch()}){Icon(Icons.Default.Subtitles,null);Text("Audio",fontSize=12.sp)}
    }
   }

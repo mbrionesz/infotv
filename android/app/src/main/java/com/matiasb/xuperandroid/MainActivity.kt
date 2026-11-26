@@ -12,6 +12,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.shadow
 import androidx.activity.viewModels
 import androidx.compose.foundation.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.lazy.grid.*
@@ -117,7 +120,7 @@ class MainActivity: ComponentActivity() {
    if(state.demo) Text("MODO DE PRUEBA · Contenido local, no es el catálogo del portal",color=Accent,fontSize=12.sp,modifier=Modifier.padding(bottom=8.dp))
    when(state.screen) {
     Screen.HOME -> CatalogHome(vm,state,history.filter { it.title.kind==state.section.kind },compact,tv,{removing=it})
-    Screen.SEARCH -> SearchScreen(vm,state)
+    Screen.SEARCH -> SearchScreen(vm,state,tv)
     Screen.DETAILS -> DetailScreen(vm,state)
     Screen.FAVORITES -> FavoritesScreen(vm)
     Screen.SETTINGS -> Unit
@@ -202,9 +205,18 @@ class MainActivity: ComponentActivity() {
 }
 @Composable private fun ChannelCard(title: Title,click: ()->Unit,favorite: ()->Unit={}) { var focused by remember { mutableStateOf(false) };Surface(onClick=click,shape=RoundedCornerShape(12.dp),color=Panel,border=if(focused)BorderStroke(2.dp,Accent)else null,modifier=Modifier.onFocusChanged { focused=it.isFocused }) { Column(Modifier.padding(14.dp),horizontalAlignment=Alignment.CenterHorizontally) { Box(Modifier.fillMaxWidth().height(70.dp).clip(RoundedCornerShape(8.dp)).background(Color.White),contentAlignment=Alignment.Center){if(title.poster.isBlank())Icon(Icons.Default.LiveTv,null,tint=Color.DarkGray)else AsyncImage(title.poster,null,Modifier.fillMaxSize().padding(8.dp),contentScale=ContentScale.Fit)};Text(title.name,maxLines=2,fontSize=14.sp,modifier=Modifier.padding(top=10.dp));IconButton(onClick=favorite){Icon(Icons.Default.FavoriteBorder,"Guardar canal")} } } }
 @Composable private fun ErrorCard(message: String,retry: ()->Unit,demo: (()->Unit)?=null) { Column(Modifier.fillMaxWidth().background(Panel,RoundedCornerShape(14.dp)).padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)) {Text(message,color=Color(0xFFFFC9C9));Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){XuperOutlinedButton(retry){Text("Reintentar")};if(demo!=null)TextButton(demo){Text("Probar interfaz local")}} } }
-@Composable private fun SearchScreen(vm: XuperViewModel,state: UiState) {
- Column(Modifier.fillMaxSize()) {
-  OutlinedTextField(value=state.query.text,onValueChange={vm.query(state.query.copy(text=it))},label={Text(if(state.section==Section.TV)"Buscar canal" else "Buscar en ${state.section.label.lowercase()}")},leadingIcon={Icon(Icons.Default.Search,null)},singleLine=true,modifier=Modifier.fillMaxWidth(),trailingIcon={if(state.query.text.isNotBlank())IconButton(onClick={vm.query(state.query.copy(text=""))}){Icon(Icons.Default.Close,"Borrar búsqueda")}})
+@Composable private fun SearchScreen(vm: XuperViewModel,state: UiState,tv: Boolean) {
+ val field=remember {FocusRequester()};val keyboard=LocalSoftwareKeyboardController.current;val focus=LocalFocusManager.current
+ val windowFocused=LocalWindowInfo.current.isWindowFocused
+ LaunchedEffect(state.searchInputRequest,tv,windowFocused) {
+  val request=state.searchInputRequest
+  if(request>0&&(tv||windowFocused)) {
+   if(!tv){withFrameNanos {};field.requestFocus();keyboard?.show()}
+   vm.consumeSearchInput(request)
+  }
+ }
+ Column(Modifier.fillMaxSize().imePadding()) {
+  OutlinedTextField(value=state.query.text,onValueChange={vm.query(state.query.copy(text=it))},label={Text(if(state.section==Section.TV)"Buscar canal" else "Buscar en ${state.section.label.lowercase()}")},leadingIcon={Icon(Icons.Default.Search,null)},singleLine=true,keyboardOptions=KeyboardOptions(autoCorrectEnabled=false,imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={keyboard?.hide();focus.clearFocus()}),modifier=Modifier.fillMaxWidth().testTag("search-text").focusRequester(field),trailingIcon={if(state.query.text.isNotBlank())IconButton(onClick={vm.query(state.query.copy(text=""))}){Icon(Icons.Default.Close,"Borrar búsqueda")}})
   LazyRow(Modifier.padding(vertical=12.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
    item { FilterPicker("Categoría",state.columns,state.query.column){vm.query(state.query.copy(column=it))} }
    if(state.section!=Section.TV){item {FilterPicker("Género",state.filters.genres,state.query.genre){vm.query(state.query.copy(genre=it))}};item {FilterPicker("Año",state.filters.years,state.query.year){vm.query(state.query.copy(year=it))}};item {FilterPicker("País",state.filters.countries,state.query.country){vm.query(state.query.copy(country=it))}}}

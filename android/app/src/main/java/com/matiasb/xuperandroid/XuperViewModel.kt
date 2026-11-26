@@ -8,7 +8,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 enum class Screen { HOME, DETAILS, SEARCH, SETTINGS, PLAYER, FAVORITES }
 data class PlaybackRequest(val title: Title,val episode: Episode?=null,val resume: WatchProgress?=null,val position: Long?=null,val audio: String="",val autoplay: Boolean=true)
-data class UiState(val screen: Screen=Screen.HOME,val section: Section=Section.MOVIES,val items: List<Title> = emptyList(),val columns: List<Choice> = emptyList(),val filters: Filters=Filters(),val query: Query=Query(),val page: Int=0,val hasMore: Boolean=false,val total: Int?=null,val loading: Boolean=false,val error: String?=null,val details: Details?=null,val seasonId: String="",val playing: Playing?=null,val playRequest: PlaybackRequest?=null,val demo: Boolean=false,val similar: List<Title> = emptyList())
+data class UiState(val screen: Screen=Screen.HOME,val section: Section=Section.MOVIES,val items: List<Title> = emptyList(),val columns: List<Choice> = emptyList(),val filters: Filters=Filters(),val query: Query=Query(),val page: Int=0,val hasMore: Boolean=false,val total: Int?=null,val loading: Boolean=false,val error: String?=null,val details: Details?=null,val seasonId: String="",val playing: Playing?=null,val playRequest: PlaybackRequest?=null,val demo: Boolean=false,val similar: List<Title> = emptyList(),val searchInputRequest: Int=0)
 class XuperViewModel(application: Application): AndroidViewModel(application) {
  private val app=application as XuperApplication
  val library=app.library;val player by lazy { app.player }
@@ -26,6 +26,7 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
   val job=viewModelScope.launch(start=CoroutineStart.LAZY){action()}
   libraryWrites.add(job);job.invokeOnCompletion {libraryWrites.remove(job)};job.start()
  }
+ private var searchInputSequence=0
  private var countJob: Job?=null;private var diagnosticJob: Job?=null
  private var lastOrigins=listOf("https://ftmrmy.jdfey0cd.com","https://fuxok.nguvmqhpk.com")
  val settings=library.settings.stateIn(viewModelScope,SharingStarted.Eagerly,Settings())
@@ -54,8 +55,9 @@ class XuperViewModel(application: Application): AndroidViewModel(application) {
  }
  fun more() { if(state.value.loading||!state.value.hasMore)return;request?.cancel();request=viewModelScope.launch { val old=state.value;mutable.update { it.copy(loading=true,error=null) };try { val page=repository.browse(old.section,old.query,old.page+1);ensureActive();mutable.update { it.copy(items=(it.items+page.items).distinctBy { title->title.id },page=page.page,hasMore=page.hasMore,loading=false) } }catch(error: CancellationException){if(error is TimeoutCancellationException)mutable.update { it.copy(loading=false,error=message(error)) } else throw error}catch(error: Exception){mutable.update { it.copy(loading=false,error=message(error)) }} } }
  fun category(choice: Choice) { openCategory(Query(column=choice.id)) }
- fun openCategory(query: Query) { mutable.update { it.copy(screen=Screen.SEARCH,query=query) };reload() }
- fun search() { request?.cancel();mutable.update { it.copy(screen=Screen.SEARCH,query=Query()) };reload() }
+ fun openCategory(query: Query) { mutable.update { it.copy(screen=Screen.SEARCH,query=query,searchInputRequest=0) };reload() }
+ fun search() { request?.cancel();mutable.update { it.copy(screen=Screen.SEARCH,query=Query(),searchInputRequest=++searchInputSequence) };reload() }
+ fun consumeSearchInput(request: Int) {mutable.update {if(it.searchInputRequest==request)it.copy(searchInputRequest=0)else it}}
  fun query(query: Query) { mutable.update { it.copy(query=query) };searchJob?.cancel();searchJob=viewModelScope.launch { delay(350);reload() } }
  fun settingsScreen() { searchJob?.cancel();request?.cancel();mutable.update { it.copy(screen=Screen.SETTINGS,query=Query(),loading=false) } }
  fun detail(title: Title, season: String = "") {

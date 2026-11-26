@@ -21,17 +21,20 @@ data class WatchProgress(val title: Title, val episodeId: String = "", val episo
  val remainingMinutes: Long? get() = durationMs.takeIf { it > 0 }?.let { ((it - positionMs).coerceAtLeast(0) + 59_999) / 60_000 }
 }
 data class Track(val id: String, val language: String, val name: String, val selected: Boolean)
-data class PlaybackSnapshot(val positionMs: Long = 0, val durationMs: Long = 0, val bufferMs: Long = 0, val playing: Boolean = false, val loading: Boolean = false, val width: Int = 0, val height: Int = 0, val fps: Float = 0f, val audio: List<Track> = emptyList(), val subtitles: List<Track> = emptyList(), val error: String? = null, val playWhenReady: Boolean = false)
+data class PlaybackSnapshot(val positionMs: Long = 0, val durationMs: Long = 0, val bufferMs: Long = 0, val playing: Boolean = false, val loading: Boolean = false, val width: Int = 0, val height: Int = 0, val fps: Float = 0f, val audio: List<Track> = emptyList(), val subtitles: List<Track> = emptyList(), val error: String? = null, val playWhenReady: Boolean = false, val seekable: Boolean = false)
 object PlaybackPolicy {
  fun audioScore(language: String, name: String = ""): Int {
-  val value = (language + " " + name).lowercase()
+  val value = (language + " " + name).lowercase().replace('_','-')
   return when {
-   value.contains("es-419") || value.contains("es-mx") || value.contains("latino") || value.contains("latam") -> 100
+   Regex("\\bes-(419|mx|ar|bo|cl|co|cr|cu|do|ec|gt|hn|ni|pa|pe|pr|py|sv|uy|ve)\\b").containsMatchIn(value) || value.contains("latino") || value.contains("latam") || value.contains("latin american") -> 100
    value.contains("es-es") || value.contains("castellano") -> 40
-   Regex("(^|[^a-z])(es|spa|esp)([^a-z]|$)").containsMatchIn(value) || value.contains("español") -> 70
+   Regex("(^|[^a-z])(es|spa|esp)([^a-z]|$)").containsMatchIn(value) || value.contains("español") || value.contains("spanish") -> 70
    else -> 0
   }
  }
+ fun preferredSubtitle(tracks: List<Track>,spanishOnly: Boolean=true): Track? = tracks.filter { !spanishOnly||audioScore(it.language,it.name)>0 }.maxByOrNull {audioScore(it.language,it.name)}
+ fun minimumBufferMs(lowRam: Boolean,live: Boolean=false)=if(lowRam||live)15_000 else 30_000
+ fun maximumBufferMs(lowRam: Boolean,live: Boolean=false)=if(lowRam)30_000 else if(live)60_000 else 90_000
  fun nextEpisodeThreshold(durationMs: Long): Long = when {
   durationMs <= 0 -> Long.MAX_VALUE
   durationMs < 35 * 60_000L -> (durationMs - 90_000).coerceAtLeast(durationMs / 2)

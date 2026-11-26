@@ -55,7 +55,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperAndroid-0.1.1-beta10-${{ matrix.suite }}
+          name: XuperAndroid-0.1.1-beta11-${{ matrix.suite }}
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/

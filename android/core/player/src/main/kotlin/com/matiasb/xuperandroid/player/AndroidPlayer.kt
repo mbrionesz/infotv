@@ -38,7 +38,7 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
   selector.setParameters(selector.buildUponParameters().clearOverridesOfType(C.TRACK_TYPE_AUDIO).clearOverridesOfType(C.TRACK_TYPE_TEXT).setPreferredAudioLanguages(preferences.audio,"es","spa").setTrackTypeDisabled(C.TRACK_TYPE_TEXT,true))
   selector.setParameters(selector.buildUponParameters().setMaxVideoSize(Int.MAX_VALUE,if(cap>0)cap else Int.MAX_VALUE))
   val renderer=DefaultRenderersFactory(context).setEnableDecoderFallback(true)
-  engine=ExoPlayer.Builder(context,renderer).setTrackSelector(selector).setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(15_000,if(lowRam)30_000 else 60_000,1500,3000).setTargetBufferBytes(if(cap==480)8*1024*1024 else PlaybackPolicy.bufferBytes(lowRam)).setPrioritizeTimeOverSizeThresholds(false).build()).build().apply {
+  engine=ExoPlayer.Builder(context,renderer).setTrackSelector(selector).setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(PlaybackPolicy.minimumBufferMs(lowRam,playing.title.kind==Kind.LIVE),PlaybackPolicy.maximumBufferMs(lowRam,playing.title.kind==Kind.LIVE),1500,3000).setTargetBufferBytes(if(cap==480)8*1024*1024 else PlaybackPolicy.bufferBytes(lowRam)).setPrioritizeTimeOverSizeThresholds(false).build()).build().apply {
    setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(),true);setHandleAudioBecomingNoisy(true)
    addListener(object: Player.Listener {
     override fun onTracksChanged(tracks: Tracks) { if(run!=generation)return;chooseAudio(tracks);if(!subtitlesManual)automaticSubtitles(tracks) else applyManualSubtitle();publish() }
@@ -93,7 +93,9 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
  private fun automaticSubtitles(tracks: Tracks) {
   val audio=groupTracks(C.TRACK_TYPE_AUDIO).firstOrNull { it.third.selected }?.third
   val enable=active?.title?.kind!=Kind.LIVE&&(settings.subtitleMode==2 || settings.subtitleMode==0&&audio!=null&&PlaybackPolicy.audioScore(audio.language,audio.name)==0)
-  val track=groupTracks(C.TRACK_TYPE_TEXT).maxByOrNull { PlaybackPolicy.audioScore(it.third.language,it.third.name) }
+  val available=groupTracks(C.TRACK_TYPE_TEXT)
+  val chosen=PlaybackPolicy.preferredSubtitle(available.map {it.third},spanishOnly=settings.subtitleMode!=2)
+  val track=available.firstOrNull {it.third.id==chosen?.id}
   val params=selector.buildUponParameters().setTrackTypeDisabled(C.TRACK_TYPE_TEXT,!enable||track==null)
   if(enable&&track!=null)params.setOverrideForType(TrackSelectionOverride(track.first.mediaTrackGroup,listOf(track.second)))
   if(selector.parameters!=params.build())selector.setParameters(params)
@@ -112,7 +114,7 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
  }
 
  fun style(view: PlayerView,settings: Settings) {view.resizeMode=intArrayOf(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT,androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM,androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL)[settings.videoFit.coerceIn(0,2)];val font=arrayOf("sans-serif","sans-serif-condensed","serif","monospace")[settings.font.coerceIn(0,3)];val color=intArrayOf(Color.WHITE,Color.YELLOW,Color.CYAN)[settings.fontColor.coerceIn(0,2)];view.subtitleView?.apply { setApplyEmbeddedStyles(false);setStyle(CaptionStyleCompat(color,Color.TRANSPARENT,Color.TRANSPARENT,CaptionStyleCompat.EDGE_TYPE_OUTLINE,Color.BLACK,Typeface.create(font,Typeface.NORMAL)));setFractionalTextSize(floatArrayOf(.045f,.055f,.035f)[settings.fontSize.coerceIn(0,2)]) } }
- private fun publish() { val p=engine?:return;val duration=p.duration.takeIf { it>0&&it!=C.TIME_UNSET }?:active?.stream?.durationSeconds?.times(1000)?:0;mutable.value=mutable.value.copy(positionMs=p.currentPosition.coerceAtLeast(0),durationMs=duration,bufferMs=(p.bufferedPosition-p.currentPosition).coerceAtLeast(0),playing=p.isPlaying,playWhenReady=p.playWhenReady,loading=mutable.value.error==null&&(renewal?.isActive==true||p.playbackState==Player.STATE_BUFFERING),width=p.videoSize.width,height=p.videoSize.height,fps=p.videoFormat?.frameRate?.takeIf { it>0 }?:0f,audio=groupTracks(C.TRACK_TYPE_AUDIO).map { it.third },subtitles=groupTracks(C.TRACK_TYPE_TEXT).map { it.third }) }
+ private fun publish() { val p=engine?:return;val duration=p.duration.takeIf { it>0&&it!=C.TIME_UNSET }?:active?.stream?.durationSeconds?.times(1000)?:0;mutable.value=mutable.value.copy(positionMs=p.currentPosition.coerceAtLeast(0),durationMs=duration,bufferMs=(p.bufferedPosition-p.currentPosition).coerceAtLeast(0),playing=p.isPlaying,playWhenReady=p.playWhenReady,seekable=p.isCurrentMediaItemSeekable,loading=mutable.value.error==null&&(renewal?.isActive==true||p.playbackState==Player.STATE_BUFFERING),width=p.videoSize.width,height=p.videoSize.height,fps=p.videoFormat?.frameRate?.takeIf { it>0 }?:0f,audio=groupTracks(C.TRACK_TYPE_AUDIO).map { it.third },subtitles=groupTracks(C.TRACK_TYPE_TEXT).map { it.third }) }
  fun pause() { engine?.pause() }
  fun toggle() { engine?.let { if(it.playWhenReady)it.pause() else it.play() } }
  fun seek(position: Long) { val p=engine?:return;if(p.isCurrentMediaItemSeekable){val target=position.coerceIn(0,(p.duration.takeIf { it>0 }?:Long.MAX_VALUE));if(renewal?.isActive==true)pendingSeek=target;p.seekTo(target)} }

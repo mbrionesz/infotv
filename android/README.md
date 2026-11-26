@@ -1,6 +1,13 @@
-# XuperAndroid · 0.1.1 beta 10
+# XuperAndroid · 0.1.1 beta 11
 
 Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identidad de XuperTizen/XuperWindows; no usa Electron, un reproductor externo ni una WebView para la interfaz.
+
+## Novedades de beta 11
+
+- La lupa enfoca el campo nativo y solicita el teclado del sistema en celular/tablet. La acción Buscar del teclado lo oculta para ver resultados; la pantalla respeta el espacio del IME. Explorar una categoría no abre el teclado, y TV lo abre solo al entrar al campo con el control.
+- VOD: objetivo de 90 s y reposición desde 30 s en equipos sin memoria reducida, conservando el presupuesto de 32 MiB y el arranque de 1,5 s. Equipos de memoria reducida mantienen 30 s/12 MiB; TV en vivo conserva su política anterior. El ahorro de datos mantiene su presupuesto menor. Son objetivos sujetos al bitrate, la red y el tamaño; el presupuesto no es un límite de RAM de todo el proceso.
+- Prioridad latinoamericana que reconoce variantes regionales `es-AR`, `es-CL`, etc. Subtítulos automáticos eligen español latino/español anunciado si el audio no es español; no activan otro idioma por ausencia de español. Las selecciones manuales tienen prioridad y TV inicia sin subtítulos.
+- La barra y los botones de salto se habilitan cuando Media3 anuncia búsqueda por tiempo. El inicio rápido tras un salto depende de la fuente/servidor. Ajustar sigue siendo el formato predeterminado: respeta resolución/proporción del vídeo sin estirarlo; ampliar/estirar continúan siendo decisiones manuales.
 
 ## Novedades de beta 10
 
@@ -78,7 +85,7 @@ Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identi
 - Media3 para VOD y TV; salto por tiempo cuando el medio lo permite, audio, subtítulos, fuentes/tamaños/colores, resolución/FPS observados y reserva en segundos. Controles traslúcidos en el mismo árbol nativo, ocultación a los tres segundos y botón de siguiente episodio solo en series.
 - Room: progreso separado por tipo, episodios y favoritos; DataStore: preferencias; Keystore: sesión propia cifrada. No persiste enlaces de vídeo autorizados ni importa sesiones ajenas.
 - Progreso de «Seguir viendo», eliminación por pulsación larga, PiP solo en teléfono/tablet compatibles, pausa al ir a segundo plano fuera de PiP, foco de audio y desconexión de audífonos. Girar la pantalla conserva el ViewModel/reproductor.
-- Caché de imágenes de 8/16 MiB en RAM y 20 MiB en disco; reserva de vídeo objetivo de 30/60 s con presupuesto de 12/32 MiB según memoria reducida. Son objetivos acotados, no una garantía de RAM total ni duración universal del búfer.
+- Caché de imágenes de 8/16 MiB en RAM y 20 MiB en disco; reserva de vídeo objetivo de 30/90 s para VOD (30/60 s en vivo) con presupuesto de 12/32 MiB según memoria reducida. Son objetivos acotados, no una garantía de RAM total ni duración universal del búfer.
 - Modo local explícito para probar interfaz y H.264/AAC/SRT sin depender del portal. Los títulos de prueba **no son el catálogo del proveedor**.
 
 Novedades de beta 1:

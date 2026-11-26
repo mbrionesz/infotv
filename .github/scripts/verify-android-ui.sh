@@ -22,6 +22,8 @@ trap android_qa_cleanup EXIT
 # Dismiss Android's one-time immersive tutorial in the test image. It owns a
 # separate focusable system window and can intercept hardware keys/PiP taps.
 adb shell settings put secure immersive_mode_confirmations confirmed
+# Exercise the device IME even though the emulator exposes a hardware keyboard.
+adb shell settings put secure show_ime_with_hard_keyboard 1
 android_qa_pip_status=0
 if [ "${XUPER_QA_SUITE:-complete}" != functional ]; then
 # PiP is a WindowManager transition. Run it with the platform animation clocks
@@ -56,7 +58,7 @@ python3 - <<'CHECK'
 from pathlib import Path
 import xml.etree.ElementTree as E
 rows=[E.parse(p).getroot().attrib for p in Path('app/build/outputs/androidTest-results/connected/debug').glob('TEST-*.xml')]
-assert sum(int(r.get('tests',0)) for r in rows)==18, rows
+assert sum(int(r.get('tests',0)) for r in rows)==19, rows
 assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0))==0 for r in rows), rows
 CHECK
 mkdir -p qa-evidence/functional

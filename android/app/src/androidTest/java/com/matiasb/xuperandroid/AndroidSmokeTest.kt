@@ -96,6 +96,31 @@ class AndroidSmokeTest {
   compose.onAllNodesWithText("Quitar de mi lista")[0].performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}
  }
+ @Test fun mobileSearchUsesSystemImeAndTvDoesNotAutoOpenIt() {
+  lateinit var host: MainActivity;lateinit var model: XuperViewModel
+  fun bind(){scenario.onActivity {host=it;model=ViewModelProvider(it)[XuperViewModel::class.java]}}
+  fun ime(): Boolean {var visible=false;InstrumentationRegistry.getInstrumentation().runOnMainSync {visible=androidx.core.view.ViewCompat.getRootWindowInsets(host.window.decorView)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime())==true};return visible}
+  fun mobileSearch(){
+   bind();compose.onNodeWithContentDescription("Buscar").performClick()
+   compose.waitUntil(15000){ime()};compose.onNodeWithTag("search-text").assertIsFocused()
+   compose.onNodeWithTag("search-text").performTextInput("Viaje")
+   compose.waitUntil(15000){model.state.value.query.text=="Viaje"}
+   compose.onNodeWithTag("search-text").performImeAction()
+   compose.waitUntil(15000){!ime()};compose.onNodeWithTag("search-text").assertIsNotFocused()
+   scenario.onActivity {model.back();model.openCategory(com.matiasb.xuperandroid.model.Query(genre="Action"))}
+   compose.waitForIdle();compose.onNodeWithTag("search-text").assertIsNotFocused();org.junit.Assert.assertFalse(ime())
+  }
+  mobileSearch()
+  scenario.close();compose.waitForIdle();shell("wm size 1600x1000");shell("wm density 240")
+  val context=ApplicationProvider.getApplicationContext<XuperApplication>()
+  scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+  compose.waitUntil(30000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()};mobileSearch()
+  scenario.close();compose.waitForIdle()
+  scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).putExtra("force_tv",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+  compose.waitUntil(30000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()};bind()
+  compose.onNodeWithContentDescription("Buscar").performClick();compose.waitForIdle()
+  compose.onNodeWithTag("search-text").assertIsNotFocused();org.junit.Assert.assertFalse("TV should open the IME only when the user enters its text field",ime())
+ }
  @PipPlatformTest
  @Test fun pipKeepsPhoneVideoAndIsDisabledForTv() {
   org.junit.Assert.assertTrue("Reference emulator must expose PiP",ApplicationProvider.getApplicationContext<XuperApplication>().packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_PICTURE_IN_PICTURE))
