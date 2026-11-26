@@ -19,6 +19,9 @@ android_qa_cleanup() {
 }
 trap android_qa_cleanup EXIT
 
+# Dismiss Android's one-time immersive tutorial in the test image. It owns a
+# separate focusable system window and can intercept hardware keys/PiP taps.
+adb shell settings put secure immersive_mode_confirmations confirmed
 android_qa_pip_status=0
 if [ "${XUPER_QA_SUITE:-complete}" != functional ]; then
 # PiP is a WindowManager transition. Run it with the platform animation clocks

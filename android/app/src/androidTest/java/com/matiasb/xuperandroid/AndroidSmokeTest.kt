@@ -162,6 +162,10 @@ class AndroidSmokeTest {
    bounds=match?.groupValues?.drop(1)?.map {it.toInt()}?.let {android.graphics.Rect(it[0],it[1],it[2],it[3])}
    bounds!=null&&bounds!!.width()<fullScreenWidth&&bounds!!.width()>0
   }
+  // Bounds change before the native enter animation relinquishes touch input.
+  // Keep pumping application frames until that animation has had time to settle.
+  val settledAt=android.os.SystemClock.uptimeMillis()+1200
+  waitPlatform(3000,"Native PiP entry animation must settle"){android.os.SystemClock.uptimeMillis()>=settledAt}
   println("PiP window bounds: $bounds")
   shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
   // Click Android's own PiP expansion button, as a user would. Relaunching a
@@ -173,7 +177,7 @@ class AndroidSmokeTest {
     automation.windows.mapNotNull {it.root}.forEach {queue.add(it)}
     while(queue.isNotEmpty()&&!expanded) {
      val node=queue.removeFirst();val label=node.contentDescription?.toString().orEmpty()
-     if(node.viewIdResourceName!=null||label.isNotBlank())println("PiP node: ${node.viewIdResourceName} / $label")
+     
      if(node.viewIdResourceName?.endsWith(":id/expand_button")==true||label.contains("Expand",true)||label.contains("Full screen",true))expanded=node.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
      for(i in 0 until node.childCount)node.getChild(i)?.let {queue.add(it)}
     }
