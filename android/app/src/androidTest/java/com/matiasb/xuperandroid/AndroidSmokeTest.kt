@@ -133,15 +133,21 @@ class AndroidSmokeTest {
   fun waitSystemControl(label: String,condition: ()->Boolean) {
    val deadline=android.os.SystemClock.uptimeMillis()+10000
    while(!condition()&&android.os.SystemClock.uptimeMillis()<deadline)Thread.sleep(50)
-   org.junit.Assert.assertTrue(label,condition())
+   val done=condition()
+   if(!done) {
+    shell("mkdir -p /data/local/tmp/xuperandroid-qa")
+    shell("screencap -p /data/local/tmp/xuperandroid-qa/pip-control-failure.png")
+   }
+   org.junit.Assert.assertTrue(label,done)
   }
   val automation=InstrumentationRegistry.getInstrumentation().uiAutomation
-  automation.serviceInfo=automation.serviceInfo.apply {flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS}
+  automation.serviceInfo=automation.serviceInfo.apply {flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS}
   var bounds: android.graphics.Rect?=null
   waitSystemControl("PiP accessibility window must be available") {
    automation.windows.firstOrNull {it.isInPictureInPictureMode}?.let {window->bounds=android.graphics.Rect().also {window.getBoundsInScreen(it)}}
    bounds!=null
   }
+  println("PiP window bounds: $bounds")
   shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
   // Click Android's own PiP expansion button, as a user would. Relaunching a
   // singleTask Activity is not equivalent to expanding its pinned task.
@@ -152,7 +158,8 @@ class AndroidSmokeTest {
     automation.windows.mapNotNull {it.root}.forEach {queue.add(it)}
     while(queue.isNotEmpty()&&!expanded) {
      val node=queue.removeFirst();val label=node.contentDescription?.toString().orEmpty()
-     if(node.viewIdResourceName?.endsWith(":id/expand_button")==true||label.equals("Expand",true)||label.equals("Full screen",true))expanded=node.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
+     if(node.viewIdResourceName!=null||label.isNotBlank())println("PiP node: ${node.viewIdResourceName} / $label")
+     if(node.viewIdResourceName?.endsWith(":id/expand_button")==true||label.contains("Expand",true)||label.contains("Full screen",true))expanded=node.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK)
      for(i in 0 until node.childCount)node.getChild(i)?.let {queue.add(it)}
     }
    }

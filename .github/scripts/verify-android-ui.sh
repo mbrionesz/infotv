@@ -19,6 +19,8 @@ android_qa_cleanup() {
 }
 trap android_qa_cleanup EXIT
 
+android_qa_pip_status=0
+if [ "${XUPER_QA_SUITE:-complete}" != functional ]; then
 # PiP is a WindowManager transition. Run it with the platform animation clocks
 # enabled; disabling those clocks can strand Android 15's leave-PiP animation.
 for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
@@ -41,6 +43,9 @@ if [ "$android_qa_pip_status" -ne 0 ]; then exit "$android_qa_pip_status"; fi
 for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
   adb shell settings put global "$scale" 0
 done
+
+if [ "${XUPER_QA_SUITE:-complete}" = pip ]; then exit "$android_qa_pip_status"; fi
+fi
 
 # Keep viewport captures after functional tests: global wm overrides can steal window focus.
 timeout 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe

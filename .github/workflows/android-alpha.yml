@@ -10,6 +10,10 @@ permissions:
   contents: read
 jobs:
   build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [pip, functional]
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -32,6 +36,7 @@ jobs:
           if [ -e /dev/kvm ]; then sudo chown "$(id -u):$(id -g)" /dev/kvm; fi
       - name: Real Android UI and native playback test
         env:
+          XUPER_QA_SUITE: ${{ matrix.suite }}
           XUPER_PORTAL_PROBE: ${{ inputs.portal_probe && '1' || '0' }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -50,7 +55,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: XuperAndroid-0.1.1-beta9
+          name: XuperAndroid-0.1.1-beta9-${{ matrix.suite }}
           path: |
             android/app/build/outputs/apk/debug/*.apk
             android/app/build/reports/androidTests/
