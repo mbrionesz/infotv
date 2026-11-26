@@ -5,7 +5,8 @@ Cliente **nativo Kotlin + Compose + Media3**. Comparte los contratos y la identi
 ## Novedades de beta 9
 
 - Recuperación VOD que respeta pausa y adelantos realizados durante la renovación, sin reaperturas tardías tras liberar el reproductor. Inicialización correcta del scope de recuperación y errores que no vuelven a activar indefinidamente el indicador de carga.
-- Selección de pistas renovada al cambiar de fuente. PiP sigue la intención de reproducción incluso mientras espera búfer, y se desactiva al pausar o ante error.
+- Cada instancia de ExoPlayer recibe su propio selector de pistas: evita reutilizar un selector entre hilos al cambiar de vídeo, capítulo o canal. La vista nativa se enlaza explícitamente al nuevo motor.
+- PiP sigue la intención de reproducción incluso mientras espera búfer, y la entrada automática se desactiva al pausar o ante error. Los controles se ocultan desde el comienzo de la transición en Android 15+.
 - Detección TV por modo del sistema o característica Leanback, compartida con la exclusión PiP. Interfaz ajustada a las dimensiones actuales, sin selector manual de celular/tablet.
 - Política de memoria y búfer conservada; no se aumenta la reserva para ocultar problemas de red.
 

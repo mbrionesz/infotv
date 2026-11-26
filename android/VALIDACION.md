@@ -1,3 +1,19 @@
+# XuperAndroid 0.1.1 beta 9: reproducción y PiP
+
+- Fuente validada: `2cb54a49affc95ebbde1548d424fcd282f8eb5dc`. El APK optimizado se compiló desde `c40a8284333090ef2068532f64d158d38bb980d3`; los commits posteriores hasta la fuente validada solo modifican pruebas y su configuración, sin diferencias de código de producción.
+- Cada ExoPlayer recibe un selector independiente. La auditoría encontró una excepción real de Media3 al reutilizar el selector entre los hilos de dos motores; se corrigió junto con el enlace explícito de PlayerView a la nueva instancia al cambiar de vídeo/capítulo/canal.
+- Recuperación inicializada con un scope activo antes de preparar la fuente. Una renovación conserva la pausa y el último adelanto solicitado durante la espera; liberar el reproductor cancela resultados tardíos. Los errores no reactivan indefinidamente el indicador de carga.
+- Pausar funciona mientras espera búfer porque se utiliza la intención de reproducción, no solo `isPlaying`. PiP automático sigue esa intención, se deshabilita ante pausa/error y oculta controles desde el inicio de la transición Android 15+. La detección TV usa UiMode o Leanback tanto en la interfaz como en la exclusión PiP. Celular/tablet ajustan la distribución a las dimensiones actuales.
+- 40 pruebas unitarias (7 modelo, 33 datos) y 20 instrumentadas (PiP 1, funcionales 18 y capturas 1), cero fallos, errores u omisiones: https://github.com/mbrionesz/infotv/actions/runs/45757533728 . Las dos nuevas pruebas cubren pausa/adelanto durante renovación, fallo sin spinner persistente y cancelación al liberar. Incluye limpieza, episodios, controles y navegación D-pad.
+- PiP se verifica en un emulador independiente: salida mediante Home, avance del vídeo, expansión con el control nativo Android, regreso a Activity reanudada y exclusión TV. Se habilitan los relojes de animación del sistema y se deja estabilizar la transición de entrada antes del toque. Las pruebas de hardware seleccionan el task de la app antes de inyectar teclas. Se descarta el tutorial inmersivo de primer inicio del emulador. No se eliminan aserciones ni se omiten casos para aprobar.
+- 20 PNG de interfaz nativa en `XuperAndroid-0.1.1-beta9-functional/qa-screenshots`: celular normal/estrecho, tablet y disposición TV. Revisión visual de cabecera, distribución, contraste y Ajustes. La disposición TV usa `force_tv` en un emulador de teléfono Android 15/API 35; sus barras del sistema no certifican el aspecto de un TCL físico. Contenido local identificado como prueba; `portal_probe=false` y ausencia de diagnóstico de sesión real.
+- Release/R8, lint, firma v2/v3 y alineación 16 KiB verificados. APK universal de 4.768.240 bytes; mismo certificado de desarrollo que beta 8. SHA-256 `f1fa421349ff5472ce9b56b4a7e8ed3b66c9bf80f85af72a9139d96e24480d5f`.
+- Publicación: https://github.com/mbrionesz/infotv/actions/runs/45758395175 . Descarga pública verificada con idéntico SHA-256: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.9 . Solo APK firmado y datos públicos; la clave privada permanece local.
+- Se conservan los 17 resolutores, biblioteca, limpieza y presupuestos de vídeo de 30/60 s con 12/32 MiB según memoria reducida. No se amplía el búfer ni se afirma una mejora de velocidad medida. Pendiente probar el APK release optimizado en celulares, Lenovo P11 y TCL físicos, reproducción prolongada, códecs y CDN reales.
+- Tizen/Windows y `companion/lib/magis.js` no se modifican; hash de este último: `fa910167e612539f54cad7535f96da1dce7abb5b3525b499a1a1edcc8c4cbf77`.
+
+## Registro anterior: beta 8
+
 # XuperAndroid 0.1.1 beta 8: limpieza y reinicio
 
 - Fuente validada: `9a07d57e4118ea73f84e64047738010b6a69c6fe`.
