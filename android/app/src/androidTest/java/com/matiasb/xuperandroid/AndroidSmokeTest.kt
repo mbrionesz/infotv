@@ -32,7 +32,7 @@ class AndroidSmokeTest {
   InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(code)
  }
  private fun screenshot(name: String) { val context=ApplicationProvider.getApplicationContext<XuperApplication>();val file=File(context.getExternalFilesDir("qa"),name+".png");file.parentFile!!.mkdirs();InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()?.let { image->file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle() } }
- private fun shell(command: String) { ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use { it.readBytes() } }
+ private fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use { it.readBytes().toString(Charsets.UTF_8) }
  @After fun stop() { scenario.onActivity {ViewModelProvider(it)[XuperViewModel::class.java].stopPlayer();it.clearPip()};scenario.close();shell("wm size reset");shell("wm density reset") }
  @Test fun navigationAndSettingsAreAccessible() {
   screenshot("phone-movies");compose.onAllNodesWithText("Series")[0].performClick();compose.waitUntil(30_000){compose.onAllNodesWithText("Horizontes",substring=true).fetchSemanticsNodes().isNotEmpty()}
@@ -146,17 +146,15 @@ class AndroidSmokeTest {
   val automation=InstrumentationRegistry.getInstrumentation().uiAutomation
   automation.serviceInfo=automation.serviceInfo.apply {flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS}
   var bounds: android.graphics.Rect?=null
-  InstrumentationRegistry.getInstrumentation().runOnMainSync {
-   val metrics=host.windowManager.currentWindowMetrics.bounds
-   val task=(context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager).appTasks.first().taskInfo.toString()
-   println("PiP window metrics: $metrics; task: $task")
-   val match=Regex("mBounds=Rect\\((\\d+), (\\d+) - (\\d+), (\\d+)\\)").find(task)
-   val taskBounds=match?.groupValues?.drop(1)?.map {it.toInt()}?.let {android.graphics.Rect(it[0],it[1],it[2],it[3])}
-   bounds=if(metrics.width()<host.resources.displayMetrics.widthPixels)android.graphics.Rect(metrics)else taskBounds
-  }
-  waitSystemControl("PiP accessibility window must be available") {
-   if(bounds==null)automation.windows.firstOrNull {it.isInPictureInPictureMode}?.let {window->bounds=android.graphics.Rect().also {window.getBoundsInScreen(it)}}
-   bounds!=null
+  val taskId=host.taskId
+  waitSystemControl("Pinned task must expose its physical bounds") {
+   compose.mainClock.advanceTimeByFrame()
+   val tasks=shell("am stack list")
+   val line=tasks.lineSequence().firstOrNull {it.startsWith("RootTask id=$taskId ")||it.trimStart().startsWith("taskId=$taskId:")}.orEmpty()
+   println("Pinned task: $line")
+   val match=Regex("bounds=\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]").find(line)
+   bounds=match?.groupValues?.drop(1)?.map {it.toInt()}?.let {android.graphics.Rect(it[0],it[1],it[2],it[3])}
+   bounds!=null&&bounds!!.width()<host.resources.displayMetrics.widthPixels&&bounds!!.width()>0
   }
   println("PiP window bounds: $bounds")
   shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")
