@@ -37,6 +37,9 @@ import kotlinx.coroutines.delay
  val snapshot by vm.player.snapshot.collectAsStateWithLifecycle();var controls by remember { mutableStateOf(true) };var activity by remember { mutableLongStateOf(SystemClock.uptimeMillis()) };var tracks by remember { mutableStateOf(false) };var seek by remember { mutableStateOf<Float?>(null) };val stage=remember { FocusRequester() };val playFocus=remember { FocusRequester() };val context=LocalContext.current
  LaunchedEffect(snapshot.playWhenReady,snapshot.error,snapshot.width,snapshot.height){(context as? MainActivity)?.updatePip(snapshot)}
  val playing=state.playing
+ // Capture the current engine in the AndroidView callbacks: Compose may skip an
+ // unchanged callback when an episode replaces the released ExoPlayer instance.
+ val nativePlayer=vm.player.player
  DisposableEffect(Unit) { val window=(context as? MainActivity)?.window;window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
   window?.let {androidx.core.view.WindowCompat.getInsetsController(it,it.decorView).apply {hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());systemBarsBehavior=androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE}}
   onDispose {window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);window?.let {androidx.core.view.WindowCompat.getInsetsController(it,it.decorView).show(androidx.core.view.WindowInsetsCompat.Type.systemBars())}} }
@@ -47,7 +50,7 @@ import kotlinx.coroutines.delay
   if(event.type!=KeyEventType.KeyDown)return@onPreviewKeyEvent false
   if(!controls){when(event.key){Key.DirectionLeft->{vm.player.seek(snapshot.positionMs-10_000);touch();true};Key.DirectionRight->{vm.player.seek(snapshot.positionMs+10_000);touch();true};Key.DirectionCenter,Key.Enter->{vm.player.toggle();touch();true};Key.DirectionUp,Key.DirectionDown->{if(playing?.title?.kind==Kind.LIVE)vm.changeChannel(if(event.key==Key.DirectionUp)1 else -1);touch();true};else->false}}else {activity=SystemClock.uptimeMillis();false}
  }.focusable().pointerInput(Unit){detectTapGestures(onTap={if(controls)controls=false else touch()})}) {
-  if(playing!=null)AndroidView(factory={c->PlayerView(c).apply { useController=false;player=vm.player.player;keepScreenOn=true }},onRelease={it.player=null},update={view->view.player=vm.player.player;vm.player.style(view,settings);view.subtitleView?.setBottomPaddingFraction(if(controls&&!pip).38f else .08f)},modifier=Modifier.fillMaxSize())
+  if(playing!=null)AndroidView(factory={c->PlayerView(c).apply { useController=false;player=nativePlayer;keepScreenOn=true }},onRelease={it.player=null},update={view->view.player=nativePlayer;vm.player.style(view,settings);view.subtitleView?.setBottomPaddingFraction(if(controls&&!pip).38f else .08f)},modifier=Modifier.fillMaxSize())
   if(state.loading||snapshot.loading)CircularProgressIndicator(Modifier.align(Alignment.Center),color=Color(0xFF64D9FF))
   val error=state.error?:snapshot.error
   if(error!=null&&!pip)Column(Modifier.align(Alignment.Center).fillMaxWidth(.85f).background(Color(0xE6192231)).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {Text(error,color=Color.White);Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){XuperButton(onClick=vm::retry,enabled=!state.loading&&!snapshot.loading){Text("Reintentar")};XuperOutlinedButton(onClick={vm.back()}){Text("Volver")}}}
