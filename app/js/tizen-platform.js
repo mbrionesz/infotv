@@ -15,6 +15,11 @@
   };
   var previous = 0;
   document.addEventListener('keydown', function (event) {
+    // Windows native text controls own editing keys before the TV dispatcher.
+    // This bridge also runs during capture, before input-level listeners.
+    if (window.XuperDesktop && window.XuperDesktop.platform === 'windows' &&
+        event.target && event.target.closest &&
+        event.target.closest('.xt-keyboard-native,.xt-search-workspace.is-desktop,.xw-seek-form')) return;
     var now=performance.now();
     if(event.keyCode>=37&&event.keyCode<=40){
       if(event.repeat&&now-previous<65){event.preventDefault();event.stopImmediatePropagation();return;}
