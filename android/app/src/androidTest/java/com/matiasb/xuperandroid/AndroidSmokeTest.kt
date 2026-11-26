@@ -20,22 +20,26 @@ import org.junit.runner.RunWith
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PipPlatformTest
 
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ImePlatformTest
+
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
 @RunWith(AndroidJUnit4::class)
 class AndroidSmokeTest {
  @get:Rule val compose=createEmptyComposeRule()
  private lateinit var scenario: ActivityScenario<MainActivity>
- @Before fun start() { val context=ApplicationProvider.getApplicationContext<XuperApplication>();(context as? XuperTestApplication)?.catalogOverride=null;scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));compose.waitUntil(90_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()} }
- private fun hardwareKey(code: Int) {
+ @Before fun start() { val context=ApplicationProvider.getApplicationContext<XuperApplication>();(context as? XuperTestApplication)?.catalogOverride=null;scenario=ActivityScenario.launch(Intent(context,MainActivity::class.java).putExtra("demo",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));compose.waitUntil(90_000){compose.onAllNodesWithText("PARA EXPLORAR").fetchSemanticsNodes().isNotEmpty()};foregroundWindow() }
+ private fun foregroundWindow() {
   lateinit var host: MainActivity;scenario.onActivity {host=it}
   val instrumentation=InstrumentationRegistry.getInstrumentation()
   fun focused(): Boolean {var result=false;instrumentation.runOnMainSync {result=host.hasWindowFocus()};return result}
   // A resized/cold emulator may leave the launcher or test invoker in front.
   // Select the app task before sending real hardware events; retain view focus.
-  if(!focused())shell("am task focus ${host.taskId}")
+  if(!focused())shell("am start --activity-reorder-to-front -n com.matiasb.xuperandroid/.MainActivity")
   compose.waitUntil(30000){focused()}
-  instrumentation.sendKeyDownUpSync(code)
  }
+ private fun hardwareKey(code: Int) {foregroundWindow();InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(code)}
  private fun screenshot(name: String) { val context=ApplicationProvider.getApplicationContext<XuperApplication>();val file=File(context.getExternalFilesDir("qa"),name+".png");file.parentFile!!.mkdirs();InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()?.let { image->file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG,100,it) };image.recycle() } }
  private fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)).use { it.readBytes().toString(Charsets.UTF_8) }
  @After fun stop() { scenario.onActivity {ViewModelProvider(it)[XuperViewModel::class.java].stopPlayer();it.clearPip()};scenario.close();shell("wm size reset");shell("wm density reset") }
@@ -96,12 +100,13 @@ class AndroidSmokeTest {
   compose.onAllNodesWithText("Quitar de mi lista")[0].performClick()
   compose.waitUntil(30000){compose.onAllNodesWithText("Guarda películas, series o canales en tu lista.").fetchSemanticsNodes().isNotEmpty()}
  }
+ @ImePlatformTest
  @Test fun mobileSearchUsesSystemImeAndTvDoesNotAutoOpenIt() {
   lateinit var host: MainActivity;lateinit var model: XuperViewModel
   fun bind(){scenario.onActivity {host=it;model=ViewModelProvider(it)[XuperViewModel::class.java]}}
   fun ime(): Boolean {var visible=false;InstrumentationRegistry.getInstrumentation().runOnMainSync {visible=androidx.core.view.ViewCompat.getRootWindowInsets(host.window.decorView)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime())==true};return visible}
   fun mobileSearch(){
-   bind();compose.onNodeWithContentDescription("Buscar").performClick()
+   bind();foregroundWindow();compose.onNodeWithContentDescription("Buscar").performClick()
    compose.waitUntil(15000){ime()};compose.onNodeWithTag("search-text").assertIsFocused()
    compose.onNodeWithTag("search-text").performTextInput("Viaje")
    compose.waitUntil(15000){model.state.value.query.text=="Viaje"}

@@ -23,7 +23,7 @@ trap android_qa_cleanup EXIT
 # separate focusable system window and can intercept hardware keys/PiP taps.
 adb shell settings put secure immersive_mode_confirmations confirmed
 android_qa_pip_status=0
-if [ "${XUPER_QA_SUITE:-complete}" != functional ]; then
+if [ "${XUPER_QA_SUITE:-complete}" != functional ] && [ "${XUPER_QA_SUITE:-complete}" != ime ]; then
 # PiP is a WindowManager transition. Run it with the platform animation clocks
 # enabled; disabling those clocks can strand Android 15's leave-PiP animation.
 for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
@@ -53,13 +53,29 @@ fi
 # Exercise the device IME only in the functional/capture instance.
 adb shell settings put secure show_ime_with_hard_keyboard 1
 
+# Run the real system-IME checks separately from SurfaceView/decoder tests in CI.
+if [ "${XUPER_QA_SUITE:-complete}" != functional ]; then
+  timeout -k 15s 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.ImePlatformTest
+  python3 - <<'CHECK_IME'
+from pathlib import Path
+import xml.etree.ElementTree as E
+rows=[E.parse(p).getroot().attrib for p in Path('app/build/outputs/androidTest-results/connected/debug').glob('TEST-*.xml')]
+assert sum(int(r.get('tests',0)) for r in rows)==1, rows
+assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0))==0 for r in rows), rows
+CHECK_IME
+  mkdir -p qa-evidence/ime
+  cp -a app/build/reports/androidTests qa-evidence/ime/reports
+  cp -a app/build/outputs/androidTest-results qa-evidence/ime/results
+  if [ "${XUPER_QA_SUITE:-complete}" = ime ]; then exit 0; fi
+fi
+
 # Keep viewport captures after functional tests: global wm overrides can steal window focus.
-timeout -k 15s 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe
+timeout -k 15s 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ImePlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe
 python3 - <<'CHECK'
 from pathlib import Path
 import xml.etree.ElementTree as E
 rows=[E.parse(p).getroot().attrib for p in Path('app/build/outputs/androidTest-results/connected/debug').glob('TEST-*.xml')]
-assert sum(int(r.get('tests',0)) for r in rows)==19, rows
+assert sum(int(r.get('tests',0)) for r in rows)==18, rows
 assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0))==0 for r in rows), rows
 CHECK
 mkdir -p qa-evidence/functional
