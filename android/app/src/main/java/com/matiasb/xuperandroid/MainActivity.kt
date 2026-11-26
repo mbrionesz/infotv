@@ -62,6 +62,10 @@ class MainActivity: ComponentActivity() {
  fun enterMiniPlayer(): Boolean {if(!canUsePip()||model.cleaning.value||model.state.value.screen!=Screen.PLAYER||model.state.value.playing==null)return false;if(isInPictureInPictureMode)return true;updatePip(model.player.snapshot.value);return runCatching { enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().build()) }.getOrDefault(false)}
  // Android 12+ uses auto-enter; invoking the legacy hook as well can request PiP twice.
  override fun onUserLeaveHint() {super.onUserLeaveHint();if(android.os.Build.VERSION.SDK_INT<31&&model.state.value.screen==Screen.PLAYER&&model.player.snapshot.value.playWhenReady)enterMiniPlayer()}
+ override fun onPictureInPictureUiStateChanged(state: android.app.PictureInPictureUiState) {
+  super.onPictureInPictureUiStateChanged(state)
+  if(android.os.Build.VERSION.SDK_INT>=35&&state.isTransitioningToPip)pipMode=true
+ }
  override fun onPictureInPictureModeChanged(active: Boolean,newConfig: Configuration) {super.onPictureInPictureModeChanged(active,newConfig);pipMode=active;if(!active&&!lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED))model.background()}
 
  override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState);enableEdgeToEdge(statusBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),navigationBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT));setContent {

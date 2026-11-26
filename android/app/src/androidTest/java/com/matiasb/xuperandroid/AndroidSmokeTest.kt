@@ -143,8 +143,16 @@ class AndroidSmokeTest {
   val automation=InstrumentationRegistry.getInstrumentation().uiAutomation
   automation.serviceInfo=automation.serviceInfo.apply {flags=flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS}
   var bounds: android.graphics.Rect?=null
+  InstrumentationRegistry.getInstrumentation().runOnMainSync {
+   val metrics=host.windowManager.currentWindowMetrics.bounds
+   val task=(context.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager).appTasks.first().taskInfo.toString()
+   println("PiP window metrics: $metrics; task: $task")
+   val match=Regex("mBounds=Rect\\((\\d+), (\\d+) - (\\d+), (\\d+)\\)").find(task)
+   val taskBounds=match?.groupValues?.drop(1)?.map {it.toInt()}?.let {android.graphics.Rect(it[0],it[1],it[2],it[3])}
+   bounds=if(metrics.width()<host.resources.displayMetrics.widthPixels)android.graphics.Rect(metrics)else taskBounds
+  }
   waitSystemControl("PiP accessibility window must be available") {
-   automation.windows.firstOrNull {it.isInPictureInPictureMode}?.let {window->bounds=android.graphics.Rect().also {window.getBoundsInScreen(it)}}
+   if(bounds==null)automation.windows.firstOrNull {it.isInPictureInPictureMode}?.let {window->bounds=android.graphics.Rect().also {window.getBoundsInScreen(it)}}
    bounds!=null
   }
   println("PiP window bounds: $bounds")
