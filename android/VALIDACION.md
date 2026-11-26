@@ -1,3 +1,14 @@
+# XuperAndroid 0.1.1 beta 11: búsqueda nativa y VOD
+
+- Lupa con foco/IME nativo en celular/tablet; categorías y TV sin apertura automática. Campo adaptado al espacio del teclado y acción Buscar que lo oculta. Prueba real de IME en celular/tablet y exclusión de apertura automática en TV.
+- VOD: objetivo hasta 90 s, reposición desde 30 s, presupuesto 32 MiB para equipos sin memoria reducida; 30 s/15 s/12 MiB en memoria reducida. Se conservan arranque 1,5 s, rebuffer 3 s, presupuesto menor de ahorro de datos y política de TV en vivo. Son objetivos, no límites de RAM total ni garantía de reserva alcanzada. Selección latinoamericana mejorada y subtítulos automáticos limitados a español anunciado; saltos habilitados al confirmarlos Media3. Ajustar preserva las proporciones originales.
+- 46 unitarias y 21 instrumentadas aprobadas sin fallos, errores ni omisiones: https://github.com/mbrionesz/infotv/actions/runs/45764310060 . Fuente `295ebdc6f2dc97c529b2a64c7ffb4d75171e7df6`; 20 capturas. IME/PiP en emuladores separados de las pruebas de vídeo; mismas aserciones, sin omitir casos. Portal no consultado.
+- Release/R8, lint, firma v2/v3, certificado idéntico a beta 10 y alineación 16 KiB verificados. APK compilado desde `bc3290c7fa90b63f24e127abd00e93980dc1d4d5` con fuentes Android de producción idénticas a las validadas. 4.768.240 bytes; SHA-256 `091719243a9bad67d131607da8c4e021103c05b7b70a71e8b924c9c91beb2bba`.
+- Publicación exitosa: https://github.com/mbrionesz/infotv/actions/runs/45765255162 . APK público descargado y hash idéntico comprobado: https://github.com/mbrionesz/infotv/releases/tag/v0.1.1-android-beta.11 . Clave privada local. Siguen pendientes pruebas físicas y sesiones largas en el portal/red del usuario.
+- Informe de implementación y pruebas Android/Windows: [Búsqueda nativa](../docs/BUSQUEDA-NATIVA.md). Los 17 DNS y perfil del portal de beta 10 permanecen iguales; `companion/lib/magis.js` conserva su hash.
+
+## Registro anterior: beta 10
+
 # XuperAndroid 0.1.1 beta 10: perfil y renovación de sesión
 
 - Fuente validada: `eb3ebffad53d276f44ba20ac9d48b067682e0fd9`.
