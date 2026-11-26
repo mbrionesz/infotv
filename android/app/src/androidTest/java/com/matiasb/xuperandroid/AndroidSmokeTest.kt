@@ -130,7 +130,7 @@ class AndroidSmokeTest {
    now.playing&&advanced>300
   }
   val context=ApplicationProvider.getApplicationContext<XuperApplication>()
-  shell("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
+  shell("am start -W --windowingMode 1 -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.matiasb.xuperandroid/.MainActivity")
   // The software-rendered emulator may stall WindowManager during cold-boot Google services.
   waitPlatform(45000,"PiP exit must resume the full-screen Activity"){!host.isInPictureInPictureMode&&host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)}
   scenario.close();compose.waitForIdle()

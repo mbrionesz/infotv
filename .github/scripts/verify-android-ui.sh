@@ -7,12 +7,12 @@ cd "$android_qa_repository/android"
 mkdir -p qa-evidence/pip
 android_qa_cleanup() {
   android_qa_exit=$?
-  adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
+  timeout 15s adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
   if [ "$android_qa_exit" -ne 0 ]; then
-    adb shell dumpsys activity activities > qa-evidence/activity-state.txt || true
-    android_qa_pid=$(adb shell pidof -s com.matiasb.xuperandroid | tr -d '\r' || true)
+    timeout 15s adb shell dumpsys activity activities > qa-evidence/activity-state.txt || true
+    android_qa_pid=$(timeout 15s adb shell pidof -s com.matiasb.xuperandroid | tr -d '\r' || true)
     if [[ "$android_qa_pid" =~ ^[0-9]+$ ]]; then
-      adb logcat -d --pid="$android_qa_pid" > qa-evidence/app-logcat.txt || true
+      timeout 15s adb logcat -d --pid="$android_qa_pid" > qa-evidence/app-logcat.txt || true
     fi
   fi
   exit "$android_qa_exit"
@@ -35,6 +35,9 @@ assert all(int(r.get('failures',0))+int(r.get('errors',0))+int(r.get('skipped',0
 PY
 cp -a app/build/reports/androidTests qa-evidence/pip/reports
 cp -a app/build/outputs/androidTest-results qa-evidence/pip/results
+# A failed native window transition may invalidate the emulator graphics context.
+# Fail promptly rather than run further tests against that damaged instance.
+if [ "$android_qa_pip_status" -ne 0 ]; then exit "$android_qa_pip_status"; fi
 for scale in window_animation_scale transition_animation_scale animator_duration_scale; do
   adb shell settings put global "$scale" 0
 done
