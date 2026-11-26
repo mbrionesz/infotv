@@ -154,7 +154,7 @@ class AndroidSmokeTest {
    println("Pinned task: $line")
    val match=Regex("bounds=\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]").find(line)
    bounds=match?.groupValues?.drop(1)?.map {it.toInt()}?.let {android.graphics.Rect(it[0],it[1],it[2],it[3])}
-   bounds!=null&&bounds!!.width()<host.resources.displayMetrics.widthPixels&&bounds!!.width()>0
+   bounds!=null&&bounds!!.width()<context.resources.displayMetrics.widthPixels&&bounds!!.width()>0
   }
   println("PiP window bounds: $bounds")
   shell("input tap ${bounds!!.centerX()} ${bounds!!.centerY()}")

@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
 class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHttpClient) {
- private val selector=DefaultTrackSelector(context);private var scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+ private var selector=DefaultTrackSelector(context);private var scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
  private var active: Playing?=null;private var sourceIndex=0;private var engine: ExoPlayer?=null;private var session: MediaSession?=null
  private var renewer: (suspend ()->Stream)?=null;private var renewal: Job?=null;private var renewals=0;private var renewedAt=0L
  private var pendingSeek: Long?=null
@@ -31,7 +31,7 @@ class AndroidPlayer(private val context: Context,private val http: okhttp3.OkHtt
  val player: ExoPlayer? get()=engine
  fun prepare(playing: Playing,preferences: Settings,preferredAudio: Pair<String,String>?,renew: (suspend ()->Stream)?=null) {
   require(playing.stream.sources.isNotEmpty()) {"El portal no entregó un enlace de vídeo"}
-  release();scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);generation++;val run=generation;active=playing;renewer=renew;renewals=0;renewedAt=0;sourceIndex=0;settings=preferences;manualAudio=preferredAudio;audioApplied="";subtitlesManual=false;manualSubtitle=null
+  release();selector=DefaultTrackSelector(context);scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate);generation++;val run=generation;active=playing;renewer=renew;renewals=0;renewedAt=0;sourceIndex=0;settings=preferences;manualAudio=preferredAudio;audioApplied="";subtitlesManual=false;manualSubtitle=null
   val network=context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
   val cap=DataPolicy.maxHeight(network.getNetworkCapabilities(network.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR)==true,network.restrictBackgroundStatus==android.net.ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
   val lowRam=(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
