@@ -7,12 +7,12 @@ cd "$android_qa_repository/android"
 mkdir -p qa-evidence/pip
 android_qa_cleanup() {
   android_qa_exit=$?
-  timeout 15s adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
+  timeout -k 5s 15s adb pull /data/local/tmp/xuperandroid-qa qa-screenshots || true
   if [ "$android_qa_exit" -ne 0 ]; then
-    timeout 15s adb shell dumpsys activity activities > qa-evidence/activity-state.txt || true
-    android_qa_pid=$(timeout 15s adb shell pidof -s com.matiasb.xuperandroid | tr -d '\r' || true)
+    timeout -k 5s 15s adb shell dumpsys activity activities > qa-evidence/activity-state.txt || true
+    android_qa_pid=$(timeout -k 5s 15s adb shell pidof -s com.matiasb.xuperandroid | tr -d '\r' || true)
     if [[ "$android_qa_pid" =~ ^[0-9]+$ ]]; then
-      timeout 15s adb logcat -d --pid="$android_qa_pid" > qa-evidence/app-logcat.txt || true
+      timeout -k 5s 15s adb logcat -d --pid="$android_qa_pid" > qa-evidence/app-logcat.txt || true
     fi
   fi
   exit "$android_qa_exit"
@@ -27,7 +27,7 @@ for scale in window_animation_scale transition_animation_scale animator_duration
   adb shell settings put global "$scale" 1
 done
 android_qa_pip_status=0
-timeout 240s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PipPlatformTest || android_qa_pip_status=$?
+timeout -k 15s 240s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PipPlatformTest || android_qa_pip_status=$?
 python3 - <<'PY' || android_qa_pip_status=1
 from pathlib import Path
 import xml.etree.ElementTree as E
@@ -48,7 +48,7 @@ if [ "${XUPER_QA_SUITE:-complete}" = pip ]; then exit "$android_qa_pip_status"; 
 fi
 
 # Keep viewport captures after functional tests: global wm overrides can steal window focus.
-timeout 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe
+timeout -k 15s 360s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notAnnotation=com.matiasb.xuperandroid.PipPlatformTest,com.matiasb.xuperandroid.ViewportCaptureTest,com.matiasb.xuperandroid.PortalProbe
 python3 - <<'CHECK'
 from pathlib import Path
 import xml.etree.ElementTree as E
@@ -60,7 +60,7 @@ mkdir -p qa-evidence/functional
 cp -a app/build/reports/androidTests qa-evidence/functional/reports
 cp -a app/build/outputs/androidTest-results qa-evidence/functional/results
 
-timeout 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.ViewportCaptureTest
+timeout -k 15s 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.ViewportCaptureTest
 python3 - <<'CHECK'
 from pathlib import Path
 import xml.etree.ElementTree as E
@@ -74,7 +74,7 @@ cp -a app/build/outputs/androidTest-results qa-evidence/captures/results
 
 if [ "${XUPER_PORTAL_PROBE:-0}" = 1 ]; then
   # This produces a redacted diagnostic, not an assertion that the real portal is available.
-  timeout 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PortalProbe -Pandroid.testInstrumentationRunnerArguments.allowPortalNetwork=true
+  timeout -k 15s 180s ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.annotation=com.matiasb.xuperandroid.PortalProbe -Pandroid.testInstrumentationRunnerArguments.allowPortalNetwork=true
 fi
 
 # Preserve functional/capture evidence even when PiP failed, without passing CI.
