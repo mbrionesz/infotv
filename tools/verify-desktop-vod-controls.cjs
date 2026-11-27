@@ -39,10 +39,10 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   assert.ok(Math.abs(await evaluate('document.getElementById("player-video").currentTime')-before)<1);
   await wait('!document.getElementById("dps-sub-switch").disabled');if(!await evaluate('document.getElementById("dps-sub-switch").classList.contains("is-on")'))await click('#dps-sub-switch');await wait('!!document.querySelector("#dps-lang-options button.is-selected")');
   await click('#dps-lang-options button',1);await wait('!document.getElementById("dps-sub-switch").disabled&&document.querySelectorAll("#dps-lang-options button")[1].classList.contains("is-selected")');
-  const state=await evaluate('XuperDesktop.mediaDiagnostics()');assert.equal(state.player.tracks.filter(t=>t.type==='audio'&&t.selected).length,1);assert.ok(state.player.tracks.some(t=>t.type==='sub'&&t.selected));assert.equal(state.player.subtitleUrl,origin+'/en.srt');
+  const state=await evaluate('XuperDesktop.mediaDiagnostics()');assert.equal(state.tracks.filter(t=>t.type==='audio'&&t.selected).length,1);assert.ok(state.tracks.some(t=>t.type==='sub'&&t.selected));assert.equal(state.subtitle.language,'en');
   await capture('english-audio-subtitles');
   await click('#dps-sub-switch');await wait('!document.getElementById("dps-sub-switch").disabled&&!document.getElementById("dps-sub-switch").classList.contains("is-on")');
-  assert.equal((await evaluate('XuperDesktop.mediaDiagnostics()')).player.tracks.some(t=>t.type==='sub'&&t.selected),false);
+  assert.equal((await evaluate('XuperDesktop.mediaDiagnostics()')).tracks.some(t=>t.type==='sub'&&t.selected),false);
   await click('#dps-audio-options button',0);await wait('XuperPlayer.audioTracks()[0].selected&&document.querySelectorAll("#dps-audio-options button")[0].classList.contains("is-selected")');
   await click('#dps-btn-exit');await wait('!document.getElementById("dialog-playsettings").classList.contains("is-active")');
   await evaluate('__xuper.showPlayerControls()');await delay(250);await click('[data-vod-action=play]');await wait('!document.getElementById("player-video").paused');
