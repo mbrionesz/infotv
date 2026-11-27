@@ -6458,7 +6458,7 @@
     if ("player" !== X.screen || !xe) return ((Xi = e), void ($i = !0));
     if(window.XuperWindowsMedia&&XuperWindowsMedia.engine&&window.XuperPlayer&&XuperPlayer.selectAudioConfirmed){
       var generation=trackSelectionGeneration;audioSelectionPending=e;
-      return XuperPlayer.selectAudioConfirmed(e).then(function(ok){if(generation!==trackSelectionGeneration)return;if(!ok)throw Error('Esta pista no está disponible.');Xi=e;$i=true;if(chosen)saveTitlePreference("audio",{language:chosen.language,name:chosen.name});Gi=Date.now()+5000;jr("Idioma cambiado");},function(error){if(generation===trackSelectionGeneration)Yt('No se pudo cambiar el audio. '+String(error.message||error));}).finally(function(){if(generation===trackSelectionGeneration)audioSelectionPending=-1;});
+      return XuperPlayer.selectAudioConfirmed(e).then(function(ok){if(generation!==trackSelectionGeneration)return;if(!ok){Yt('Esta pista no está disponible.');return;}Xi=e;$i=true;if(chosen)saveTitlePreference("audio",{language:chosen.language,name:chosen.name});Gi=Date.now()+5000;jr("Idioma cambiado");},function(error){if(generation===trackSelectionGeneration)Yt('No se pudo cambiar el audio. '+String(error.message||error));}).finally(function(){if(generation===trackSelectionGeneration)audioSelectionPending=-1;});
     }
     if ("relay" === X.streamMode || "smooth" === X.streamMode)
       if (((Xi = e), ($i = !0), br)) {

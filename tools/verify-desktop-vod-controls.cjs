@@ -12,7 +12,7 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   }
   subtitleRequests++;res.writeHead(200,{'Content-Type':'application/x-subrip'});res.end('1\n00:00:00,000 --> 00:01:59,000\n'+(req.url==='/en.srt'?'English subtitle':'Subtítulo español')+'\n');
  });
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://windows-controls.fixture.test:'+server.address().port;
  const evaluate=code=>window.webContents.executeJavaScript(code),delay=ms=>new Promise(r=>setTimeout(r,ms));
  const wait=async(code,timeout=15000)=>{const deadline=Date.now()+timeout;while(Date.now()<deadline){if(await evaluate(code))return;await delay(80);}throw Error('VOD controls timeout: '+code+'\n'+JSON.stringify(await evaluate('XuperDesktop.mediaDiagnostics()')));};
  async function click(selector,index=0){const point=await evaluate(`(()=>{const b=document.querySelectorAll(${JSON.stringify(selector)})[${index}];if(!b||b.disabled)throw Error('Unavailable control: '+${JSON.stringify(selector)});b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}})()`);window.webContents.sendInputEvent({type:'mouseMove',...point});await delay(200);window.webContents.sendInputEvent({type:'mouseDown',...point,button:'left',clickCount:1});window.webContents.sendInputEvent({type:'mouseUp',...point,button:'left',clickCount:1});}
@@ -52,3 +52,6 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   console.log('PASS '+engine+': real VOD GUI, native HEVC active, mouse HUD pixels, pause, single-click confirmed English/Spanish, subtitles on/change/off, retained position and three-second autohide. Local fixtures.');
  }finally{await evaluate('__xuper.show("home");Object.assign(XuperStandalone.core,window.__vodQaOriginal||{});delete window.__vodQaOriginal;');server.closeAllConnections();await new Promise(r=>server.close(r));}
 };
+// Only the test process replaces resolution for its synthetic fixture hostname;
+// production DNS continues rejecting private/loopback addresses.
+module.exports.installFixtureResolver=function(){const dns=require('../desktop/dns.cjs'),create=dns.createResolver;dns.createResolver=(...args)=>{const resolver=create(...args),resolve=resolver.resolve;resolver.resolve=(host,...options)=>host==='windows-controls.fixture.test'?Promise.resolve({ip:'127.0.0.1',mode:'local-fixture'}):resolve(host,...options);return resolver;};};
