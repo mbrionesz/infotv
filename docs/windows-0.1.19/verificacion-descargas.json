@@ -1,0 +1,22 @@
+{
+  "release": "v0.10.21-beta.8",
+  "draft": false,
+  "source": "5c7181848b95327b95f9ef02665241fed79c9147",
+  "files": [
+    {
+      "name": "XuperWindows-0.1.19-beta-ia32-Setup.exe",
+      "bytes": 168294774,
+      "sha256": "4949d8451ea9d36e4d5f9e66672f7233b1cdc028f5feec6824af15d4aac40e51"
+    },
+    {
+      "name": "XuperWindows-0.1.19-beta-x64-Setup.exe",
+      "bytes": 182078728,
+      "sha256": "203f59de98108434eed9de0734eed473e96ede0c45ae397624453a433ccdc2e8"
+    },
+    {
+      "name": "XuperWindows-Tester-0.1.19-Test-libmpv-r1-x64-Setup.exe",
+      "bytes": 153061095,
+      "sha256": "3f25112e80ebe4151c6c337bd2a3ef65a232336eddb6197b59c0f553131a22c2"
+    }
+  ]
+}
