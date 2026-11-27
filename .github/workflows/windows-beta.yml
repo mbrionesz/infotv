@@ -32,8 +32,17 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             desktop/package-lock.json
+      - uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            desktop/node_modules
+          key: libmpv-windows-node22-${{ hashFiles('package-lock.json', 'desktop/package-lock.json') }}
       - run: npm ci
+        if: steps.dependencies.outputs.cache-hit != 'true'
       - run: npm ci --prefix desktop
+        if: steps.dependencies.outputs.cache-hit != 'true'
       - name: Download and verify native decoders
         env:
           GH_TOKEN: ${{ github.token }}
