@@ -1,6 +1,7 @@
 'use strict';
 // Real Electron input + shared VOD UI + the packaged native engine. All media is local.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
+const {execFileSync}=require('node:child_process');
 module.exports=async function verifyVodControls(window,{desktopCapturer,screen,engine}){
  const media=fs.readFileSync(path.resolve('tests/fixtures/windows-controls-hevc.mp4'));
  let subtitleRequests=0;
@@ -14,8 +15,11 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://windows-controls.fixture.test:'+server.address().port;
  const evaluate=code=>window.webContents.executeJavaScript(code),delay=ms=>new Promise(r=>setTimeout(r,ms));
+ fs.mkdirSync('dist',{recursive:true});const pointer=path.resolve('dist/windows-vod-pointer.exe');
+ execFileSync(path.join(process.env.WINDIR||'C:\\Windows','Microsoft.NET','Framework64','v4.0.30319','csc.exe'),['/nologo','/target:exe','/out:'+pointer,path.resolve('tools/windows-vod-pointer.cs')]);
+ async function moveMouse(point,click=false){const bounds=window.getContentBounds();execFileSync(pointer,[String(Math.round(bounds.x+point.x)),String(Math.round(bounds.y+point.y)),...(click?['click']:[])]);await delay(180);}
  const wait=async(code,timeout=15000)=>{const deadline=Date.now()+timeout;while(Date.now()<deadline){if(await evaluate(code))return;await delay(80);}throw Error('VOD controls timeout: '+code+'\n'+JSON.stringify(await evaluate('XuperDesktop.mediaDiagnostics()')));};
- async function click(selector,index=0){const point=await evaluate(`(()=>{const b=document.querySelectorAll(${JSON.stringify(selector)})[${index}];if(!b||b.disabled)throw Error('Unavailable control: '+${JSON.stringify(selector)});b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}})()`);window.webContents.sendInputEvent({type:'mouseMove',...point});await delay(200);window.webContents.sendInputEvent({type:'mouseDown',...point,button:'left',clickCount:1});window.webContents.sendInputEvent({type:'mouseUp',...point,button:'left',clickCount:1});}
+ async function click(selector,index=0){const point=await evaluate(`(()=>{const b=document.querySelectorAll(${JSON.stringify(selector)})[${index}];if(!b||b.disabled)throw Error('Unavailable control: '+${JSON.stringify(selector)});b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}})()`);await moveMouse(point,true);}
  async function capture(name){await delay(300);const sources=await desktopCapturer.getSources({types:['screen'],thumbnailSize:{width:1920,height:1080}});const image=sources[0].thumbnail;fs.mkdirSync('dist',{recursive:true});fs.writeFileSync(`dist/xuperwindows-${engine}-vod-${name}.png`,image.toPNG());return image;}
  // Check the exposed HUD, rather than just capturePage() which omits native HWNDs.
  async function assertDarkHud(image){const rect=await evaluate('(()=>{const r=document.querySelector(".vod-infobar-content").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}})()'),display=screen.getPrimaryDisplay().bounds,bounds=window.getContentBounds(),size=image.getSize(),pixels=image.getBitmap(),sx=size.width/display.width,sy=size.height/display.height;let bright=0,count=0;for(let y=rect.top+3;y<rect.top+rect.height-3;y+=3)for(let x=rect.left+3;x<rect.left+rect.width-3;x+=3){const px=Math.round((bounds.x+x-display.x)*sx),py=Math.round((bounds.y+y-display.y)*sy);if(px<0||py<0||px>=size.width||py>=size.height)continue;const i=(py*size.width+px)*4;if(pixels[i]>220&&pixels[i+1]>220&&pixels[i+2]>220)bright++;count++;}assert.ok(count>500);assert.ok(bright/count<.18,'Mouse HUD must not expose a white native window/background: '+bright/count);}
@@ -26,7 +30,7 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   await wait(`XuperPlayer.diagnostics.engine===${JSON.stringify(engine)}&&XuperPlayer.diagnostics.stage==='playing'&&XuperPlayer.audioTracks().length===2`,30000);
   await evaluate('__xuper.hidePlayerControls()');await delay(250);
   // Real desktop mouse activity should restore the HUD over active native video.
-  window.webContents.sendInputEvent({type:'mouseMove',x:80,y:80});
+  await moveMouse({x:80,y:80});
   await wait('document.getElementById("player-vod-infobar").classList.contains("is-active")');
   await assertDarkHud(await capture('mouse-hud'));
   await click('[data-vod-action=play]');await wait('document.getElementById("player-video").paused');
@@ -47,11 +51,11 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   await click('#dps-btn-exit');await wait('!document.getElementById("dialog-playsettings").classList.contains("is-active")');
   await evaluate('__xuper.showPlayerControls()');await delay(250);await click('[data-vod-action=play]');await wait('!document.getElementById("player-video").paused');
   await delay(3300);await wait('!document.getElementById("player-vod-infobar").classList.contains("is-active")');
-  window.webContents.sendInputEvent({type:'mouseMove',x:110,y:100});await wait('document.getElementById("player-vod-infobar").classList.contains("is-active")');await assertDarkHud(await capture('mouse-hud-after-tracks'));
+  await moveMouse({x:110,y:100});await wait('document.getElementById("player-vod-infobar").classList.contains("is-active")');await assertDarkHud(await capture('mouse-hud-after-tracks'));
   assert.ok(subtitleRequests<=2,'Native subtitles should not also be downloaded by the HTML subtitle parser: '+subtitleRequests);
   console.log('PASS '+engine+': real VOD GUI, native HEVC active, mouse HUD pixels, pause, single-click confirmed English/Spanish, subtitles on/change/off, retained position and three-second autohide. Local fixtures.');
  }finally{await evaluate('__xuper.show("home");Object.assign(XuperStandalone.core,window.__vodQaOriginal||{});delete window.__vodQaOriginal;');server.closeAllConnections();await new Promise(r=>server.close(r));}
 };
 // Only the test process replaces resolution for its synthetic fixture hostname;
 // production DNS continues rejecting private/loopback addresses.
-module.exports.installFixtureResolver=function(){const dns=require('../desktop/dns.cjs'),create=dns.createResolver;dns.createResolver=(...args)=>{const resolver=create(...args),resolve=resolver.resolve;resolver.resolve=(host,...options)=>host==='windows-controls.fixture.test'?Promise.resolve({ip:'127.0.0.1',mode:'local-fixture'}):resolve(host,...options);return resolver;};};
+module.exports.installFixtureResolver=function(modulePath='../desktop/dns.cjs'){const dns=require(modulePath),create=dns.createResolver;dns.createResolver=(...args)=>{const resolver=create(...args),resolve=resolver.resolve;resolver.resolve=(host,...options)=>host==='windows-controls.fixture.test'?Promise.resolve({ip:'127.0.0.1',mode:'local-fixture'}):resolve(host,...options);return resolver;};};
