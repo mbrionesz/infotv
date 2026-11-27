@@ -8199,7 +8199,7 @@
           ba(l[e] || l[0]);
         },
         openSearch: La,
-        subtitleForPlayback:function(){return Qi||null;},subtitleStyleForPlayback:function(){return {font:subtitleFontValue(),size:subtitleOptionValue("size",3),color:subtitleOptionValue("style",4)};},
+        subtitleForPlayback:function(){return Ji?Qi||null:null;},subtitleStyleForPlayback:function(){return {font:subtitleFontValue(),size:subtitleOptionValue("size",3),color:subtitleOptionValue("style",4)};},
         openSettings: Ha,
         openPlayer: function (e, t) {
           Yr(e || "live", l[t] || null);
