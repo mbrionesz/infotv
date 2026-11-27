@@ -18,8 +18,8 @@ function createVideoSurface({NativeWindow,parent,platform=process.platform,ignor
  function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;}
  function handle(){
   if(platform!=='win32')return null;
-  close();surface=new NativeWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000'});
-  surface.setBackgroundColor?.('#000000');
+  close();surface=new NativeWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,transparent:true,backgroundColor:'#00000000'});
+  surface.setBackgroundColor?.('#00000000');
   if(ignoreMouseEvents)surface.setIgnoreMouseEvents(true,{forward:true});
   const hwnd=surface.getNativeWindowHandle();sync();
   return (hwnd.length===8?hwnd.readBigUInt64LE():BigInt(hwnd.readUInt32LE())).toString();
