@@ -7262,7 +7262,9 @@
     var leavingVod=X.playerMode==='vod'&&xe?{position:xe.currentTime||0,duration:trustedVodDuration(),durationEstimated:!!(window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated),live:false}:null;
     hideNextEpisode();var pauseCard=t('xt-vod-pause-card');if(pauseCard)pauseCard.hidden=true;
     if(X.episodeSwitchTimer){clearTimeout(X.episodeSwitchTimer);X.episodeSwitchTimer=null;}X.episodeSwitchSeq=(X.episodeSwitchSeq||0)+1;
-    mn(null);
+    // Native stop below releases its subtitle decoder too. Invalidate pending
+    // completions instead of sending a last command to a closing session.
+    if(window.XuperWindowsMedia&&XuperWindowsMedia.subtitle){++Yi;nativeSubtitlePending=false;subtitleLoadedUrl="";subtitleFailureUrl="";if(subtitleTask){subtitleTask.cancel();subtitleTask=null;}pn=[];if(Bi)Bi.innerHTML="";}else mn(null);
     (Lr(), "vod" === X.playerMode && xe) &&
       sn(
         br ? Cr + (xe.currentTime || 0) : xe.currentTime || 0,

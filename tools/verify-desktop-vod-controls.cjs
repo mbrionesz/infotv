@@ -13,7 +13,7 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   }
   subtitleRequests++;res.writeHead(200,{'Content-Type':'application/x-subrip'});res.end('1\n00:00:00,000 --> 00:01:59,000\n'+(req.url==='/en.srt'?'English subtitle':'Subtítulo español')+'\n');
  });
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://windows-controls.fixture.test:'+server.address().port;
+ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(80,'127.0.0.1',resolve);});const origin='http://windows-controls.fixture.test';
  const evaluate=code=>window.webContents.executeJavaScript(code),delay=ms=>new Promise(r=>setTimeout(r,ms));
  fs.mkdirSync('dist',{recursive:true});const pointer=path.resolve('dist/windows-vod-pointer.exe');
  execFileSync(path.join(process.env.WINDIR||'C:\\Windows','Microsoft.NET','Framework64','v4.0.30319','csc.exe'),['/nologo','/target:exe','/out:'+pointer,path.resolve('tools/windows-vod-pointer.cs')]);
