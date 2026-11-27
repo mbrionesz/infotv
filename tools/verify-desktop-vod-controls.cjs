@@ -2,6 +2,7 @@
 // Real Electron input + shared VOD UI + the packaged native engine. All media is local.
 const assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {execFileSync}=require('node:child_process');
+let fixturePort=0;
 module.exports=async function verifyVodControls(window,{desktopCapturer,screen,engine}){
  const media=fs.readFileSync(path.resolve('tests/fixtures/windows-controls-hevc.mp4'));
  let subtitleRequests=0;
@@ -13,7 +14,7 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   }
   subtitleRequests++;res.writeHead(200,{'Content-Type':'application/x-subrip'});res.end('1\n00:00:00,000 --> 00:01:59,000\n'+(req.url==='/en.srt'?'English subtitle':'Subtítulo español')+'\n');
  });
- await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(80,'127.0.0.1',resolve);});const origin='http://windows-controls.fixture.test';
+ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});fixturePort=server.address().port;const origin='http://windows-controls.fixture.test';
  const evaluate=code=>window.webContents.executeJavaScript(code),delay=ms=>new Promise(r=>setTimeout(r,ms));
  fs.mkdirSync('dist',{recursive:true});const pointer=path.resolve('dist/windows-vod-pointer.exe');
  execFileSync(path.join(process.env.WINDIR||'C:\\Windows','Microsoft.NET','Framework64','v4.0.30319','csc.exe'),['/nologo','/target:exe','/out:'+pointer,path.resolve('tools/windows-vod-pointer.cs')]);
@@ -58,4 +59,10 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
 };
 // Only the test process replaces resolution for its synthetic fixture hostname;
 // production DNS continues rejecting private/loopback addresses.
-module.exports.installFixtureResolver=function(modulePath='../desktop/dns.cjs'){const dns=require(modulePath),create=dns.createResolver;dns.createResolver=(...args)=>{const resolver=create(...args),resolve=resolver.resolve;resolver.resolve=(host,...options)=>host==='windows-controls.fixture.test'?Promise.resolve({ip:'127.0.0.1',mode:'local-fixture'}):resolve(host,...options);return resolver;};};
+module.exports.installFixtureResolver=function(modulePath='../desktop/dns.cjs'){
+ const dns=require(modulePath),create=dns.createResolver;
+ dns.createResolver=(...args)=>{const resolver=create(...args),resolve=resolver.resolve;resolver.resolve=(host,...options)=>host==='windows-controls.fixture.test'?Promise.resolve({ip:'127.0.0.1',mode:'local-fixture'}):resolve(host,...options);return resolver;};
+ // Preserve the production HTTP-port validation; only route this synthetic
+ // hostname's socket to our unprivileged local fixture listener.
+ const request=http.request;http.request=function(options,...args){if(options&&options.hostname==='windows-controls.fixture.test'&&fixturePort)options={...options,port:fixturePort};return request.call(this,options,...args);};
+};
