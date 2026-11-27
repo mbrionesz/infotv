@@ -5499,6 +5499,10 @@
   }
   var pn = [],
     subtitleTask = null,
+    nativeSubtitlePending = false,
+    nativeSubtitleChoice = null,
+    audioSelectionPending = -1,
+    trackSelectionGeneration = 0,
     subtitleLoadedUrl = "",
     subtitleFailureUrl = "",
     un = {},
@@ -5512,9 +5516,12 @@
       : 0;
   }
   function mn(e) {
-    if(window.XuperWindowsMedia&&window.XuperWindowsMedia.subtitle)window.XuperWindowsMedia.subtitle(e);
     var t = ++Yi;subtitleLoadedUrl="";subtitleFailureUrl="";
     if(subtitleTask){subtitleTask.cancel();subtitleTask=null;}pn=[];
+    if(window.XuperWindowsMedia&&window.XuperWindowsMedia.subtitle){
+      nativeSubtitlePending=true;if(Bi)Bi.innerHTML="";
+      window.XuperWindowsMedia.subtitle(e).then(function(){if(t!==Yi)return;nativeSubtitlePending=false;nativeSubtitleChoice=e||null;subtitleLoadedUrl=e&&e.url||"";if(Ki)saveSubtitleChoice();if(ji)ir();},function(error){if(t!==Yi)return;nativeSubtitlePending=false;subtitleFailureUrl=e&&e.url||"";Qi=nativeSubtitleChoice;Ji=!!Qi;if(ji)ir();if(X.screen==='player')Yt('No se pudo cambiar el subtítulo. '+String(error.message||error));});return;
+    }
     if(e&&e.url&&window.XuperStandalone&&XuperStandalone.loadSubtitles){
       subtitleTask=XuperStandalone.loadSubtitles(e);
       subtitleTask.promise.then(function(cues){if(t===Yi){subtitleTask=null;subtitleLoadedUrl=e.url;pn=cues;yn(xe&&xe.currentTime||0);}},function(error){if(t!==Yi||error.name==='AbortError')return;subtitleTask=null;subtitleFailureUrl=e.url;pn=[];Ji=false;Qi=null;ir();Yt(error.message||'No se pudieron cargar los subtítulos');});return;
@@ -5574,7 +5581,7 @@
   }
   function gn() {
     Zi=["normal","big","small","huge"][subtitleOptionValue("size",3)];en=["white","yellow","black","cyan","lime"][subtitleOptionValue("style",4)];
-    if(window.XuperWindowsMedia&&window.XuperWindowsMedia.style)window.XuperWindowsMedia.style({font:subtitleFontValue(),size:subtitleOptionValue("size",3),color:subtitleOptionValue("style",4)});
+    if(window.XuperWindowsMedia&&window.XuperWindowsMedia.style)window.XuperWindowsMedia.style({font:subtitleFontValue(),size:subtitleOptionValue("size",3),color:subtitleOptionValue("style",4)}).catch(function(error){Yt("No se pudo aplicar el estilo. "+String(error.message||error));});
     Bi &&
       (Bi.classList.remove("size-small", "size-normal", "size-big", "size-huge"),
       Bi.classList.add("size-" + Zi),
@@ -5722,6 +5729,7 @@
     });
   }
   function An(e) {
+    if(nativeSubtitlePending)return;
     if(X.screen!=='player'||X.playerMode!=='vod'||!window.XuperStandalone||!XuperStandalone.subtitleDecision)return;
     var subtitles=En(e),tracks=window.XuperPlayer&&XuperPlayer.audioTracks?XuperPlayer.audioTracks():[];
     var choice=XuperStandalone.subtitleDecision({subtitles:subtitles,audioTracks:tracks,manual:titlePreferences(X.playerItem).subtitle,mode:Number(X.playback.subtitlePolicy)||0,preferred:rn()});
@@ -6336,8 +6344,14 @@
           var a = e("button", "dps-btn focusable");
           ((a.textContent = t.label),
             Xi === t.index && a.classList.add("is-selected"),
+            a.setAttribute("aria-pressed",Xi === t.index?"true":"false"),
+            (a.disabled=audioSelectionPending>=0),
+            audioSelectionPending===t.index&&(a.textContent=t.label+" · Cambiando…"),
             (a._activate = function () {
-              (or(t.index), ar());var selected=Pi.querySelector(".is-selected")||Pi.firstChild;if(selected)rt(selected);Dn();
+              if(audioSelectionPending>=0)return;
+              var pending=or(t.index);ar();
+              if(pending&&typeof pending.then==='function'){pending.then(function(){if(!ji)return;ar();var selected=Pi.querySelector(".is-selected")||Pi.firstChild;if(selected)rt(selected);Dn();});return;}
+              var selected=Pi.querySelector(".is-selected")||Pi.firstChild;if(selected)rt(selected);Dn();
             }),
             Pi.appendChild(a));
         })(i[n]);
@@ -6350,9 +6364,11 @@
     if (Oi) {
       var i = Oi.parentNode;
       (i && i.classList.toggle("is-hidden", !t.length),
-        Oi.classList.toggle("is-on", Ji));
+        Oi.classList.toggle("is-on", Ji),
+        (Oi.disabled=nativeSubtitlePending),
+        Oi.setAttribute("aria-busy",nativeSubtitlePending?"true":"false"));
       var n = Oi.querySelector(".dps-switch-text");
-      n && (n.textContent = Ji ? "ON" : "OFF");
+      n && (n.textContent = nativeSubtitlePending?"Cambiando…":Ji ? "ON" : "OFF");
     }
     if (
       (qi && qi.classList.toggle("is-visible", Ji && t.length > 0),
@@ -6366,9 +6382,11 @@
           (function (t) {
             var a = e("button", "dps-btn focusable");
             ((a.textContent = (window.XuperStandalone?XuperStandalone.audioLanguageLabel({language:t.lang,name:t.name}):nr(t.lang || "Sub"))+(t.forced===true?" · Forzados":"")),
-              Qi && Qi.url === t.url && a.classList.add("is-selected"),
+              Qi && Qi.url === t.url && !nativeSubtitlePending && a.classList.add("is-selected"),
+              (a.disabled=nativeSubtitlePending),
               (a._activate = function () {
-                ((Qi = t), (Ji = !0), (Ki = !0), saveSubtitleChoice(), mn(t), ir());var selected=Vi.querySelector(".is-selected")||Vi.firstChild;if(selected)rt(selected);Dn();
+                if(nativeSubtitlePending)return;
+                ((Qi = t), (Ji = !0), (Ki = !0));if(!(window.XuperWindowsMedia&&XuperWindowsMedia.subtitle))saveSubtitleChoice();mn(t);ir();var selected=Vi.querySelector(".is-selected")||Vi.firstChild;if(selected)rt(selected);Dn();
               }),
               Vi.appendChild(a));
           })(t[r]);
@@ -6438,6 +6456,10 @@
   function or(e) {
     var actual=window.XuperPlayer&&XuperPlayer.audioTracks?XuperPlayer.audioTracks():[],chosen=actual.filter(function(track){return track.index===e;})[0];
     if ("player" !== X.screen || !xe) return ((Xi = e), void ($i = !0));
+    if(window.XuperWindowsMedia&&XuperWindowsMedia.engine&&window.XuperPlayer&&XuperPlayer.selectAudioConfirmed){
+      var generation=trackSelectionGeneration;audioSelectionPending=e;
+      return XuperPlayer.selectAudioConfirmed(e).then(function(ok){if(generation!==trackSelectionGeneration)return;if(!ok)throw Error('Esta pista no está disponible.');Xi=e;$i=true;if(chosen)saveTitlePreference("audio",{language:chosen.language,name:chosen.name});Gi=Date.now()+5000;jr("Idioma cambiado");},function(error){if(generation===trackSelectionGeneration)Yt('No se pudo cambiar el audio. '+String(error.message||error));}).finally(function(){if(generation===trackSelectionGeneration)audioSelectionPending=-1;});
+    }
     if ("relay" === X.streamMode || "smooth" === X.streamMode)
       if (((Xi = e), ($i = !0), br)) {
         var t = Cr + (xe.currentTime || 0);
@@ -6567,11 +6589,12 @@
       (Bi = t("player-subtitles")),
       Oi &&
         (Oi._activate = function () {
+          if(nativeSubtitlePending)return;
           if (((Ki = !0), (Ji = !Ji))) {
             var e = En(un[Ln(bn())]);
             if(!Qi&&e.length){var savedSub=titlePreferences(X.playerItem).subtitle,preferredSub=savedSub&&savedSub.language||rn(),subIndex=window.XuperStandalone&&XuperStandalone.chooseAudioTrack?XuperStandalone.chooseAudioTrack(e,preferredSub):-1;Qi=e[subIndex>=0?subIndex:0];}if(Qi)mn(Qi);
           } else mn(null);
-          (saveSubtitleChoice(), ir(), Dn());
+          if(!(window.XuperWindowsMedia&&XuperWindowsMedia.subtitle))saveSubtitleChoice();ir();Dn();
         }),
       Hi)
     )
@@ -7235,6 +7258,7 @@
     }
   }
   function zr() {
+    ++trackSelectionGeneration;audioSelectionPending=-1;nativeSubtitleChoice=null;
     var leavingVod=X.playerMode==='vod'&&xe?{position:xe.currentTime||0,duration:trustedVodDuration(),durationEstimated:!!(window.XuperPlayer&&XuperPlayer.diagnostics.durationEstimated),live:false}:null;
     hideNextEpisode();var pauseCard=t('xt-vod-pause-card');if(pauseCard)pauseCard.hidden=true;
     if(X.episodeSwitchTimer){clearTimeout(X.episodeSwitchTimer);X.episodeSwitchTimer=null;}X.episodeSwitchSeq=(X.episodeSwitchSeq||0)+1;
