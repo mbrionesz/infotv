@@ -17,8 +17,8 @@ static class NativeWindowClip {
  public static object Apply(Dictionary<string,object> request){
   var hwnd=new IntPtr(unchecked((long)ulong.Parse(Convert.ToString(request["hwnd"]),CultureInfo.InvariantCulture)));
   Rect client;if(hwnd==IntPtr.Zero||!GetClientRect(hwnd,out client))throw new Exception("WINDOW_CLIP_HANDLE");
-  double width=Number(request,"width"),height=Number(request,"height");var regions=request["regions"] as object[];
-  if(width<1||height<1||width>32768||height>32768||regions==null||regions.Length<1||regions.Length>40)throw new Exception("WINDOW_CLIP_BOUNDS");
+  double width=Number(request,"width"),height=Number(request,"height");var regions=request["regions"] as System.Collections.IList;
+  if(width<1||height<1||width>32768||height>32768||regions==null||regions.Count<1||regions.Count>40)throw new Exception("WINDOW_CLIP_BOUNDS");
   double sx=(client.right-client.left)/width,sy=(client.bottom-client.top)/height;
   if(sx<=0||sy<=0)throw new Exception("WINDOW_CLIP_SIZE");
   IntPtr combined=CreateRectRgn(0,0,0,0);if(combined==IntPtr.Zero)throw new Exception("WINDOW_CLIP_REGION");
@@ -28,7 +28,7 @@ static class NativeWindowClip {
    }
    if(SetWindowRgn(hwnd,combined,true)==0)throw new Exception("WINDOW_CLIP_APPLY");combined=IntPtr.Zero; // Ownership transfers to Windows.
    IntPtr owner=GetWindow(hwnd,4);if(owner!=IntPtr.Zero)RedrawWindow(owner,IntPtr.Zero,IntPtr.Zero,0x0001|0x0080|0x0100);
-   return new Dictionary<string,object>{{"clipped",true},{"width",client.right-client.left},{"height",client.bottom-client.top},{"scaleX",sx},{"scaleY",sy},{"regions",regions.Length}};
+   return new Dictionary<string,object>{{"clipped",true},{"width",client.right-client.left},{"height",client.bottom-client.top},{"scaleX",sx},{"scaleY",sy},{"regions",regions.Count}};
   }finally{if(combined!=IntPtr.Zero)DeleteObject(combined);}
  }
 }
