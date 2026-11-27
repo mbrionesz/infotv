@@ -9,6 +9,9 @@ const {createLibmpvMedia}=require('./libmpv-media.cjs');
 const flavor=require('./flavor.cjs');
 const {createVideoSurface}=require('./video-surface.cjs');
 const {migrateProfile}=require('./profile-migration.cjs');
+// The owned decoder HWND covers Chromium. Keep its HTML HUD painted when the
+// native surface is clipped; Windows occlusion tracking otherwise exposes white.
+if(process.platform==='win32'){const disabled=app.commandLine.getSwitchValue('disable-features');app.commandLine.appendSwitch('disable-features',[disabled,'CalculateNativeWinOcclusion'].filter(Boolean).join(','));}
 app.setName(flavor.name);if(process.platform==='win32')app.setAppUserModelId(flavor.appId);if(!process.env.XUPER_QA_PROFILE)app.setPath('userData',flavor.tester?path.join(app.getPath('appData'),'XuperWindows Tester'):migrateProfile(app.getPath('appData')));
 protocol.registerSchemesAsPrivileged([{scheme:'xuper',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true}}]);
 if(!app.requestSingleInstanceLock())app.quit();

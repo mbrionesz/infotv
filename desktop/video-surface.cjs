@@ -15,10 +15,11 @@ function createVideoSurface({NativeWindow,parent,platform=process.platform,ignor
   if(parent.isMinimized()||!parent.isVisible()||width<2||height<2||layout.clipHeight===0||layout.hidden){surface.hide();return;}
   surface.setBounds({x:bounds.x+x,y:bounds.y+y,width,height});const regions=visibleVideoRegions(width,Math.min(height,Math.max(1,Math.round(layout.clipHeight??height))),layout.occlusions);if(!regions.length){surface.hide();return;}surface.setShape(regions);if(!surface.isVisible())surface.showInactive();
  }
- function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;}
+ function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;if(!parent.isDestroyed())parent.webContents?.setBackgroundThrottling?.(true);}
  function handle(){
   if(platform!=='win32')return null;
   close();surface=new NativeWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000'});
+  parent.webContents?.setBackgroundThrottling?.(false);
   surface.setBackgroundColor?.('#000000');
   if(ignoreMouseEvents)surface.setIgnoreMouseEvents(true,{forward:true});
   const hwnd=surface.getNativeWindowHandle();sync();

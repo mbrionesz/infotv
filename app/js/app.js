@@ -6630,7 +6630,7 @@
       }, 2e3),
       a(we),
       a(Se),
-      (function(){document.querySelectorAll('[data-vod-action]').forEach(function(button){button._activate=function(){var action=button.getAttribute('data-vod-action');if(action==='play')di();else if(action==='rewind')li(-10);else if(action==='forward')li(10);else if(action==='settings')Pn();else if(action==='back')ct();};});})(),
+      (function(){document.querySelectorAll('[data-vod-action]').forEach(function(button){button._activate=function(){var action=button.getAttribute('data-vod-action');if(action==='play')di();else if(action==='rewind')li(-10);else if(action==='forward')li(10);else if(action==='settings'){if(window.XuperDesktop)er();else Pn();}else if(action==='back')ct();};});})(),
       Ce.classList.add("focusable"),
       (Ce._onMove = function (e) {
         return "vod" === X.playerMode
