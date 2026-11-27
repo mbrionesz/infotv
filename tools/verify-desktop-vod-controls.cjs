@@ -23,7 +23,39 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
  async function click(selector,index=0){const point=await evaluate(`(()=>{const b=document.querySelectorAll(${JSON.stringify(selector)})[${index}];if(!b||b.disabled)throw Error('Unavailable control: '+${JSON.stringify(selector)});b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)}})()`);await moveMouse(point,true);}
  async function capture(name){await delay(300);const sources=await desktopCapturer.getSources({types:['screen'],thumbnailSize:{width:1920,height:1080}});const image=sources[0].thumbnail;fs.mkdirSync('dist',{recursive:true});const prefix=`dist/xuperwindows-${engine}-vod-${name}-${process.env.XUPER_QA_GPU==='1'?'gpu':'software'}`;fs.writeFileSync(prefix+'.png',image.toPNG());fs.writeFileSync(prefix+'-html.png',(await window.webContents.capturePage()).toPNG());return image;}
  // Check the exposed HUD, rather than just capturePage() which omits native HWNDs.
- async function assertDarkHud(image){const rect=await evaluate('(()=>{const r=document.querySelector(".vod-infobar-content").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}})()'),display=screen.getPrimaryDisplay().bounds,bounds=window.getContentBounds(),size=image.getSize(),pixels=image.getBitmap(),sx=size.width/display.width,sy=size.height/display.height;let bright=0,dark=0,count=0;for(let y=rect.top+3;y<rect.top+rect.height-3;y+=3)for(let x=rect.left+3;x<rect.left+rect.width-3;x+=3){const px=Math.round((bounds.x+x-display.x)*sx),py=Math.round((bounds.y+y-display.y)*sy);if(px<0||py<0||px>=size.width||py>=size.height)continue;const i=(py*size.width+px)*4;if(pixels[i]>220&&pixels[i+1]>220&&pixels[i+2]>220)bright++;if(Math.max(pixels[i],pixels[i+1],pixels[i+2])<100)dark++;count++;}assert.ok(count>500,'HUD must be visible in the captured desktop: '+JSON.stringify({count,rect,bounds,size,display}));if(bright/count>=.18||dark/count<.70||bright/count<.003)console.log('Native clip diagnosis '+JSON.stringify(await evaluate('XuperDesktop.mediaDiagnostics()')));assert.ok(bright/count<.18,'Mouse HUD must not expose a white native window/background: '+bright/count);assert.ok(dark/count>.70&&bright/count>.003,'The actual HUD background and text must be visible above native video: '+JSON.stringify({dark:dark/count,text:bright/count}));assert.equal((await evaluate('XuperDesktop.mediaDiagnostics()')).videoClip?.clipped,true,'Native clipping must be acknowledged by Win32');}
+ async function assertDarkHud(image){
+  const rect=await evaluate('(()=>{const r=document.querySelector(".vod-infobar-content").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height}})()');
+  const display=screen.getPrimaryDisplay().bounds,bounds=window.getContentBounds(),size=image.getSize(),pixels=image.getBitmap();
+  const reference=await window.webContents.capturePage(),htmlSize=reference.getSize(),html=reference.getBitmap();
+  const sx=size.width/display.width,sy=size.height/display.height,hx=htmlSize.width/bounds.width,hy=htmlSize.height/bounds.height;
+  let bright=0,dark=0,count=0,expectedText=0,visibleText=0;
+  for(let y=rect.top+3;y<rect.top+rect.height-3;y+=3)for(let x=rect.left+3;x<rect.left+rect.width-3;x+=3){
+   const px=Math.round((bounds.x+x-display.x)*sx),py=Math.round((bounds.y+y-display.y)*sy);
+   if(px<0||py<0||px>=size.width||py>=size.height)continue;
+   const i=(py*size.width+px)*4;
+   if(pixels[i]>220&&pixels[i+1]>220&&pixels[i+2]>220)bright++;
+   if(Math.max(pixels[i],pixels[i+1],pixels[i+2])<100)dark++;
+   count++;
+   const tx=Math.round(x*hx),ty=Math.round(y*hy);if(tx<0||ty<0||tx>=htmlSize.width||ty>=htmlSize.height)continue;
+   const j=(ty*htmlSize.width+tx)*4,min=Math.min(html[j],html[j+1],html[j+2]),max=Math.max(html[j],html[j+1],html[j+2]);
+   if(min<=145||max-min>=55)continue;
+   expectedText++;let found=false;
+   // Desktop thumbnail scaling changes antialiasing; allow one display pixel.
+   for(let dy=-1;dy<=1&&!found;dy++)for(let dx=-1;dx<=1;dx++){
+    const ax=px+dx,ay=py+dy;if(ax<0||ay<0||ax>=size.width||ay>=size.height)continue;
+    const k=(ay*size.width+ax)*4,lo=Math.min(pixels[k],pixels[k+1],pixels[k+2]),hi=Math.max(pixels[k],pixels[k+1],pixels[k+2]);
+    if(lo>100&&hi-lo<100){found=true;break;}
+   }
+   if(found)visibleText++;
+  }
+  const metrics={dark:dark/count,white:bright/count,expectedText,visibleText:visibleText/Math.max(1,expectedText)};
+  console.log('Actual HUD pixels '+JSON.stringify(metrics));
+  if(count<=500||metrics.white>=.18||metrics.dark<=.70||expectedText<=30||metrics.visibleText<=.30)console.log('Native clip diagnosis '+JSON.stringify(await evaluate('XuperDesktop.mediaDiagnostics()')));
+  assert.ok(count>500,'HUD must lie within the captured desktop: '+JSON.stringify({count,rect,bounds,size,display}));
+  assert.ok(metrics.white<.18&&metrics.dark>.70,'The actual desktop must show a dark HUD rather than a white band or the underlying video: '+JSON.stringify(metrics));
+  assert.ok(expectedText>30&&metrics.visibleText>.30,'The HTML HUD text/buttons must also be visible in the actual native desktop capture: '+JSON.stringify(metrics));
+  assert.equal((await evaluate('XuperDesktop.mediaDiagnostics()')).videoClip?.clipped,true,'Native clipping must be acknowledged by Win32');
+ }
  try{
   window.focus();window.webContents.focus();
   await evaluate(`window.__vodQaHtmlDownloads=0;window.__vodQaOriginalSubtitleLoader=XuperStandalone.loadSubtitles;XuperStandalone.loadSubtitles=function(){__vodQaHtmlDownloads++;return __vodQaOriginalSubtitleLoader.apply(this,arguments)};window.__vodQaOriginal={resolve:XuperStandalone.core.resolve,mediaInfo:XuperStandalone.core.mediaInfo,detail:XuperStandalone.core.detail};window.__vodQaInfo={audio:'es-MX,en',subtitles:[{lang:'es-MX',url:${JSON.stringify(origin+'/es.srt')},format:'srt'},{lang:'en',url:${JSON.stringify(origin+'/en.srt')},format:'srt'}]};XuperStandalone.core.mediaInfo=function(a,b,cb){cb(null,__vodQaInfo)};XuperStandalone.core.detail=function(id,cb){cb(null,{item:{id,title:'Prueba local de audio y subtítulos',type:'movie',portal:true,genres:[]},episodes:[],seasons:[]})};XuperStandalone.core.resolve=function(id,series,options,cb){cb(null,Object.assign({},__vodQaInfo,{url:${JSON.stringify(origin+'/movie.mp4')},codec:'H265',mime:'video/mp4',duration:120,headers:{}}))};__xuper.show('home');__xuper.vod.push({id:'windows-native-controls-qa',title:'Prueba local de audio y subtítulos',type:'movie',_portal:true});__xuper.openDetail(__xuper.vod.length-1);`);
