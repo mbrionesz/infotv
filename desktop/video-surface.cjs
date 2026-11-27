@@ -6,20 +6,19 @@ function visibleVideoRegions(width,height,occlusions=[]){
  for(const hole of occlusions){const next=[];for(const r of regions){const left=Math.max(r.x,Math.floor(hole.x)),top=Math.max(r.y,Math.floor(hole.y)),right=Math.min(r.x+r.width,Math.ceil(hole.x+hole.width)),bottom=Math.min(r.y+r.height,Math.ceil(hole.y+hole.height));if(right<=left||bottom<=top){next.push(r);continue;}if(top>r.y)next.push({x:r.x,y:r.y,width:r.width,height:top-r.y});if(bottom<r.y+r.height)next.push({x:r.x,y:bottom,width:r.width,height:r.y+r.height-bottom});if(left>r.x)next.push({x:r.x,y:top,width:left-r.x,height:bottom-top});if(right<r.x+r.width)next.push({x:right,y:top,width:r.x+r.width-right,height:bottom-top});}regions=next;}
  return regions;
 }
-function createVideoSurface({NativeWindow,parent,platform=process.platform,ignoreMouseEvents=true}){
+function createVideoSurface({NativeWindow,parent,platform=process.platform,ignoreMouseEvents=true,onClip=null}){
  let surface=null,layout=null;
  function sync(){
   if(!surface||surface.isDestroyed()||!layout||parent.isDestroyed())return;
   const bounds=parent.getContentBounds(),x=Math.max(0,Math.round(layout.x)),y=Math.max(0,Math.round(layout.y));
   const width=Math.max(0,Math.min(Math.round(layout.width),bounds.width-x)),height=Math.max(0,Math.min(Math.round(layout.height),bounds.height-y));
   if(parent.isMinimized()||!parent.isVisible()||width<2||height<2||layout.clipHeight===0||layout.hidden){surface.hide();return;}
-  surface.setBounds({x:bounds.x+x,y:bounds.y+y,width,height});const regions=visibleVideoRegions(width,Math.min(height,Math.max(1,Math.round(layout.clipHeight??height))),layout.occlusions);if(!regions.length){surface.hide();return;}surface.setShape(regions);if(!surface.isVisible())surface.showInactive();
+  surface.setBounds({x:bounds.x+x,y:bounds.y+y,width,height});const regions=visibleVideoRegions(width,Math.min(height,Math.max(1,Math.round(layout.clipHeight??height))),layout.occlusions);if(!regions.length){surface.hide();return;}if(onClip)onClip({width,height,regions});else surface.setShape(regions);if(!surface.isVisible())surface.showInactive();
  }
- function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;if(!parent.isDestroyed())parent.webContents?.setBackgroundThrottling?.(true);}
+ function close(){if(surface&&!surface.isDestroyed())surface.destroy();surface=null;}
  function handle(){
   if(platform!=='win32')return null;
   close();surface=new NativeWindow({parent,frame:false,thickFrame:false,hasShadow:false,show:false,skipTaskbar:true,focusable:false,resizable:false,movable:false,backgroundColor:'#000000'});
-  parent.webContents?.setBackgroundThrottling?.(false);
   surface.setBackgroundColor?.('#000000');
   if(ignoreMouseEvents)surface.setIgnoreMouseEvents(true,{forward:true});
   const hwnd=surface.getNativeWindowHandle();sync();
