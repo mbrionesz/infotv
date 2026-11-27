@@ -6,12 +6,12 @@ import {openDesktopNative} from '../../browser/desktop-native-player.js';
 const {createVlcMedia}=createRequire(import.meta.url)('../../desktop/vlc-media.cjs');
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(predicate){for(let i=0;i<100;i++){if(predicate())return;await delay(10);}assert.fail('Native track state did not settle');}
-function fixture(engine){
- let audio=0,sub=-1,requests=[],rejectAudio=false;
+function fixture(engine,{subtitleDelay=0}={}){
+ let audio=0,sub=-1,nextSub=5,requests=[],rejectAudio=false;
  const native=()=>({ready:true,state:'paused',time:45,length:3600,stats:{decodedvideo:1,displayedpictures:1},information:{category:{a:{Type:'Audio',ID:0,Selected:audio===0},b:{Type:'Audio',ID:7,Selected:audio===7},...(sub>=0?{s:{Type:'Subtitle',ID:sub,Selected:true}}:{})}}});
  const media=createVlcMedia({engine,executable:'/decoder/test',resolver:{},pollMs:10,proxyFactory:async()=>({url:'http://127.0.0.1/test',subtitle:()=> 'http://127.0.0.1/subtitle',snapshot:()=>({bytes:123,httpStatus:206}),close(){}}),spawnProcess:()=>{
   const child=new EventEmitter();child.stdout=new EventEmitter();child.stdout.setEncoding=()=>{};child.stderr=new EventEmitter();child.stdin=new EventEmitter();child.kill=()=>{};
-  child.stdin.write=(line,done)=>{const r=JSON.parse(line);requests.push(r);if(r.action==='audio'&&!rejectAudio)setTimeout(()=>{audio=r.track;},120);if(r.action==='subtitle')sub=5;if(r.action==='subtitle-off')sub=-1;queueMicrotask(()=>child.stdout.emit('data',JSON.stringify({requestId:r.requestId,...(r.action==='audio'&&rejectAudio?{error:'AUDIO_TRACK_UNAVAILABLE'}:{result:native()})})+'\n'));done?.();};
+  child.stdin.write=(line,done)=>{const r=JSON.parse(line);requests.push(r);if(r.action==='audio'&&!rejectAudio)setTimeout(()=>{audio=r.track;},120);if(r.action==='subtitle'){const target=nextSub++;if(subtitleDelay)setTimeout(()=>{sub=target;},subtitleDelay);else sub=target;}if(r.action==='subtitle-off')sub=-1;queueMicrotask(()=>child.stdout.emit('data',JSON.stringify({requestId:r.requestId,...(r.action==='audio'&&rejectAudio?{error:'AUDIO_TRACK_UNAVAILABLE'}:{result:native()})})+'\n'));done?.();};
   queueMicrotask(()=>child.stdout.emit('data',JSON.stringify({event:'ready',protocol:1})+'\n'));return child;
  }});
  return {media,requests,rejectAudio:()=>rejectAudio=true};
@@ -33,4 +33,8 @@ test('renderer propagates rejected subtitle/audio commands and never marks the r
  const previous=globalThis.window;globalThis.window={XuperDesktop:{startMedia:async()=>({id:'fail'}),mediaState:async()=>({id:'fail',ready:true,tracks:[{id:0,type:'audio',selected:true},{id:1,type:'audio',selected:false}]}),mediaCommand:async()=>{throw Error('AUDIO_TRACK_UNAVAILABLE');},mediaSubtitle:async()=>{throw Error('SUBTITLE_OPEN');},stopMedia(){},onMediaClosed:()=>()=>{}},__xuper:{subtitleForPlayback:()=>null}};
  class Video extends EventTarget{play(){}pause(){}}const session=openDesktopNative(new Video(),{url:'http://fixture.test/movie.mp4'},{onState(){},onError:assert.fail,onClosed(){}});
  try{await session.ready;await until(()=>session.state.ready);await assert.rejects(session.selectAudioConfirmed(1),/AUDIO_TRACK_UNAVAILABLE/);assert.equal(session.state.tracks[0].selected,true);await assert.rejects(session.subtitle({url:'http://fixture.test/sub.srt'}),/SUBTITLE_OPEN/);}finally{session.destroy();globalThis.window=previous;}
+});
+
+test('a subtitle change waits for the new native track instead of accepting the previously selected subtitle',async()=>{
+ const f=fixture('vlc',{subtitleDelay:200});try{const {id}=await f.media.open({url:'http://fixture.test/movie.mp4'});await until(()=>f.media.snapshot(id).ready);await f.media.subtitle(id,{lang:'es',url:'http://fixture.test/es.srt'});const previous=f.media.snapshot(id).tracks.find(t=>t.type==='sub'&&t.selected).id;let finished=false;const next=f.media.subtitle(id,{lang:'en',url:'http://fixture.test/en.srt'}).then(s=>{finished=true;return s;});await delay(50);assert.equal(finished,false);const result=await next;assert.notEqual(result.tracks.find(t=>t.type==='sub'&&t.selected).id,previous);assert.equal(result.subtitle.language,'en');}finally{f.media.close();}
 });

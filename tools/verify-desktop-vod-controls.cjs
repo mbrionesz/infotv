@@ -43,8 +43,9 @@ module.exports=async function verifyVodControls(window,{desktopCapturer,screen,e
   assert.equal(await evaluate('document.getElementById("player-video").paused'),true);
   assert.ok(Math.abs(await evaluate('document.getElementById("player-video").currentTime')-before)<1);
   await wait('!document.getElementById("dps-sub-switch").disabled');if(!await evaluate('document.getElementById("dps-sub-switch").classList.contains("is-on")'))await click('#dps-sub-switch');await wait('!!document.querySelector("#dps-lang-options button.is-selected")');
+  const previousSubtitle=(await evaluate('XuperDesktop.mediaDiagnostics()')).tracks.find(t=>t.type==='sub'&&t.selected)?.id;
   await click('#dps-lang-options button',1);await wait('!document.getElementById("dps-sub-switch").disabled&&document.querySelectorAll("#dps-lang-options button")[1].classList.contains("is-selected")');
-  const state=await evaluate('XuperDesktop.mediaDiagnostics()');assert.equal(state.tracks.filter(t=>t.type==='audio'&&t.selected).length,1);assert.ok(state.tracks.some(t=>t.type==='sub'&&t.selected));assert.equal(state.subtitle.language,'en');
+  const state=await evaluate('XuperDesktop.mediaDiagnostics()');assert.equal(state.tracks.filter(t=>t.type==='audio'&&t.selected).length,1);assert.ok(state.tracks.some(t=>t.type==='sub'&&t.selected));assert.equal(state.subtitle.language,'en');assert.notEqual(state.tracks.find(t=>t.type==='sub'&&t.selected).id,previousSubtitle,'Switching subtitles must select the new native track');
   await capture('english-audio-subtitles');
   await click('#dps-sub-switch');await wait('!document.getElementById("dps-sub-switch").disabled&&!document.getElementById("dps-sub-switch").classList.contains("is-on")');
   assert.equal((await evaluate('XuperDesktop.mediaDiagnostics()')).tracks.some(t=>t.type==='sub'&&t.selected),false);
